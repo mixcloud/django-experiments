@@ -31,7 +31,7 @@ class ExperimentNode(template.Node):
             user = request.experiment_user
 
         # Should we render?
-        if Experiment.show_alternative(self.experiment_name, user, self.alternative, experiment_manager, request):
+        if Experiment.show_alternative(self.experiment_name, user, self.alternative, experiment_manager):
             response = self.node_list.render(context)
         else:
             response = ""
