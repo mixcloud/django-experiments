@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
+from django.db import IntegrityError
 
 from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE
 from experiments.counters import counter_increment
@@ -77,6 +78,12 @@ class WebUser(object):
     def confirm_human(self):
         self.session['experiments_verified_human'] = True
 
+        signals.user_confirmed_human.send(
+            sender=self,
+            request=self.request,
+            user=self.user,
+        )
+
         enrollments = self.session.get('experiments_enrollments', None)
         if not enrollments:
             return
@@ -87,11 +94,6 @@ class WebUser(object):
             # Increment experiment_name:alternative:participant counter
             self.increment_participant_count(experiment_manager[experiment_name], alternative)
 
-        signals.user_confirmed_human.send(
-            sender=self,
-            request=self.request,
-            user=self.user,
-        )    
 
     def get_enrollment(self, experiment):
         if self.is_bot():
@@ -117,7 +119,11 @@ class WebUser(object):
             return
         if not self.is_anonymous():
             # Registered User
-            enrollment, _ = Enrollment.objects.get_or_create(user=self.get_registered_user(), experiment=experiment, defaults={'alternative':alternative})
+            try:
+                enrollment, _ = Enrollment.objects.get_or_create(user=self.get_registered_user(), experiment=experiment, defaults={'alternative':alternative})
+            except IntegrityError, exc:
+                # Already registered (db race condition under high load)
+                return
             # Update alternative if it doesn't match
             if enrollment.alternative != alternative:
                 enrollment.alternative = alternative
