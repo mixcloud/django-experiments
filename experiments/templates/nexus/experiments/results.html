@@ -1,0 +1,138 @@
+{% extends "nexus/module.html" %}
+{% load humanize %}
+{% load experiment_helpers %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+
+    <script>
+        var EXPERIMENT = {
+            addExperiment:    "{% url experiments:add %}",
+            updateExperiment: "{% url experiments:update %}",
+            deleteExperiment: "{% url experiments:delete %}",
+            updateState:      "{% url experiments:state %}",
+
+            deleteImage:  "{% url nexus:media 'experiments' 'img/delete.png' %}"
+        };
+    </script>
+
+    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
+
+
+{% endblock %}
+
+{% block content %}
+    <div class="results header top">
+        <h2 class="experiment">{{ experiment.name }}</h2>
+        <div data-experiment-name="{{experiment.name}}" class="results state">
+            <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"{% endif %}>
+                Gargoyle
+            </button>
+
+            <button class="xtrasmall button {% if experiment.state == 1 %}toggled{% endif %}" data-state="1">
+                Enabled
+            </button>
+
+            <button class="xtrasmall button {% if experiment.state == 0 %}toggled{% endif %}" data-state="0">
+                Control
+            </button>
+        </div>
+    </div>
+
+    {% if experiment.switch_key %}
+        <div data-experiment-name="{{experiment.name}}" class="results header" style>
+            Connected to Gargoyle switch <a href="{% url gargoyle:index %}#id_{{experiment.switch_key}}">{{experiment.switch_key}}</a>.
+        </div>
+    {% endif %}
+
+    <div class="results header bottom">
+        {% if experiment.description %}<p>{{ experiment.description }}</p>{% endif %}
+
+        <div class="dates">
+            <div id = "{{ experiment.name }}_start_date"
+                {% if experiment.start_date %}
+                     >Started: {{ experiment.start_date }}
+                {% else %}
+                    style="display:none;">Started: 
+                {% endif %}
+            </div>
+            <div id = "{{ experiment.name }}_end_date"
+                {% if experiment.end_date %}
+                    >Ended: {{ experiment.end_date }}
+                {% else %}
+                    style="display:none;">Ended: 
+                {% endif %}
+            </div>
+        </div>
+    </div>
+        
+    <table class="goals{% if not results %}empty{% endif %}">
+
+        <thead>
+            <tr>
+                <td class="goal odd"></td>
+                <td class="conversion1 even">control <small>({{ control_participants|intcomma }})</small></td>
+                {% for alternative, participants in alternatives.items %}
+                     {% if alternative != 'control' %}
+                         <td colspan="3" class="conversion2 {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">{{ alternative }} <small>({{ participants|intcomma }})</small></td>
+                     {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for goal, data in results.items %}
+                <tr id="{{goal}}-row"class="row-{% cycle 'odd' 'even' %} {% if not data.relevant %}hiddengoal{% endif %}">
+
+                    <td class="goal odd">
+                        {{ goal }}
+                    </td>
+
+                    <td class="conversion1 even">{{ data.control.conversions|intcomma }} <small>({{ data.control.conversion_rate|floatformat:2 }}%)</small></td>
+
+                    {% for alternative_name, results in data.alternatives.items %}
+                        {% if alternative_name != 'control' %}
+                            <td class="conversion2 {% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">{{ results.conversions|intcomma }}<small> ({{ results.conversion_rate|floatformat:2 }}%)</small></td>
+                            <td title="Improvement" class="improvement {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
+                                {% with results.improvement as improvement %}
+                                    {% if improvement != None %}
+                                        {% if improvement < 0 %}
+                                            <span class="negative_improvement">
+                                        {% else %}
+                                            <span class="positive_improvement">
+                                        {% endif %}
+                                        {{ improvement|floatformat:2 }} %</span>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td title="Confidence Interval" class="confidence_interval {% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
+                                {% with results.confidence as confidence %}
+                                    {% if confidence != None %}
+                                        {% if confidence >= 95 %}
+                                            <span class="high_confidence">
+                                        {% endif %}
+                                        {% if confidence < 95 and confidence >= 90 %}
+                                            <span class="medium_confidence">
+                                        {% endif %}
+                                        {% if confidence < 90 %}
+                                            <span class="low_confidence">
+                                        {% endif %}
+                                        {{ confidence|stringformat:"d" }} %</span>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a id  = "ToggleGoals" href="#">Toggle All Goals</a>
+
+{% endblock content %}

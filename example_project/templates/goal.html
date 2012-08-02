@@ -1,0 +1,11 @@
+{% load experiments %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Goal Page</title>
+</head>
+<body>
+    {% experiment_goal "page_goal" %}
+    <a href="{% url test_page %}">Back</a>
+</body>
+</html>

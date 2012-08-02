@@ -1,0 +1,394 @@
+/*dashboard.html*/
+.experiment-list {
+    width: 100%;
+}
+
+/*index.html*/
+#container div.wrapper > h1 {
+    display: none;
+}
+
+#container div.noExperiments {
+    margin: 20px 0 0 0;
+    text-align: center;
+}
+
+#container div.toolbar {
+    border-bottom: solid 1px #e5e5e5;
+    padding-bottom: 20px;
+}
+
+#container div.toolbar span.search {
+    padding-top: 3px;
+    float: right;
+}
+
+#container div.toolbar ul.sort {
+    float: right;
+    list-style: none;
+    padding: 10px 20px 10px 0;
+    margin: 0 20px 0 0;
+    border-right: 1px solid #EAEAEA;
+}
+
+#container div.toolbar ul.sort li {
+    display: inline-block;
+}
+
+#container div.toolbar ul.sort li a {
+    color: #999;
+    display: block;
+}
+
+#container div.toolbar ul.sort li + li {
+    margin-left: 10px;
+}
+
+#container div.toolbar[data-sort=-name] ul.sort li.name a,
+#container div.toolbar[data-sort=-start_date] ul.sort li.start_date a,
+#container div.toolbar[data-sort=-end_date] ul.sort li.end_date a,
+#container div.toolbar[data-sort=name] ul.sort li.name a,
+#container div.toolbar[data-sort=start_date] ul.sort li.start_date a,
+#container div.toolbar[data-sort=end_date] ul.sort li.end_date a{
+
+    color: #000;
+    font-weight: bold;
+}
+
+#container div.toolbar[data-sort=-name] ul.sort li.name a:after,
+#container div.toolbar[data-sort=-start_date] ul.sort li.start_date a:after,
+#container div.toolbar[data-sort=-end_date] ul.sort li.end_date a:after{
+    content: " ▴";
+}
+
+#container div.toolbar[data-sort=name] ul.sort li.name a:after,
+#container div.toolbar[data-sort=start_date] ul.sort li.start_date a:after,
+#container div.toolbar[data-sort=end_date] ul.sort li.end_date a:after{
+    content: " ▾";
+}
+
+
+#container div.toolbar span.search input {
+    width: 200px;
+    padding: 6px;
+    font-size: 13px;
+}
+
+#container table.experiments {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#container table.experiments tr:hover {
+    background: #f9f9f9;
+    cursor: pointer;
+}
+
+#container table.experiments tr.hidden {
+    display: none;
+}
+
+#container table.experiments tr.collapsed .inner {
+    display: none;
+}
+
+#container table.experiments td {
+    vertical-align: top;
+    border-bottom: solid 1px #efefef;
+    padding: 20px 10px;
+}
+
+#container table.experiments td.name h4 {
+    font-size: 100%;
+    font-weight: bold;
+    margin: 0;
+}
+
+#container div.results.header a,
+#container table.experiments td.name a {
+    font-weight:normal;
+    font-size:.8em;
+    color:blue;
+    text-decoration:none;
+}
+
+#container div.results.header a,
+#container table.experiments td.name p a {
+    font-size:1em;
+}
+
+#container table.experiments td.name a:hover {
+    text-decoration:underline;
+}
+
+#container table.experiments td.name h4 small {
+    color: #999;
+    font-weight: normal;
+    margin-left: 8px;
+    font-family: "Inconsolata", arial;
+}
+
+#container table.experiments td.name h4 small {
+    color: #999;
+    font-weight: normal;
+    margin-left: 8px;
+    font-family: "Inconsolata", arial;
+}
+
+#container table.experiments td.name h5 {
+    color: #777;
+    font-size: 50%;
+    font-weight: normal;
+    margin-bottom: 0;
+}
+
+#container table.experiments td.name p {
+    color: #666;
+    margin: 10px 0 0 0;
+}
+
+#container table.experiments td.state {
+    width: 250px;
+    text-align: center;
+}
+
+#container table.experiments td.state p {
+    color: #999;
+    margin-top: 15px;
+    font-size: 85%;
+    text-transform: lowercase;
+    margin-bottom: 0;
+}
+
+#container table.experiments td.actions {
+    text-align: right;
+    width: 70px;
+}
+
+#container table.experiments td.state button[disabled],
+#container div.results button[disabled] {
+    color:#AAA;
+    border-color:#AAA;
+}
+
+
+#container table.experiments td.actions button.edit,
+#container table.experiments td.actions button.edit span {
+    height: 18px;
+    width: 18px;
+}
+
+#container table.experiments td.actions button.edit span {
+    display: block;
+    background: transparent url("../img/edit.png") no-repeat left 35%;
+}
+
+#container table.experiments td.actions button.delete,
+#container table.experiments td.actions button.delete span {
+    height: 18px;
+    width: 18px;
+}
+
+#container table.experiments td.actions button.delete span {
+    display: block;
+    background: transparent url("../img/delete.png") no-repeat left 35%;
+}
+
+#container table.empty {
+    display: none;
+}
+
+/*
+Facebox css
+*/
+
+#facebox h2 {
+    font-size: 100%;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#facebox table.experimentForm {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+#facebox table.experimentForm th, #facebox table.experimentForm td {
+    vertical-align: top;
+}
+
+#facebox table.experimentForm th {
+    width: 100px;
+    font-weight: normal;
+    text-align: right;
+    padding-right: 10px;
+}
+
+#facebox table.experimentForm td input,
+#facebox table.experimentForm td textarea {
+    width: 230px;
+    padding: 2px 3px;
+}
+
+#facebox table.experimentForm td input[disabled],
+#facebox table.experimentForm td textarea[disabled] {
+    background-color:#eeeeee;
+}
+
+#facebox table.experimentForm td p {
+    margin-top: 5px;
+    font-size: 80%;
+    color: #666;
+}
+
+#facebox table.experimentForm td textarea {
+    height: 30px;
+}
+
+#facebox table.experimentForm td.buttons {
+    text-align: right;
+}
+
+/*
+Results page header
+*/
+#container div.results.header{
+    padding-top:10px;
+    padding-bottom:10px;
+    border-bottom:1px solid #DDD;
+}
+
+#container div.results.header.top{
+    min-height:30px;
+}
+
+#container h2.experiment{
+    color:#2457A9;
+    float:left;
+}
+
+#container div.results.state{
+    float:right;
+}
+
+#container div.results.header.bottom{
+    color:#666;
+}
+
+/*Results table*/
+#container table.goals{
+    border-spacing:0px;
+}
+
+#container table.goals td{
+    padding:8px;
+    width:100px;
+    border-bottom:1px solid #DDD;
+}
+
+
+#container table.goals td.goal{
+    min-width:200px;
+    max-width:200px;
+    overflow:hidden;
+}
+
+#container table.goals tbody td{
+    color:#344259;
+}
+
+#container table.goals thead{
+    font-weight:bold;
+    color:#2457A9;
+}
+
+#container table.goals thead td{
+    border-left:solid 1px #EEE;
+}
+
+#container table.goals thead td.goal{
+    border-left:none;
+}
+
+#container table.goals tbody td.conversion2{
+    border-left:solid 1px #DDD;
+}
+
+
+#container table.goals tbody td.even{
+    background:#EEE;
+}
+
+#container table.goals tbody td.even.shine{
+    background:#DDD;
+}
+
+#container table.goals td.filler{
+    padding:0px;
+    width:0px;
+    border:none;
+}
+
+#container table.goals tbody tr{
+    border-top:1px solid #000;
+}
+s
+#container table.goals tbody tr:hover,
+#container table.goals tbody tr:focus{
+    background:#E4E9F1;
+}
+
+#container table.goals tbody tr:hover td,
+#container table.goals tbody tr:focus td{
+    background:#C6D0E0 !important;
+}
+
+#container table.goals tbody tr.hiddengoal{
+    display:none;
+}
+
+#container #ToggleGoals{
+    padding-left:5px;
+    font-weight:normal;
+    font-size:.8em;
+    color:blue;
+    text-decoration:none;
+}
+
+#container #ToggleGoals {
+    text-decoration:underline;
+}
+
+/*Statistical CSS*/
+.positive_improvement {
+    font-weight: bold;
+    color: green;
+}
+.negative_improvement {
+    font-weight: bold;
+    color: red;
+}
+
+.low_confidence {
+    color: #333;
+}
+.medium_confidence {
+    color: #ff9900;
+    font-weight: bold;
+}
+.high_confidence {
+    color: green;
+    font-weight: bold;
+}
+
+.low_confidence:after {
+    content: '  ✗';
+}
+.medium_confidence:after {
+    content: '  ✓';
+}
+.high_confidence:after {
+    content: '  ✔';
+}

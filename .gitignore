@@ -1,0 +1,6 @@
+.idea/*
+*.pyc
+*~
+*conflicted copy*
+*.sublime*
+*experiments.db

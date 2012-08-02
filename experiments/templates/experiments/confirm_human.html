@@ -1,0 +1,5 @@
+{% if not request.session.experiments_verified_human %}
+    <script type="text/javascript" charset="utf-8">
+        experiments.confirm_human();
+    </script>
+{% endif %}

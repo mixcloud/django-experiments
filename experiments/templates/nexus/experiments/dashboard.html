@@ -1,0 +1,12 @@
+{% if not enabled_experiments %}
+    <p>There are no active experiments.</p>
+{% else %}    
+    <p>There are <b>{{ enabled_experiments_count }} active</b> experiments.</p>
+    <table class="experiment-list">
+        {% for experiment in enabled_experiments %}
+            <tr>
+                <td><a href="{% url experiments:results experiment.name %}">{{experiment.name}}</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endif %}

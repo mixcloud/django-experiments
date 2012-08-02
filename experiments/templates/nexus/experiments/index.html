@@ -1,0 +1,205 @@
+{% extends "nexus/module.html" %}
+
+{% load experiment_helpers %}
+
+{% block head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+    <script>
+        var EXPERIMENT = {
+            addExperiment:    "{% url experiments:add %}",
+            updateExperiment: "{% url experiments:update %}",
+            deleteExperiment: "{% url experiments:delete %}",
+            updateState:      "{% url experiments:state %}",
+
+            deleteImage:  "{% url nexus:media 'experiments' 'img/delete.png' %}"
+        };
+    </script>
+
+    <script src="{% url nexus:media 'experiments' 'js/string_score.min.js' %}"></script>
+    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="toolbar" data-sort="{{ sorted_by }}">
+        <button class="button addExperiment">Add an Experiment</button>
+
+        <span class="search">
+            <input type="text" placeholder="search">
+        </span>
+
+        <ul class="sort">
+            <li class="start_date">
+                <a href="?by={{'start_date'|sort_by_key:sorted_by}}">Start Date</a>
+            </li>
+            <li class="end_date">
+                <a href="?by={{'end_date'|sort_by_key:sorted_by}}">End Date</a>
+            </li>  
+            <li class="name">
+                <a href="?by={{'name'|sort_by_key:sorted_by}}">Name</a>
+            </li>          
+        </ul>
+
+    </div>
+
+    <div class="noExperiments" {% if experiments %}style="display:none;"{% endif %}>
+        You do not have any experiments.
+    </div>
+
+    <table class="experiments {% if not experiments %}empty{% endif %}">
+        {% for experiment in experiments %}
+        <tr data-experiment-name="{{ experiment.name }}" data-experiment-switch="{{ experiment.switch_key }}" data-experiment-desc="{{ experiment.description }}" data-experiment-goals="{{ experiment.relevant_goals }}" class="collapsed">
+            <td class="name">
+                <h4>{{ experiment.name }}
+                <a href="{% url experiments:results experiment.name %}">(View Results)</a>
+                    <small>
+                        <span id = "{{ experiment.name }}_start_date"
+                            {% if experiment.start_date %}
+                                 >Started: {{ experiment.start_date }}
+                            {% else %}
+                                style="display:none;">Started: 
+                            {% endif %}
+                        </span>
+                        <span id = "{{ experiment.name }}_end_date"
+                            {% if experiment.end_date %}
+                                >Ended: {{ experiment.end_date }}
+                            {% else %}
+                                style="display:none;">Ended: 
+                            {% endif %}
+                        </span>
+                    </small>
+                </h4>
+
+                <div class="inner">
+                    {% if experiment.description %}
+                        <p>{{ experiment.description }}</p>
+                    {% endif %}
+
+                    {% if experiment.switch_key %}
+                        <p>Connected to Gargoyle switch <a href="{% url gargoyle:index %}#id_{{ experiment.switch_key }}">{{ experiment.switch_key }}</a>.</p>
+                    {% endif %}
+                </div>
+
+            </td>
+
+            <td class="state">
+                <div data-experiment-name="{{experiment.name}}" class="state">
+                    <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"s{% endif %}>
+                        Gargoyle
+                    </button>
+
+                    <button class="xtrasmall button {% if experiment.state == 1 %}toggled{% endif %}" data-state="1">
+                        Enabled
+                    </button>
+
+                    <button class="xtrasmall button {% if experiment.state == 0 %}toggled{% endif %}" data-state="0">
+                        Control
+                    </button>
+                </div>
+            </td>
+
+            <td class="actions">
+                <button class="edit xtrasmall button"><span></span></button>
+                <button class="delete xtrasmall button"><span></span></button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% raw %}
+        <script type="text/x-jquery-tmpl" id="experimentForm">
+            {{ if add }}
+                <h2>Add an Experiment</h2>
+            {{ else }}
+                <h2>Update an Experiment</h2>
+            {{ /if }}
+
+            <table class="experimentForm">
+                <tr>
+                    <th>Name:</th>
+                    <td>
+                        <input name="name" type="text" value="{{ if name }}${name}{{ /if }}" {{ if add }}{{ else }}disabled{{ /if }}>
+                        <p>The experiment name.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Switch Key:</th>
+                    <td>
+                        <input name="switch_key" type="text" value="{{ if switch_key }}${switch_key}{{ /if }}">
+                        <p>Connected gargoyle switch. (Optional)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Description:</th>
+                    <td>
+                        <textarea name="desc">{{ if desc }}${desc}{{ /if }}</textarea>
+                        <p>A brief description of this experiment.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Relevant Goals:</th>
+                    <td>
+                        <textarea name="relevant_goals">{{ if relevant_goals }}${relevant_goals}{{ /if }}</textarea>
+                        <p>Comma separated list of relevant goals.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="buttons">
+                        <button
+                            data-action="{{ if add }}add{{ else }}update{{ /if }}"
+                            data-curname="${curname}"
+                            class="submitExperiment small button">{{ if add }}Add{{ else }}Update{{ /if }}</button>
+                        or <a href="#" class="closeFacebox">cancel</a>
+                    </td>
+                </tr>
+            </table>
+        </script>
+        <script type="text/x-jquery-tmpl" id="experimentData">
+            <tr data-experiment-name="${name}" data-experiment-switch="${switch_key}" data-experiment-desc="${description}" data-experiment-goals="${relevant_goals}">
+                <td class="name">
+                    <h4>
+                        ${name}
+
+                        <a href="${edit_url}">(View Results)</a>
+
+                        <small>
+                            {{if start_date }}Started: ${start_date}{{/if}}
+                            {{if end_date }} Ended: ${end_date}{{/if}}
+                        </small>
+                    </h4>
+                    
+                    <div class="inner">
+                        {{ if description }}
+                            <p>${description}</p>
+                        {{ /if }}
+
+                        {{ if switch_key }}
+                            <p>Connected to Gargoyle switch <a href="{% endraw %}{% url gargoyle:index %}{% raw %}#id_${switch_key}">${switch_key}</a>.</p>
+                        {{ /if }}
+                    </div>
+                </td>
+
+                <td class="state">
+                    <div class = "state" data-experiment-name="${name}">
+                        <button class="xtrasmall button {{if state == 2}}toggled{{/if}}" data-state="2" {{ if !switch_key }}disabled="disabled"{{ /if }}>
+                            Gargoyle
+                        </button>
+
+                        <button class="xtrasmall button {{if state == 1}}toggled{{/if}}" data-state="1">
+                            Enabled
+                        </button>
+                        <button class="xtrasmall button {{if state == 0}}toggled{{/if}}" data-state="0">
+                            Control
+                        </button>
+                    </div>
+                </td>
+
+                <td class="actions">
+                    <button class="edit xtrasmall button"><span></span></button>
+                    <button class="delete xtrasmall button"><span></span></button>
+                </td>
+            </tr>
+        </script>
+
+    {% endraw %}
+
+{% endblock %}
