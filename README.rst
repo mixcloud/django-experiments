@@ -7,6 +7,10 @@ user enrollment via Gargoyle.
 
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
+.. image:: https://github.com/mixcloud/django-experiments/tree/master/etc/screenshot1.jpg
+
+.. image:: https://github.com/mixcloud/django-experiments/tree/master/etc/screenshot2.jpg
+
 Installation
 ------------
 
