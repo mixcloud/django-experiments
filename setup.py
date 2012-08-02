@@ -26,11 +26,11 @@ def parse_dependency_links(file_name):
 
 
 setup(name='django-experiments',
-      version='0.2.0',
+      version='0.2.1',
       description='Python Django AB Testing Framework',
       author='Chris Villa',
       author_email='chris@mixcloud.com',
-      url='https://github.com/mixcloud/nexus-experiments',
+      url='https://github.com/mixcloud/django-experiments',
       packages=find_packages(exclude=["example_project"]),
       include_package_data=True,
       license="MIT license, see LICENSE file",
