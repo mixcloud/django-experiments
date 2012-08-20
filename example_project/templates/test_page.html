@@ -6,6 +6,20 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js" type="text/javascript"></script>
     <script src="{% url nexus:media 'experiments' 'js/jquery.cookie.js' %}"></script>
     <script src="{% url nexus:media 'experiments' 'js/experiments.js' %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(experiments).bind("goal", function(event, goal) {
+                console.log("Goal, " + goal + ", attained!");
+            });
+            $(experiments.enrollments).each(function(i, enrollment) {
+                $("#enrollments_list").append(
+                    $("<dt/>").text(enrollment.experiment)
+                ).append(
+                    $("<dd/>").text(enrollment.alternative)
+                );
+            });
+        });
+    </script>
 </head>
 <body>
     {% experiment helloworld control %}
@@ -18,7 +32,8 @@
 
     <span onclick="experiments.goal('js_goal')">JS GOAL</span>
     <span data-experiments-goal="cookie_goal">COOKIE GOAL</span>
-
+    <dl id="enrollments_list"></dl>
     {% include "experiments/confirm_human.html" %}
+    {% enrollments %}
 </body>
 </html>
