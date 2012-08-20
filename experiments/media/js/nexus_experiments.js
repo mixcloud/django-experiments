@@ -45,14 +45,16 @@ $(document).ready(function () {
         var row = $(this).parents("tr:first");
         var table = row.parents("table:first");
 
-        api(EXPERIMENT.deleteExperiment, { name: row.attr("data-experiment-name") },
-            function (response) {
+        var confirmdelete = confirm("Delete experiment \"" + row.attr("data-experiment-name") + '\"? This can be dangerous if a lot of people are enrolled!')
+
+        if (confirmdelete) {
+            api(EXPERIMENT.deleteExperiment, { name: row.attr("data-experiment-name") }, function (response) {
                 row.remove();
                 if (!table.find("tr").length) {
                     $("div.noExperiments").show();
                 }
-            }
-        );
+            });
+        }
     });
 
 
