@@ -14,6 +14,7 @@
 }
 
 #container div.toolbar {
+    min-height:25px;
     border-bottom: solid 1px #e5e5e5;
     padding-bottom: 20px;
 }
