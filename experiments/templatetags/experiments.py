@@ -5,12 +5,13 @@ from django import template
 from experiments.models import Experiment
 from experiments.manager import experiment_manager
 from experiments.utils import StaticUser, WebUser
+import random
 
 register = template.Library()
 
 @register.inclusion_tag('experiments/goal.html')
 def experiment_goal(goal_name):
-    return { 'goal_name': goal_name }
+    return { 'goal_name': goal_name, 'random_number': random.randint(1,1000000) }
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative):
