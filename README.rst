@@ -14,11 +14,16 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 Changelog
 ---------
 
+0.3.1
+~~~~~
+
+- Replaced django static template tags. Supports django 1.3 again!
+
 0.3.0
 ~~~~~
 
 - Added django permission support.
-- Started using django static instead of nexus:media.
+- Started using django static instead of nexus:media. (django 1.4 only)
 
 
 Installation
