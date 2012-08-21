@@ -11,6 +11,16 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 .. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/screenshot2.jpg
 
+Changelog
+---------
+
+0.3.0
+~~~~~
+
+- Added django permission support.
+- Started using django static instead of nexus:media.
+
+
 Installation
 ------------
 
@@ -84,7 +94,8 @@ And add our middleware:
         'experiments.middleware.ExperimentsMiddleware',
     ]
 
-We haven't configured our goals yet, we'll do that in a bit.
+We haven't configured our goals yet, we'll do that in a bit. Please ensure
+you have correctly configured your STATIC_URL setting.
 
 *Note, more configuration options are detailed below.*
 

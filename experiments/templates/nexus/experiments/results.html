@@ -1,10 +1,12 @@
 {% extends "nexus/module.html" %}
+{% load staticfiles %}
 {% load humanize %}
 {% load experiment_helpers %}
 
 {% block head %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+
+    <link rel="stylesheet" href="{% static 'experiments/css/experiments.css' %}">
 
     <script>
         var EXPERIMENT = {
@@ -13,12 +15,10 @@
             deleteExperiment: "{% url experiments:delete %}",
             updateState:      "{% url experiments:state %}",
 
-            deleteImage:  "{% url nexus:media 'experiments' 'img/delete.png' %}"
         };
     </script>
 
-    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
-
+    <script src="{% static 'experiments/js/nexus_experiments.js' %}"></script>
 
 {% endblock %}
 

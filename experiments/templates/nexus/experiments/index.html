@@ -1,23 +1,34 @@
 {% extends "nexus/module.html" %}
 
+{% load staticfiles %}
 {% load experiment_helpers %}
 
 {% block head %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+
+    <link rel="stylesheet" href="{% static 'experiments/css/experiments.css' %}">
+
+    <style>
+        #container table.experiments td.actions button.edit span {
+            background: transparent url("{% static 'experiments/img/edit.png' %}") no-repeat left 35%;
+        }
+
+        #container table.experiments td.actions button.delete span {
+            background: transparent url("{% static 'experiments/img/delete.png' %}") no-repeat left 35%;
+        }
+    </style>
+
     <script>
         var EXPERIMENT = {
             addExperiment:    "{% url experiments:add %}",
             updateExperiment: "{% url experiments:update %}",
             deleteExperiment: "{% url experiments:delete %}",
             updateState:      "{% url experiments:state %}",
-
-            deleteImage:  "{% url nexus:media 'experiments' 'img/delete.png' %}"
         };
     </script>
 
-    <script src="{% url nexus:media 'experiments' 'js/string_score.min.js' %}"></script>
-    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
+    <script src="{% static 'experiments/js/string_score.min.js' %}"></script>
+    <script src="{% static 'experiments/js/nexus_experiments.js' %}"></script>
 {% endblock %}
 
 {% block content %}
