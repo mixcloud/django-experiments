@@ -14,6 +14,11 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 Changelog
 ---------
 
+0.3.2
+~~~~~
+
+- Fixed missing edit/delete images
+
 0.3.1
 ~~~~~
 
