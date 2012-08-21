@@ -5,7 +5,7 @@
 {% block head %}
     {{ block.super }}
 
-    <link rel="stylesheet" href="{{ STATIC_URL }}experiments/css/experiments.css">
+    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
 
     <script>
         var EXPERIMENT = {
@@ -17,7 +17,7 @@
         };
     </script>
 
-    <script src="{{ STATIC_URL }}experiments/js/nexus_experiments.js"></script>
+    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
 
 {% endblock %}
 

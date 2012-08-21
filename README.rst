@@ -14,6 +14,11 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 Changelog
 ---------
 
+0.3.3
+~~~~~
+
+- Static media handled by nexus again
+
 0.3.2
 ~~~~~
 
