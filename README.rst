@@ -14,6 +14,12 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 Changelog
 ---------
 
+0.3.4
+~~~~~
+
+- Updated JS goal to POST method. Requires csrf javascript.
+
+
 0.3.3
 ~~~~~
 

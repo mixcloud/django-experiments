@@ -4,7 +4,7 @@ experiments = function() {
             $.get("/experiments/confirm_human/");
         },
         goal: function(goal_name) {
-            $.get("/experiments/goal/" + goal_name);
+            $.post("/experiments/goal/" + goal_name);
         }
     };
 }();
