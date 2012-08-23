@@ -18,6 +18,7 @@ Changelog
 ~~~~~
 
 - Updated JS goal to POST method. Requires csrf javascript.
+- Random number on template tag goal image to prevent caching
 
 
 0.3.3
@@ -187,35 +188,41 @@ Add the goal to our EXPERIMENT_GOALS tuple in setting.py:
 
     EXPERIMENTS_GOALS = ("registration")
 
-Our registration successful page will contain our goal, “registration”:
+Our registration successful page will contain the goal template tag:
 
 ::
 
     {% experiment_goal "registration" %}
 
-This will be fired when the user loads the page. There are three ways
-ways of using goals: a server-sided python function, a JavaScript onclick event, or
-cookies.
+This will be fired when the user loads the page. This is not the only way of firing a goal. In total, there are four ways of recording goals:
 
-The python function, somewhere in your django views:
+1. **Django Template Tags** (as above).
+ 
+    ::
+    
+        {% experiment_goal "registration" %}
 
-::
+2. **Server side**, using a python function somewhere in your django views:
 
-    from experiments.utils import record_goal
+    ::
+    
+        from experiments.utils import record_goal
+    
+        record_goal(request, 'registration')
 
-    record_goal(request, 'registration')
+3. **JavaScript onclick**:
 
-The JavaScript onclick method:
+    ::
+    
+        <button onclick="experiments.goal('registration')">Complete Registration</button>
 
-::
+    (Please note, this requires CSRF authentication. Please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
 
-    <button onclick="experiments.goal('registration')">Complete Registration</button>
+4. **Cookies**:
 
-The cookie method:
-
-::
-
-    <span data-experiments-goal="registration">Complete Registration</span>
+    ::
+    
+        <span data-experiments-goal="registration">Complete Registration</span>
 
 The goal is independent from the experiment as many experiments can all
 have the same goal. The goals are defined in the settings.py file for
@@ -304,4 +311,4 @@ All Settings
         'nexus',
         'gargoyle',
         'experiments',
-    ]   
+    ]
