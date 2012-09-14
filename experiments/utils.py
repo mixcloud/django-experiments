@@ -2,7 +2,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from django.db import IntegrityError
 
-from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE
+from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE, Experiment
 from experiments.counters import counter_increment
 from experiments.manager import experiment_manager
 from gargoyle.manager import gargoyle
@@ -19,6 +19,60 @@ BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|li
 def record_goal(request, goal_name):
     experiment_user = WebUser(request)
     experiment_user.record_goal(goal_name)
+
+def sync_experiments(sender, request, user, **kwargs):
+    """
+    Syncs experiment data between the session and the db
+    Attached to user_logged_in signal.
+    """
+
+    # get session data
+    sessions_experiments = request.session.get('experiments_enrollments', {})
+
+    # if non anon, get db data
+    try:
+        db_experiments = {enrollment.experiment.name: (enrollment.alternative, enrollment.goals) for enrollment in Enrollment.objects.filter(user=user)}
+    except Enrollment.DoesNotExist:
+        db_experiments = {}
+
+    # return here if they're the same and no updating needs to be done
+    if sessions_experiments == db_experiments:
+        return
+
+    # merge data - settings define whether recent or db entries get priority. Should depend on how you store sessions. Persistent sessions between login/out are best for this (Cookies ideal as preserve between browser sessions)
+    synced_experiments = {}
+    if getattr(settings, 'EXPERIMENTS_PRIORITY', 'db') == 'db':
+        synced_experiments = dict(sessions_experiments.items() + db_experiments.items())
+
+    # TODO decide if there is a use case for this - think not in reality
+    elif getattr(settings, 'EXPERIMENTS_PRIORITY', 'db') == 'recent':
+        # iterate merged list of db and sessions experiments
+        for key, (alternative, goals, date) in sessions_experiments.iteritems() + db_experiments.iteritems():
+
+            # add to dict if not already in, otherwise compare dates
+            if key not in synced_experiments:
+                synced_experiments[key] = (alternative, goals, date)
+            else:
+                _alternative, _goals, _date = synced_experiments[key]
+                if date > _date:
+                    synced_experiments[key] = (alternative, goals, date)
+
+    # save to session - doesn't work anymore as not attached to WebUser
+    #self.session['experiments_enrollments'] = synced_experiments
+
+    # save to db
+    for key, (alternative, goals) in synced_experiments.iteritems():
+        try:
+            enrollment, _ = Enrollment.objects.get_or_create(user=user, experiment=Experiment.objects.get(name=key), defaults={'alternative':alternative, 'goals':goals})
+        except IntegrityError, exc:
+            # Already registered (db race condition under high load)
+            continue
+
+        # Update alternative if it doesn't match
+        if enrollment.alternative != alternative:
+            enrollment.alternative = alternative
+            enrollment.save()
+
 
 class WebUser(object):
     """
@@ -94,6 +148,23 @@ class WebUser(object):
             # Increment experiment_name:alternative:participant counter
             self.increment_participant_count(experiment_manager[experiment_name], alternative)
 
+    @property
+    def experiments(self):
+        # Bot/Spider, so send back control group
+        if self.is_bot():
+            return {}
+
+        # Registered User
+        elif not self.is_anonymous():
+            try:
+                db_experiments = {enrollment.experiment.name: (enrollment.alternative, enrollment.goals, enrollment.enrollment_date) for enrollment in Enrollment.objects.filter(user=self.get_registered_user())}
+            except Enrollment.DoesNotExist:
+                db_experiments = {}
+            return db_experiments
+
+        # Not registered, use sessions
+        else:
+            return self.session['experiments_enrollments']
 
     def get_enrollment(self, experiment):
         if self.is_bot():
