@@ -119,7 +119,7 @@
                                         {% if confidence < 90 %}
                                             <span class="low_confidence">
                                         {% endif %}
-                                        {{ confidence|stringformat:"d" }} %</span>
+                                        {{ confidence|floatformat:2 }} %</span>
                                     {% else %}
                                         N/A
                                     {% endif %}
