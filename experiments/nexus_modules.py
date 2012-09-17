@@ -29,7 +29,7 @@ def confidence(a_count, a_conversion, b_count, b_conversion):
                          [b_count - b_conversion, b_conversion]]
 
     chi_square, p_value = chi_square_p_value(contingency_table)
-    if p_value:
+    if p_value is not None:
         return (1 - p_value) * 100
     else:
         return None
