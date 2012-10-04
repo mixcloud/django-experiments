@@ -149,31 +149,24 @@ class WebUser(object):
             alternative=alternative,
         )    
 
-    def should_increment(self, enrollment_dict, goal_name):
+    def should_increment(self, experiment, goals, goal_name):
         # Increments goal if enabled+gargoyle switch conditions met or just enabled
         # Goal uniquely incremented for all enrollments at once
 
-        if enrollment_dict['experiment'].state == CONTROL_STATE:
+        if experiment.state == CONTROL_STATE:
             # Control state, experiment not running
             return False
-        elif enrollment_dict['experiment'].state == ENABLED_STATE and enrollment_dict['experiment'].switch_key:
+        elif experiment.state == ENABLED_STATE and experiment.switch_key:
             # Gargoyle state only increment actives.
-            if gargoyle.is_active(enrollment_dict['experiment'].switch_key, self.request):
-                if goal_name not in enrollment_dict['goals']: # Check if already recorded for this enrollment
+            if gargoyle.is_active(experiment.switch_key, self.request):
+                if goal_name not in goals: # Check if already recorded for this enrollment
                     return True
 
-        if goal_name not in enrollment_dict['goals']: # Check if already recorded for this enrollment
+        if goal_name not in goals: # Check if already recorded for this enrollment
             return True
         return False
 
     # Checks if the goal should be incremented
-    def check_and_increment(self, enrollment_dict, goal_name):
-        if self.should_increment(enrollment_dict, goal_name):
-            self.increment_goal_count(enrollment_dict['experiment'], enrollment_dict['alternative'], goal_name)
-            enrollment_dict['goals'].append(goal_name)
-            return enrollment_dict
-        return enrollment_dict
-
     def record_goal(self, goal_name):
         # Bots don't register goals
         if self.is_bot():
@@ -184,27 +177,22 @@ class WebUser(object):
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
-                enrollment_dict = self.check_and_increment(enrollment.to_dict(), goal_name)
-                enrollment.goals = enrollment_dict["goals"]
-                enrollment.save()
+                if self.should_increment(enrollment.experiment, enrollment.goals, goal_name):
+                    self.increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
+                    enrollment.goals.append(goal_name)
+                    enrollment.save()
             return
         # If confirmed human
         if self.is_verified_human():
             enrollments = self.session.get('experiments_enrollments', None)
-            new_enrollments = enrollments
             if not enrollments:
                 return
-            for experiment_name, data in enrollments.items():
-                alternative, goals = data
-                enrollment_dict = {
-                    "experiment": experiment_manager[experiment_name],
-                    "alternative": alternative,
-                    "goals": goals,
-                }
-                new_enrollment_dict = self.check_and_increment(enrollment_dict, goal_name)
-                new_enrollments[experiment_name] = (new_enrollment_dict['alternative'], new_enrollment_dict['goals'])
+            for experiment_name, (alternative, goals) in enrollments.items():
+                if self.should_increment(experiment_manager[experiment_name], goals, goal_name):
+                    self.increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
+                    goals.append(goal_name)
 
-            self.session['experiments_enrollments'] = new_enrollments
+            self.session['experiments_enrollments'] = enrollments
             return
         else:
             # TODO: store temp goals and convert later when is_human is triggered
