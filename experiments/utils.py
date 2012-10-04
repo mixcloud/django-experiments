@@ -167,12 +167,6 @@ class WebUser(object):
         return False
 
     # Checks if the goal should be incremented
-    def check_and_increment(self, experiment, alternative, goals, goal_name):
-        if self.should_increment(experiment, goals, goal_name):
-            self.increment_goal_count(experiment, alternative, goal_name)
-            goals.append(goal_name)
-        return goals
-
     def record_goal(self, goal_name):
         # Bots don't register goals
         if self.is_bot():
@@ -183,7 +177,10 @@ class WebUser(object):
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
-                new_goals = self.check_and_increment(enrollment.experiment, enrollment.alternative, enrollment.goals, goal_name)
+                if self.should_increment(enrollment.experiment, enrollment.goals, goal_name):
+                    self.increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
+                    enrollment.goals.append(goal_name)
+                new_goals = enrollment.goals
                 enrollment.goals = new_goals
                 enrollment.save()
             return
@@ -194,7 +191,10 @@ class WebUser(object):
             if not enrollments:
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
-                new_goals = self.check_and_increment(experiment_manager[experiment_name], alternative, goals, goal_name)
+                if self.should_increment(experiment_manager[experiment_name], goals, goal_name):
+                    self.increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
+                    goals.append(goal_name)
+                new_goals = goals
                 new_enrollments[experiment_name] = (alternative, new_goals)
 
             self.session['experiments_enrollments'] = new_enrollments
