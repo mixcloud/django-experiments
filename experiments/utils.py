@@ -180,24 +180,19 @@ class WebUser(object):
                 if self.should_increment(enrollment.experiment, enrollment.goals, goal_name):
                     self.increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
                     enrollment.goals.append(goal_name)
-                new_goals = enrollment.goals
-                enrollment.goals = new_goals
-                enrollment.save()
+                    enrollment.save()
             return
         # If confirmed human
         if self.is_verified_human():
             enrollments = self.session.get('experiments_enrollments', None)
-            new_enrollments = enrollments
             if not enrollments:
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
                 if self.should_increment(experiment_manager[experiment_name], goals, goal_name):
                     self.increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
                     goals.append(goal_name)
-                new_goals = goals
-                new_enrollments[experiment_name] = (alternative, new_goals)
 
-            self.session['experiments_enrollments'] = new_enrollments
+            self.session['experiments_enrollments'] = enrollments
             return
         else:
             # TODO: store temp goals and convert later when is_human is triggered
