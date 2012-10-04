@@ -193,8 +193,7 @@ class WebUser(object):
             new_enrollments = enrollments
             if not enrollments:
                 return
-            for experiment_name, data in enrollments.items():
-                alternative, goals = data
+            for experiment_name, (alternative, goals) in enrollments.items():
                 new_goals = self.check_and_increment(experiment_manager[experiment_name], alternative, goals, goal_name)
                 new_enrollments[experiment_name] = (alternative, new_goals)
 
