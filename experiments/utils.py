@@ -167,12 +167,11 @@ class WebUser(object):
         return False
 
     # Checks if the goal should be incremented
-    def check_and_increment(self, enrollment_dict, goal_name):
-        if self.should_increment(enrollment_dict['experiment'], enrollment_dict['goals'], goal_name):
-            self.increment_goal_count(enrollment_dict['experiment'], enrollment_dict['alternative'], goal_name)
-            enrollment_dict['goals'].append(goal_name)
-            return enrollment_dict
-        return enrollment_dict
+    def check_and_increment(self, experiment, alternative, goals, goal_name):
+        if self.should_increment(experiment, goals, goal_name):
+            self.increment_goal_count(experiment, alternative, goal_name)
+            goals.append(goal_name)
+        return goals
 
     def record_goal(self, goal_name):
         # Bots don't register goals
@@ -184,8 +183,8 @@ class WebUser(object):
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
-                enrollment_dict = self.check_and_increment(enrollment.to_dict(), goal_name)
-                enrollment.goals = enrollment_dict["goals"]
+                new_goals = self.check_and_increment(enrollment.experiment, enrollment.alternative, enrollment.goals, goal_name)
+                enrollment.goals = new_goals
                 enrollment.save()
             return
         # If confirmed human
@@ -196,13 +195,8 @@ class WebUser(object):
                 return
             for experiment_name, data in enrollments.items():
                 alternative, goals = data
-                enrollment_dict = {
-                    "experiment": experiment_manager[experiment_name],
-                    "alternative": alternative,
-                    "goals": goals,
-                }
-                new_enrollment_dict = self.check_and_increment(enrollment_dict, goal_name)
-                new_enrollments[experiment_name] = (new_enrollment_dict['alternative'], new_enrollment_dict['goals'])
+                new_goals = self.check_and_increment(experiment_manager[experiment_name], alternative, goals, goal_name)
+                new_enrollments[experiment_name] = (alternative, new_goals)
 
             self.session['experiments_enrollments'] = new_enrollments
             return
