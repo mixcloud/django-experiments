@@ -14,6 +14,13 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 Changelog
 ---------
 
+0.3.5
+~~~~~
+
+- Add migration scripts for south
+- Fix rendering when probabilities close to 100%
+- Reduce database load when a user performs an action multiple times
+
 0.3.4
 ~~~~~
 
