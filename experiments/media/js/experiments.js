@@ -32,3 +32,8 @@ $(function(){
     });
 });
 
+$(function() {
+    $(".django-experiments-goal").each(function() {
+        $(experiments).trigger('goal', [$(this).data("experiments-goal-name")]);
+    });
+});

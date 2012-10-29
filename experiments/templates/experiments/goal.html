@@ -1,8 +1,1 @@
 <img class="django-experiments-goal" data-experiments-goal-name="{{ goal_name }}" src="{% url experiment_goal goal_name %}?v={{ random_number }}" height="1" width="1" />
-<script>
-    $(function() {
-        $("img.django-experiments-goal").each(function() {
-            $(experiments).trigger('goal', [$(this).data("experiments-goal-name")]);
-        });
-    });
-</script>
