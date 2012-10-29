@@ -38,8 +38,6 @@ class WebUser(object):
         return self.user
 
     def is_bot(self):
-        if not self.request or not self.request.META:
-            return True
         return bool(BOT_REGEX.search(self.request.META.get("HTTP_USER_AGENT","")))
 
     def is_verified_human(self):
