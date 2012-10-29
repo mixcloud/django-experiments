@@ -11,6 +11,45 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 .. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/screenshot2.jpg
 
+Changelog
+---------
+
+0.3.5
+~~~~~
+
+- Add migration scripts for south
+- Fix rendering when probabilities close to 100%
+- Reduce database load when a user performs an action multiple times
+
+0.3.4
+~~~~~
+
+- Updated JS goal to POST method. Requires csrf javascript.
+- Random number on template tag goal image to prevent caching
+
+
+0.3.3
+~~~~~
+
+- Static media handled by nexus again
+
+0.3.2
+~~~~~
+
+- Fixed missing edit/delete images
+
+0.3.1
+~~~~~
+
+- Replaced django static template tags. Supports django 1.3 again!
+
+0.3.0
+~~~~~
+
+- Added django permission support.
+- Started using django static instead of nexus:media. (django 1.4 only)
+
+
 Installation
 ------------
 
@@ -84,7 +123,8 @@ And add our middleware:
         'experiments.middleware.ExperimentsMiddleware',
     ]
 
-We haven't configured our goals yet, we'll do that in a bit.
+We haven't configured our goals yet, we'll do that in a bit. Please ensure
+you have correctly configured your STATIC_URL setting.
 
 *Note, more configuration options are detailed below.*
 
@@ -155,35 +195,41 @@ Add the goal to our EXPERIMENT_GOALS tuple in setting.py:
 
     EXPERIMENTS_GOALS = ("registration")
 
-Our registration successful page will contain our goal, “registration”:
+Our registration successful page will contain the goal template tag:
 
 ::
 
     {% experiment_goal "registration" %}
 
-This will be fired when the user loads the page. There are three ways
-ways of using goals: a server-sided python function, a JavaScript onclick event, or
-cookies.
+This will be fired when the user loads the page. This is not the only way of firing a goal. In total, there are four ways of recording goals:
 
-The python function, somewhere in your django views:
+1. **Django Template Tags** (as above).
+ 
+    ::
+    
+        {% experiment_goal "registration" %}
 
-::
+2. **Server side**, using a python function somewhere in your django views:
 
-    from experiments.utils import record_goal
+    ::
+    
+        from experiments.utils import record_goal
+    
+        record_goal(request, 'registration')
 
-    record_goal(request, 'registration')
+3. **JavaScript onclick**:
 
-The JavaScript onclick method:
+    ::
+    
+        <button onclick="experiments.goal('registration')">Complete Registration</button>
 
-::
+    (Please note, this requires CSRF authentication. Please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
 
-    <button onclick="experiments.goal('registration')">Complete Registration</button>
+4. **Cookies**:
 
-The cookie method:
-
-::
-
-    <span data-experiments-goal="registration">Complete Registration</span>
+    ::
+    
+        <span data-experiments-goal="registration">Complete Registration</span>
 
 The goal is independent from the experiment as many experiments can all
 have the same goal. The goals are defined in the settings.py file for
@@ -272,4 +318,4 @@ All Settings
         'nexus',
         'gargoyle',
         'experiments',
-    ]   
+    ]

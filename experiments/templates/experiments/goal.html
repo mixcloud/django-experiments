@@ -1,4 +1,4 @@
-<img src="{% url experiment_goal goal_name %}" height="1" width="1" />
+<img src="{% url experiment_goal goal_name %}?v={{ random_number }}" height="1" width="1" />
 <script>
     $(function() {
         $(experiments).trigger('goal', ['{{ goal_name }}']);

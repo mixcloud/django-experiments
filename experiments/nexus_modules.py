@@ -7,7 +7,6 @@ from django.http import HttpResponse
 from django.utils import simplejson
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
-from experiments.manager import experiment_manager
 from experiments.utils import PARTICIPANT_KEY, GOAL_KEY
 from experiments.counters import counter_get
 from experiments.significance import chi_square_p_value
@@ -30,7 +29,7 @@ def confidence(a_count, a_conversion, b_count, b_conversion):
                          [b_count - b_conversion, b_conversion]]
 
     chi_square, p_value = chi_square_p_value(contingency_table)
-    if p_value:
+    if p_value is not None:
         return (1 - p_value) * 100
     else:
         return None
@@ -151,6 +150,9 @@ class ExperimentsModule(nexus.NexusModule):
         }, request)
 
     def state(self, request):
+        if not request.user.has_perm('experiments.change_experiment'):
+            raise ExperimentException("You do not have permission to do that!")
+
         experiment = Experiment.objects.get(name=request.POST.get("name"))
         try:
             state = int(request.POST.get("state"))
@@ -174,10 +176,18 @@ class ExperimentsModule(nexus.NexusModule):
             state=state,
         )        
 
-        return experiment.to_dict_serialized()
+        response = {
+            "success": True,
+            "experiment": experiment.to_dict_serialized(),
+        }
+
+        return response
     state = json(state)
 
     def add(self, request):
+        if not request.user.has_perm('experiments.add_experiment'):
+            raise ExperimentException("You do not have permission to do that!")
+
         name = request.POST.get("name")
 
         if not name:
@@ -204,10 +214,18 @@ class ExperimentsModule(nexus.NexusModule):
             experiment=experiment,
         )
 
-        return experiment.to_dict_serialized()
+        response = {
+            'success': True,
+            'experiment': experiment.to_dict_serialized(),
+        }
+
+        return response
     add = json(add)
 
     def update(self, request):
+        if not request.user.has_perm('experiments.change_experiment'):
+            raise ExperimentException("You do not have permission to do that!")
+
         experiment = Experiment.objects.get(name=request.POST.get("curname"))
 
         experiment.switch_key = request.POST.get("switch_key")
@@ -221,10 +239,19 @@ class ExperimentsModule(nexus.NexusModule):
             experiment=experiment,
         )
 
-        return experiment.to_dict_serialized()
+        response = {
+            'success': True,
+            'experiment': experiment.to_dict_serialized()
+        }
+
+        return response
     update = json(update)
 
+
+#    @permission_required(u'experiments.delete_experiment')
     def delete(self, request):
+        if not request.user.has_perm('experiments.delete_experiment'):
+            raise ExperimentException("You don't have permission to do that!")
         experiment = Experiment.objects.get(name=request.POST.get("name"))
         signals.experiment_deleted.send(
             sender=self,
@@ -233,7 +260,7 @@ class ExperimentsModule(nexus.NexusModule):
         )
         experiment.enrollment_set.all().delete()
         experiment.delete()
-        return {}
+        return {'successful': True}
     delete = json(delete)
 
 nexus.site.register(ExperimentsModule, 'experiments')

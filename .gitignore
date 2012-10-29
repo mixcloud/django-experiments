@@ -4,3 +4,4 @@
 *conflicted copy*
 *.sublime*
 *experiments.db
+.DS_Store

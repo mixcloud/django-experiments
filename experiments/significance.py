@@ -72,5 +72,5 @@ def chi_square_p_value(matrix):
     degrees_freedom = (num_columns - 1) * (num_rows - 1)
     
     p_value = chisqprob(observed_test_statistic, degrees_freedom)
-    
+
     return observed_test_statistic, p_value

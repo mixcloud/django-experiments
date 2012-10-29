@@ -4,6 +4,7 @@
 
 {% block head %}
     {{ block.super }}
+
     <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
 
     <script>
@@ -13,12 +14,10 @@
             deleteExperiment: "{% url experiments:delete %}",
             updateState:      "{% url experiments:state %}",
 
-            deleteImage:  "{% url nexus:media 'experiments' 'img/delete.png' %}"
         };
     </script>
 
     <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
-
 
 {% endblock %}
 
@@ -120,7 +119,12 @@
                                         {% if confidence < 90 %}
                                             <span class="low_confidence">
                                         {% endif %}
-                                        {{ confidence|stringformat:"d" }} %</span>
+                                        {% if confidence >= 99.995 %}
+                                            ~{{ confidence|floatformat:2 }} %
+                                        {% else %}
+                                            {{ confidence|floatformat:2 }} %
+                                        {% endif %}
+                                        </span>
                                     {% else %}
                                         N/A
                                     {% endif %}

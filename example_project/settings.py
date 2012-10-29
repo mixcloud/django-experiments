@@ -23,6 +23,9 @@ EXPERIMENTS_REDIS_PORT = 6379
 EXPERIMENTS_REDIS_DB = 0
 
 
+# Media Settings
+STATIC_URL = '/static/'
+
 # Other settings
 # Django settings for example_project project.
 NEXUS_MEDIA_PREFIX = '/nexus/media/'
@@ -133,6 +136,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.humanize',
+    'django.contrib.staticfiles',
     'nexus',
     'experiments',
     'gargoyle',

@@ -14,6 +14,7 @@
 }
 
 #container div.toolbar {
+    min-height:25px;
     border-bottom: solid 1px #e5e5e5;
     padding-bottom: 20px;
 }
@@ -50,7 +51,6 @@
 #container div.toolbar[data-sort=name] ul.sort li.name a,
 #container div.toolbar[data-sort=start_date] ul.sort li.start_date a,
 #container div.toolbar[data-sort=end_date] ul.sort li.end_date a{
-
     color: #000;
     font-weight: bold;
 }
@@ -180,7 +180,6 @@
 
 #container table.experiments td.actions button.edit span {
     display: block;
-    background: transparent url("../img/edit.png") no-repeat left 35%;
 }
 
 #container table.experiments td.actions button.delete,
@@ -191,7 +190,6 @@
 
 #container table.experiments td.actions button.delete span {
     display: block;
-    background: transparent url("../img/delete.png") no-repeat left 35%;
 }
 
 #container table.empty {

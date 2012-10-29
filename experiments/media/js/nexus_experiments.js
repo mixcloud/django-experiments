@@ -45,14 +45,16 @@ $(document).ready(function () {
         var row = $(this).parents("tr:first");
         var table = row.parents("table:first");
 
-        api(EXPERIMENT.deleteExperiment, { name: row.attr("data-experiment-name") },
-            function () {
+        var confirmdelete = confirm("Delete experiment \"" + row.attr("data-experiment-name") + '\"? This can be dangerous if a lot of people are enrolled!')
+
+        if (confirmdelete) {
+            api(EXPERIMENT.deleteExperiment, { name: row.attr("data-experiment-name") }, function (response) {
                 row.remove();
                 if (!table.find("tr").length) {
                     $("div.noExperiments").show();
                 }
-            }
-        );
+            });
+        }
     });
 
 
@@ -67,8 +69,8 @@ $(document).ready(function () {
                 name: row.attr("data-experiment-name"),
                 state: state
             },
-            function (experiment) {
-                experiment = JSON.parse(experiment);
+            function (response) {
+                experiment = JSON.parse(response.experiment);
                 if (experiment.state == state) {
                     row.find(".toggled").removeClass("toggled");
                     el.addClass("toggled");
@@ -109,7 +111,7 @@ $(document).ready(function () {
             switch_key:     row.attr("data-experiment-switch"),
             desc:           row.attr("data-experiment-desc"),
             relevant_goals: row.attr("data-experiment-goals"),
-        }))
+        }));
     });
 
     $("#facebox .closeFacebox").live("click", function (ev) {
@@ -130,8 +132,8 @@ $(document).ready(function () {
                 goals:      $("#facebox textarea[name=relevant_goals]").val()
             },
 
-            function (experiment) {
-                experiment = JSON.parse(experiment);
+            function (response) {
+                experiment = JSON.parse(response.experiment);
                 var result = $("#experimentData").tmpl(experiment);
 
                 if (action == "add") {
@@ -148,7 +150,6 @@ $(document).ready(function () {
                     $("table.experiments tr[data-experiment-name=" + curname + "]").replaceWith(result);
                     $.facebox.close();
                 }
-                result.click()
 
             });
     });

@@ -4,15 +4,25 @@
 
 {% block head %}
     {{ block.super }}
+
     <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+
+    <style>
+        #container table.experiments td.actions button.edit span {
+            background: transparent url("{% url nexus:media 'experiments' 'img/edit.png' %}") no-repeat left 35%;
+        }
+
+        #container table.experiments td.actions button.delete span {
+            background: transparent url("{% url nexus:media 'experiments' 'img/delete.png' %}") no-repeat left 35%;
+        }
+    </style>
+
     <script>
         var EXPERIMENT = {
             addExperiment:    "{% url experiments:add %}",
             updateExperiment: "{% url experiments:update %}",
             deleteExperiment: "{% url experiments:delete %}",
             updateState:      "{% url experiments:state %}",
-
-            deleteImage:  "{% url nexus:media 'experiments' 'img/delete.png' %}"
         };
     </script>
 
@@ -22,7 +32,9 @@
 
 {% block content %}
     <div class="toolbar" data-sort="{{ sorted_by }}">
-        <button class="button addExperiment">Add an Experiment</button>
+        {% if perms.experiments.add_experiment %}
+            <button class="button addExperiment">Add an Experiment</button>
+        {%  endif %}
 
         <span class="search">
             <input type="text" placeholder="search">
@@ -99,8 +111,12 @@
             </td>
 
             <td class="actions">
-                <button class="edit xtrasmall button"><span></span></button>
-                <button class="delete xtrasmall button"><span></span></button>
+                {% if perms.experiments.change_experiment %}
+                    <button class="edit xtrasmall button"><span></span></button>
+                {% endif %}
+                {% if perms.experiments.delete_experiment %}
+                    <button class="delete xtrasmall button"><span></span></button>
+                {%  endif %}
             </td>
         </tr>
         {% endfor %}
@@ -193,10 +209,16 @@
                     </div>
                 </td>
 
+                {% endraw %}
                 <td class="actions">
-                    <button class="edit xtrasmall button"><span></span></button>
-                    <button class="delete xtrasmall button"><span></span></button>
+                    {% if perms.experiments.change_experiment %}
+                        <button class="edit xtrasmall button"><span></span></button>
+                    {% endif %}
+                    {% if perms.experiments.delete_experiment %}
+                        <button class="delete xtrasmall button"><span></span></button>
+                    {%  endif %}
                 </td>
+                {% raw %}
             </tr>
         </script>
 

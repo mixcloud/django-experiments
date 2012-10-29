@@ -13,15 +13,13 @@ experiments = function() {
         confirm_human: function() {
             $.get("/experiments/confirm_human/");
         },
-        goal: function() {
-            if ($.type(arguments[0]) === "string") {
-                var goal_name = arguments[0];
-                $.get("/experiments/goal/" + goal_name).success(function() {
-                    // Trigger the experiments 'goal' event so others
-                    // can do something in reaction to goal attainment.
-                    $(experiments).trigger('goal', [goal_name]);
-                });
-            }
+        goal: function(goal_name) {
+            $.post("/experiments/goal/" + goal_name);
+            $.get("/experiments/goal/" + goal_name).success(function() {
+                // Trigger the experiments 'goal' event so others
+                // can do something in reaction to goal attainment.
+                $(experiments).trigger('goal', [goal_name]);
+            });
         }
     };
 }();

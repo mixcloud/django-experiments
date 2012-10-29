@@ -26,7 +26,7 @@ def parse_dependency_links(file_name):
 
 
 setup(name='django-experiments',
-      version='0.2.3',
+      version='0.3.5',
       description='Python Django AB Testing Framework',
       author='Chris Villa',
       author_email='chris@mixcloud.com',
@@ -37,4 +37,4 @@ setup(name='django-experiments',
       install_requires = parse_requirements('requirements.txt'),
       dependency_links = parse_dependency_links('requirements.txt'),
       long_description=open('README.rst').read(),
-     )
+)
