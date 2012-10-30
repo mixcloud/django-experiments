@@ -1,7 +1,7 @@
 // experiments contains methods and events for using javascript and the
 // django-experiments library.
 // Tell the server the user attained goal 'foo'.
-// $(experiments).goal("foo");
+// experiments.goal("foo");
 //
 // Subscribe to an event that triggers when the user attains a goal.
 // $(experiments).bind("goal", function(event, goalName) {
@@ -27,13 +27,13 @@ $(function(){
     $('[data-experiments-goal]').each(function() {
         $(this).bind('click', function() {
             $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
-            $(experiments).trigger('goal', [$(this).data('experiments-goal')]);
+            experiments.goal($(this).data('experiments-goal'));
         });
     });
 });
 
 $(function() {
-    $(".django-experiments-goal").each(function() {
-        $(experiments).trigger('goal', [$(this).data("experiments-goal-name")]);
+    $(".experiments-goal").each(function() {
+        experiments.goal($(this).data('experiments-goal-name'));
     });
 });
