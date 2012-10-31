@@ -37,21 +37,3 @@ def change_alternative(request, experiment_name, alternative_name):
     experiment_user = WebUser(request)
     experiment_user.set_enrollment(experiment, alternative_name)
     return HttpResponse('OK')
-
-def get_enrollment(request, experiment):
-    user = WebUser(request)
-    experiment = Experiment.objects.get(name=experiment)
-    return user.get_enrollment(experiment)
-
-def set_enrollment(request, experiment, alternative=None):
-    user = WebUser(request)
-    experiment = Experiment.objects.get(name=experiment)
-    if alternative is None:
-        user.set_enrollment(experiment, random.choice(experiment.alternatives.keys()))
-    else:
-        user.set_enrollment(experiment, alternative)
-
-def is_enrolled(request, experiment, alternative):
-    if get_enrollment(request, experiment) is None:
-        return False
-    return True

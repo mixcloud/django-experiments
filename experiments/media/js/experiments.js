@@ -27,13 +27,19 @@ $(function(){
     $('[data-experiments-goal]').each(function() {
         $(this).bind('click', function() {
             $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
-            experiments.goal($(this).data('experiments-goal'));
+
+            // Trigger the experiments 'goal' event so others
+            // can do something in reaction to goal attainment.
+            $(experiments).trigger('goal', [$(this).data('experiments-goal')]);
         });
     });
 });
 
 $(function() {
     $(".experiments-goal").each(function() {
-        experiments.goal($(this).data('experiments-goal-name'));
+
+        // Trigger the experiments 'goal' event so others
+        // can do something in reaction to goal attainment.
+        $(experiments).trigger('goal', [$(this).data("experiments-goal-name")]);
     });
 });
