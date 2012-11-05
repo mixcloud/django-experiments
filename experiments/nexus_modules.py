@@ -162,8 +162,13 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.state = state
 
         if state == 0:
-            import datetime
-            experiment.end_date = datetime.datetime.now()
+            USE_TZ = getattr(settings, 'USE_TZ', False)
+            if USE_TZ:
+                from django.utils.timezone import now
+                experiment.end_date = now()
+            else:
+                from datetime.datetime import now
+                experiment.end_date = now()
         else:
             experiment.end_date = None
 
@@ -174,7 +179,7 @@ class ExperimentsModule(nexus.NexusModule):
             request=request,
             experiment=experiment,
             state=state,
-        )        
+        )
 
         response = {
             "success": True,
@@ -201,7 +206,7 @@ class ExperimentsModule(nexus.NexusModule):
             defaults     = dict(
                 switch_key = request.POST.get("switch_key"),
                 description = request.POST.get("desc"),
-                relevant_goals = request.POST.get("goals"),                
+                relevant_goals = request.POST.get("goals"),
             ),
         )
 
