@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.utils import simplejson     
+from django.utils import simplejson
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
@@ -11,9 +11,13 @@ from modeldict import ModelDict
 from gargoyle.manager import gargoyle
 from gargoyle.models import Switch
 
-import datetime
-
 import random
+
+USE_TZ = getattr(settings, 'USE_TZ', False)
+if USE_TZ:
+    from django.utils.timezone import now
+else:
+    from datetime.datetime import now
 
 CONTROL_GROUP = 'control'
 
@@ -36,7 +40,7 @@ class Experiment(models.Model):
 
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
 
-    start_date = models.DateTimeField(default=datetime.datetime.now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
     def __unicode__(self):
@@ -55,7 +59,7 @@ class Experiment(models.Model):
 
         if experiment.state == GARGOYLE_STATE:
             if not gargoyle.is_active(experiment.switch_key, experiment_user.request):
-                return alternative == CONTROL_GROUP                
+                return alternative == CONTROL_GROUP
 
         if experiment.state != ENABLED_STATE and experiment.state != GARGOYLE_STATE:
             raise Exception("Invalid experiment state %s!" % experiment.state)
