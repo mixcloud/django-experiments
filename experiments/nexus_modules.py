@@ -5,6 +5,7 @@ from functools import wraps
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import simplejson
+from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.utils import PARTICIPANT_KEY, GOAL_KEY
