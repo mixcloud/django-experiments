@@ -8,9 +8,8 @@ from django.utils import simplejson
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.utils import PARTICIPANT_KEY, GOAL_KEY
-from experiments.counters import counter_get
 from experiments.significance import chi_square_p_value
-from experiments import signals
+from experiments import signals, counters
 
 import nexus
 
@@ -114,20 +113,20 @@ class ExperimentsModule(nexus.NexusModule):
 
         alternatives = {}
         for alternative_name in experiment.alternatives.keys():
-            alternatives[alternative_name] = counter_get(PARTICIPANT_KEY % (name, alternative_name))
+            alternatives[alternative_name] = counters.get(PARTICIPANT_KEY % (name, alternative_name))
 
-        control_participants = counter_get(PARTICIPANT_KEY % (name, CONTROL_GROUP))
+        control_participants = counters.get(PARTICIPANT_KEY % (name, CONTROL_GROUP))
 
         results = {}
 
         for goal in getattr(settings, 'EXPERIMENTS_GOALS', []):
             alternatives_conversions = {}
-            control_conversions = counter_get(GOAL_KEY % (name, CONTROL_GROUP, goal ))
+            control_conversions = counters.get(GOAL_KEY % (name, CONTROL_GROUP, goal ))
             control_conversion_rate = rate(control_conversions, control_participants)
             for alternative_name in experiment.alternatives.keys():
                 if not alternative_name == CONTROL_GROUP:
-                    alternative_conversions = counter_get(GOAL_KEY % (name, alternative_name, goal))
-                    alternative_participants = counter_get(PARTICIPANT_KEY % (name, alternative_name))
+                    alternative_conversions = counters.get(GOAL_KEY % (name, alternative_name, goal))
+                    alternative_participants = counters.get(PARTICIPANT_KEY % (name, alternative_name))
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
                     alternative_confidence = confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
                     alternative = {

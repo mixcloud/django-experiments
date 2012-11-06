@@ -17,9 +17,9 @@ goal_hit = django.dispatch.Signal(providing_args=["request", "experiment", "alte
 user_confirmed_human = django.dispatch.Signal(providing_args=["request", "user"])
 
 # Reset redis counters when deleting an experiment
-from counters import counter_reset_pattern
+from experiments import counters
 def redis_counter_tidy(instance, **kwargs):
-    counter_reset_pattern(instance.name + "*")
+    counters.reset_pattern(instance.name + "*")
 
 #: Other, standard django signal handlers of interest include:
 #:     pre_save

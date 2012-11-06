@@ -3,10 +3,9 @@ from django.conf import settings
 from django.db import IntegrityError
 
 from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE
-from experiments.counters import counter_increment
 from experiments.manager import experiment_manager
 from gargoyle.manager import gargoyle
-from experiments import signals
+from experiments import signals, counters
 
 import re
 
@@ -57,7 +56,7 @@ class WebUser(object):
     def increment_participant_count(self, experiment, alternative_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
-        count = counter_increment(counter_key, self.participant_identifier())
+        count = counters.increment(counter_key, self.participant_identifier())
 
         signals.experiment_incr_participant.send(
             sender=self,
@@ -71,7 +70,7 @@ class WebUser(object):
     def increment_goal_count(self, experiment, alternative_name, goal_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = GOAL_KEY % (experiment.name, alternative_name, goal_name)
-        count = counter_increment(counter_key, self.participant_identifier())
+        count = counters.increment(counter_key, self.participant_identifier())
 
         signals.goal_hit.send(
             sender=self,
