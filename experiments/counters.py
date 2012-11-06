@@ -11,11 +11,11 @@ r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_EXPERIMENTS_DB)
 
 COUNTER_CACHE_KEY = 'experiments:%s'
 
-def counter_increment(key):
+def counter_increment(key, participant_identifier):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        r.incr(cache_key, 1)
-        return int(r.get(cache_key))
+        r.sadd(cache_key, participant_identifier)
+        return r.scard(cache_key)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         pass
@@ -23,7 +23,7 @@ def counter_increment(key):
 def counter_get(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        count = r.get(cache_key)
+        count = r.scard(cache_key)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return 0

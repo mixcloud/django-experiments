@@ -46,10 +46,18 @@ class WebUser(object):
         else:
             return True
 
+    def participant_identifier(self):
+        if not self.is_anonymous():
+            return 'user:%d' % (self.user.pk,)
+        else:
+            if not self.session.session_key:
+                self.session.save() # Force session key
+            return 'session:%s' % (self.session.session_key,)
+
     def increment_participant_count(self, experiment, alternative_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
-        count = counter_increment(counter_key)
+        count = counter_increment(counter_key, self.participant_identifier())
 
         signals.experiment_incr_participant.send(
             sender=self,
@@ -63,7 +71,7 @@ class WebUser(object):
     def increment_goal_count(self, experiment, alternative_name, goal_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = GOAL_KEY % (experiment.name, alternative_name, goal_name)
-        count = counter_increment(counter_key)
+        count = counter_increment(counter_key, self.participant_identifier())
 
         signals.goal_hit.send(
             sender=self,
