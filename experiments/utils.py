@@ -24,13 +24,12 @@ class WebUser(object):
         self.user = request.user
         self.session = request.session
 
-    def _is_anonymous(self):
-        return self.user.is_anonymous()
+    def _is_authenticated(self):
+        return self.user.is_authenticated()
 
     def _get_registered_user(self):
-        if self._is_anonymous():
-            return None
-        return self.user
+        if self._is_authenticated():
+            return self.user
 
     def _is_bot(self):
         return bool(BOT_REGEX.search(self.request.META.get("HTTP_USER_AGENT","")))
@@ -42,7 +41,7 @@ class WebUser(object):
             return True
 
     def _participant_identifier(self):
-        if not self._is_anonymous():
+        if self._is_authenticated():
             return 'user:%d' % (self.user.pk,)
         else:
             if not self.session.session_key:
@@ -67,7 +66,7 @@ class WebUser(object):
         if self._is_bot():
             # Bot/Spider, so send back control group
             return CONTROL_GROUP
-        if not self._is_anonymous():
+        if self._is_authenticated():
             # Registered User
             try:
                 return Enrollment.objects.get(user=self._get_registered_user(), experiment=experiment).alternative
@@ -85,7 +84,7 @@ class WebUser(object):
         if self._is_bot():
             # Bot/Spider, so don't enroll
             return
-        if not self._is_anonymous():
+        if self._is_authenticated():
             # Registered User
             try:
                 enrollment, _ = Enrollment.objects.get_or_create(user=self._get_registered_user(), experiment=experiment, defaults={'alternative':alternative})
@@ -115,7 +114,7 @@ class WebUser(object):
         if self._is_bot():
             return
         # If the user is registered
-        if not self._is_anonymous():
+        if self._is_authenticated():
             enrollments = Enrollment.objects.filter(user=self._get_registered_user())
             if not enrollments:
                 return
