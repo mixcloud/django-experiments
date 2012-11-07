@@ -32,7 +32,7 @@ class ExperimentNode(template.Node):
             user = request.experiment_user
 
         # Should we render?
-        if user.show_alternative(self.experiment_name, self.alternative):
+        if user.is_enrolled_alternative(self.experiment_name, self.alternative):
             response = self.node_list.render(context)
         else:
             response = ""

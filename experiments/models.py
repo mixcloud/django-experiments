@@ -12,7 +12,6 @@ from gargoyle.manager import gargoyle
 from gargoyle.models import Switch
 
 import datetime
-
 import random
 
 CONTROL_GROUP = 'control'
@@ -38,6 +37,25 @@ class Experiment(models.Model):
 
     start_date = models.DateTimeField(default=datetime.datetime.now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
+
+    def enabled(self, request):
+        if self.state == CONTROL_STATE:
+            return False
+        elif experiment.state == ENABLED_STATE:
+            return True
+        elif experiment.state == GARGOYLE_STATE:
+            return gargoyle.is_active(self.switch_key, request)
+        else:
+            raise Exception("Invalid experiment state %s!" % experiment.state)
+
+    def ensure_alternative_exists(self, alternative):
+        if alternative not in self.alternatives:
+            self.alternatives[alternative] = {}
+            self.alternatives[alternative]['enabled'] = True
+            self.save()
+
+    def random_alternative(self):
+        return random.choice(self.alternatives.keys())
 
     def __unicode__(self):
         return self.name
