@@ -19,11 +19,13 @@ CONTROL_GROUP = 'control'
 CONTROL_STATE = 0
 ENABLED_STATE = 1
 GARGOYLE_STATE = 2
+TRACK_STATE = 2
 
 STATES = (
     (CONTROL_STATE, 'Control'),
     (ENABLED_STATE, 'Enabled'),
     (GARGOYLE_STATE, 'Gargoyle'),
+    (TRACK_STATE, 'Track'),
 )
 
 class Experiment(models.Model):
@@ -45,6 +47,8 @@ class Experiment(models.Model):
             return True
         elif self.state == GARGOYLE_STATE:
             return True
+        elif self.state == TRACK_STATE:
+            return True
         else:
             raise Exception("Invalid experiment state %s!" % experiment.state)
         
@@ -56,6 +60,8 @@ class Experiment(models.Model):
             return True
         elif self.state == GARGOYLE_STATE:
             return gargoyle.is_active(self.switch_key, request)
+        elif self.state == TRACK_STATE:
+            return False
         else:
             raise Exception("Invalid experiment state %s!" % experiment.state)
 
