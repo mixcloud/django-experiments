@@ -51,10 +51,8 @@ class WebUser(object):
         if not enrollments:
             return
 
-        # Promote experiments
         for experiment_name, data in enrollments.items():
             alternative, goals = data
-            # Increment experiment_name:alternative:participant counter
             experiment_manager[experiment_name].increment_participant_count(alternative, self._participant_identifier())
 
 
@@ -63,13 +61,11 @@ class WebUser(object):
             # Bot/Spider, so send back control group
             return CONTROL_GROUP
         if self._is_authenticated():
-            # Registered User
             try:
                 return Enrollment.objects.get(user=self.user, experiment=experiment).alternative
             except Enrollment.DoesNotExist:
                 return None
         else:
-            # Not registered, use Sessions
             enrollments = self.session.get('experiments_enrollments', None)
             if enrollments and experiment.name in enrollments:
                 alternative, goals = enrollments[experiment.name]
@@ -81,7 +77,6 @@ class WebUser(object):
             # Bot/Spider, so don't enroll
             return
         if self._is_authenticated():
-            # Registered User
             try:
                 enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative':alternative})
             except IntegrityError, exc:
@@ -92,16 +87,12 @@ class WebUser(object):
                 enrollment.alternative = alternative
                 enrollment.save()
 
-            # Increment experiment_name:alternative:participant counter
             experiment.increment_participant_count(alternative, self._participant_identifier())
         else:
-            # Not registered use Sessions
             enrollments = self.session.get('experiments_enrollments', {})
             enrollments[experiment.name] = (alternative, [])
             self.session['experiments_enrollments'] = enrollments
-            # Only Increment participant count for verified users
             if self._is_verified_human():
-                # Increment experiment_name:alternative:participant counter
                 experiment.increment_participant_count(alternative, self._participant_identifier())
 
     # Checks if the goal should be incremented
@@ -109,7 +100,6 @@ class WebUser(object):
         # Bots don't register goals
         if self._is_bot():
             return
-        # If the user is registered
         if self._is_authenticated():
             enrollments = Enrollment.objects.filter(user=self.user)
             if not enrollments:
@@ -118,7 +108,6 @@ class WebUser(object):
                 if enrollment.experiment.is_displaying_alternatives():
                     enrollment.experiment.increment_goal_count(enrollment.alternative, goal_name, self._participant_identifier())
             return
-        # If confirmed human
         if self._is_verified_human():
             enrollments = self.session.get('experiments_enrollments', None)
             if not enrollments:
