@@ -6,7 +6,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
 from jsonfield import JSONField
-from modeldict import ModelDict
 
 from gargoyle.manager import gargoyle
 from gargoyle.models import Switch
@@ -138,10 +137,6 @@ class Experiment(models.Model):
         counters.reset_pattern(self.name + "*")
 
         super(Experiment, self).delete(*args, **kwargs)
-
-
-class ExperimentManager(ModelDict):
-    pass
 
 
 class Enrollment(models.Model):
