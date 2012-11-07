@@ -200,6 +200,40 @@ class WebUser(object):
             # if verify human is called quick enough this should rarely happen.
             pass
 
+    def show_alternative(self, experiment_name, alternative, experiment_manager):
+        """ does the real work """
+        try:
+            experiment = experiment_manager[experiment_name] # use cache where possible
+        except KeyError:
+            return alternative == CONTROL_GROUP
+
+        if experiment.state == CONTROL_STATE:
+            return alternative == CONTROL_GROUP
+
+        if experiment.state == GARGOYLE_STATE:
+            if not gargoyle.is_active(experiment.switch_key, self.request):
+                return alternative == CONTROL_GROUP                
+
+        if experiment.state != ENABLED_STATE and experiment.state != GARGOYLE_STATE:
+            raise Exception("Invalid experiment state %s!" % experiment.state)
+
+        # Add new alternatives to experiment model
+        if alternative not in experiment.alternatives:
+            experiment.alternatives[alternative] = {}
+            experiment.alternatives[alternative]['enabled'] = True
+            experiment.save()
+
+        # Lookup User alternative
+        assigned_alternative = self.get_enrollment(experiment)
+
+        # No alternative so assign one
+        if assigned_alternative is None:
+            assigned_alternative = random.choice(experiment.alternatives.keys())
+            self.set_enrollment(experiment, assigned_alternative)
+
+        return alternative == assigned_alternative
+
+
 class StaticUser(WebUser):
     def __init__(self):
         self.request = None
