@@ -38,6 +38,7 @@ class CounterTestCase(TestCase):
         counters.increment(TEST_KEY, 'fred')
         counters.increment(TEST_KEY, 'barney')
         counters.increment(TEST_KEY, 'george')
+        counters.increment(TEST_KEY, 'george')
         self.assertEqual(counters.get(TEST_KEY), 3)
 
     def test_add_duplicate_item(self):

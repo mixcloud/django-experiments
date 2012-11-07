@@ -14,7 +14,7 @@ COUNTER_CACHE_KEY = 'experiments:%s'
 def increment(key, participant_identifier):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        r.sadd(cache_key, participant_identifier)
+        r.hincrby(cache_key, participant_identifier, 1)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         pass
@@ -22,7 +22,7 @@ def increment(key, participant_identifier):
 def get(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        return r.scard(cache_key)
+        return r.hlen(cache_key)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return 0
