@@ -6,8 +6,8 @@ from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
 from experiments import stats, counters
-from experiments.utils import WebUser
-from experiments.models import Experiment, ENABLED_STATE
+from experiments.utils import create_user
+from experiments.models import Experiment, ENABLED_STATE, CONTROL_GROUP
 
 request_factory = RequestFactory()
 TEST_KEY = 'CounterTestCase'
@@ -63,22 +63,22 @@ class WebUserTests:
         self.experiment.delete()
 
     def confirm_human(self, experiment_user):
-        raise NotImplementedError
+        pass
 
     def participants(self, alternative):
         return self.experiment.participant_count(alternative)
 
     def enrollment_initially_none(self,):
-        experiment_user = WebUser(self.request)
+        experiment_user = create_user(self.request)
         self.assertEqual(experiment_user.get_enrollment(self.experiment), None)
 
     def test_user_enrolls(self):
-        experiment_user = WebUser(self.request)
+        experiment_user = create_user(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
         self.assertEqual(experiment_user.get_enrollment(self.experiment), TEST_ALTERNATIVE)
 
     def test_record_goal_increments_counts(self):
-        experiment_user = WebUser(self.request)
+        experiment_user = create_user(self.request)
         self.confirm_human(experiment_user)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
 
@@ -87,7 +87,7 @@ class WebUserTests:
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_can_record_goal_multiple_times(self):
-        experiment_user = WebUser(self.request)
+        experiment_user = create_user(self.request)
         self.confirm_human(experiment_user)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
 
@@ -97,7 +97,7 @@ class WebUserTests:
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_counts_increment_immediately_once_confirmed_human(self):
-        experiment_user = WebUser(self.request)
+        experiment_user = create_user(self.request)
         self.confirm_human(experiment_user)
 
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
@@ -113,7 +113,7 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
         experiment_user.confirm_human()
 
     def test_confirm_human_increments_counts(self):
-        experiment_user = WebUser(self.request)
+        experiment_user = create_user(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
 
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 0, "Counted participant before confirmed human")
@@ -131,5 +131,25 @@ class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
         self.request.user.delete()
         super(WebUserAuthenticatedTestCase, self).tearDown()
 
-    def confirm_human(self, experiment_user):
-        pass
+
+class BotTestCase(TestCase):
+    def setUp(self):
+        self.experiment = Experiment(name='backgroundcolor', state=ENABLED_STATE)
+        self.experiment.save()
+        self.request = request_factory.get('/', HTTP_USER_AGENT='GoogleBot/2.1')
+
+    def test_user_does_not_enroll(self):
+        experiment_user = create_user(self.request)
+        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        self.assertEqual(self.experiment.participant_count(TEST_ALTERNATIVE), 0, "Bot counted towards results")
+
+    def test_bot_in_control_group(self):
+        experiment_user = create_user(self.request)
+        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        self.assertEqual(experiment_user.get_enrollment(self.experiment), CONTROL_GROUP, "Bot alternative is not control")
+        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE, self.request), False, "Bot in test alternative")
+        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")
+
+    def tearDown(self):
+        self.experiment.delete()
+
