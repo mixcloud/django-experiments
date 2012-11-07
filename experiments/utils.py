@@ -185,8 +185,6 @@ class WebUser(object):
             for enrollment in enrollments: # Looks up by PK so no point caching.
                 if self._should_increment(enrollment.experiment):
                     self._increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
-                    enrollment.goals.append(goal_name)
-                    enrollment.save()
             return
         # If confirmed human
         if self._is_verified_human():
@@ -196,9 +194,6 @@ class WebUser(object):
             for experiment_name, (alternative, goals) in enrollments.items():
                 if self._should_increment(experiment_manager[experiment_name]):
                     self._increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
-                    goals.append(goal_name)
-
-            self.session['experiments_enrollments'] = enrollments
             return
         else:
             # TODO: store temp goals and convert later when is_human is triggered
