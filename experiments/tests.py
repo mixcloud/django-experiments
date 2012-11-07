@@ -68,6 +68,10 @@ class WebUserTests:
     def participants(self, alternative):
         return counters.get(PARTICIPANT_KEY % (self.experiment.name, alternative))
 
+    def enrollment_initially_none(self,):
+        experiment_user = WebUser(self.request)
+        self.assertEqual(experiment_user.get_enrollment(self.experiment), None)
+
     def test_user_enrolls(self):
         experiment_user = WebUser(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
