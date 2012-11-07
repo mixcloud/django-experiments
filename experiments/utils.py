@@ -184,7 +184,7 @@ class WebUser(object):
             # if verify human is called quick enough this should rarely happen.
             pass
 
-    def is_enrolled_alternative(self, experiment_name, alternative):
+    def is_enrolled(self, experiment_name, alternative):
         """ does the real work """
         try:
             experiment = experiment_manager[experiment_name] # use cache where possible
