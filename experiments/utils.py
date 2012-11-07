@@ -54,12 +54,12 @@ class WebUser(object):
     def _increment_participant_count(self, experiment, alternative_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
-        count = counters.increment(counter_key, self._participant_identifier())
+        counters.increment(counter_key, self._participant_identifier())
 
     def _increment_goal_count(self, experiment, alternative_name, goal_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = GOAL_KEY % (experiment.name, alternative_name, goal_name)
-        count = counters.increment(counter_key, self._participant_identifier())
+        counters.increment(counter_key, self._participant_identifier())
 
     def confirm_human(self):
         self.session['experiments_verified_human'] = True

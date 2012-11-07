@@ -15,7 +15,6 @@ def increment(key, participant_identifier):
     try:
         cache_key = COUNTER_CACHE_KEY % key
         r.sadd(cache_key, participant_identifier)
-        return r.scard(cache_key)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         pass
@@ -23,13 +22,10 @@ def increment(key, participant_identifier):
 def get(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        count = r.scard(cache_key)
+        return r.scard(cache_key)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return 0
-    if not count:
-        return 0
-    return int(count)
 
 def reset(key):
     try:
