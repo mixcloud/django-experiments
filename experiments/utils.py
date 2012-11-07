@@ -27,10 +27,6 @@ class WebUser(object):
     def _is_authenticated(self):
         return self.user.is_authenticated()
 
-    def _get_registered_user(self):
-        if self._is_authenticated():
-            return self.user
-
     def _is_bot(self):
         return bool(BOT_REGEX.search(self.request.META.get("HTTP_USER_AGENT","")))
 
@@ -69,7 +65,7 @@ class WebUser(object):
         if self._is_authenticated():
             # Registered User
             try:
-                return Enrollment.objects.get(user=self._get_registered_user(), experiment=experiment).alternative
+                return Enrollment.objects.get(user=self.user, experiment=experiment).alternative
             except Enrollment.DoesNotExist:
                 return None
         else:
@@ -87,7 +83,7 @@ class WebUser(object):
         if self._is_authenticated():
             # Registered User
             try:
-                enrollment, _ = Enrollment.objects.get_or_create(user=self._get_registered_user(), experiment=experiment, defaults={'alternative':alternative})
+                enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative':alternative})
             except IntegrityError, exc:
                 # Already registered (db race condition under high load)
                 return
@@ -115,7 +111,7 @@ class WebUser(object):
             return
         # If the user is registered
         if self._is_authenticated():
-            enrollments = Enrollment.objects.filter(user=self._get_registered_user())
+            enrollments = Enrollment.objects.filter(user=self.user)
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
