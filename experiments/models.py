@@ -79,6 +79,16 @@ class Experiment(models.Model):
     def random_alternative(self):
         return random.choice(self.alternatives.keys())
 
+    def increment_participant_count(self, alternative_name, participant_identifier):
+        # Increment experiment_name:alternative:participant counter
+        counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
+        counters.increment(counter_key, participant_identifier)
+
+    def increment_goal_count(self, alternative_name, goal_name, participant_identifier):
+        # Increment experiment_name:alternative:participant counter
+        counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
+        counters.increment(counter_key, participant_identifier)
+
     def participant_count(self, alternative):
         return counters.get(PARTICIPANT_KEY % (self.name, alternative))
 

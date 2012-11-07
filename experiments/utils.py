@@ -4,11 +4,9 @@ from django.db import IntegrityError
 
 from experiments.models import Enrollment, CONTROL_GROUP
 from experiments.manager import experiment_manager
-from experiments import counters
 
 import re
 
-from experiments.models import PARTICIPANT_KEY, GOAL_KEY
 
 # Known bots user agents to drop from experiments
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)
@@ -51,16 +49,6 @@ class WebUser(object):
                 self.session.save() # Force session key
             return 'session:%s' % (self.session.session_key,)
 
-    def _increment_participant_count(self, experiment, alternative_name):
-        # Increment experiment_name:alternative:participant counter
-        counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
-        counters.increment(counter_key, self._participant_identifier())
-
-    def _increment_goal_count(self, experiment, alternative_name, goal_name):
-        # Increment experiment_name:alternative:participant counter
-        counter_key = GOAL_KEY % (experiment.name, alternative_name, goal_name)
-        counters.increment(counter_key, self._participant_identifier())
-
     def confirm_human(self):
         self.session['experiments_verified_human'] = True
 
@@ -72,7 +60,7 @@ class WebUser(object):
         for experiment_name, data in enrollments.items():
             alternative, goals = data
             # Increment experiment_name:alternative:participant counter
-            self._increment_participant_count(experiment_manager[experiment_name], alternative)
+            experiment_manager[experiment_name].increment_participant_count(alternative, self._participant_identifier())
 
 
     def get_enrollment(self, experiment):
@@ -110,7 +98,7 @@ class WebUser(object):
                 enrollment.save()
 
             # Increment experiment_name:alternative:participant counter
-            self._increment_participant_count(experiment, alternative)
+            experiment.increment_participant_count(alternative, self._participant_identifier())
         else:
             # Not registered use Sessions
             enrollments = self.session.get('experiments_enrollments', {})
@@ -119,7 +107,7 @@ class WebUser(object):
             # Only Increment participant count for verified users
             if self._is_verified_human():
                 # Increment experiment_name:alternative:participant counter
-                self._increment_participant_count(experiment, alternative)
+                experiment.increment_participant_count(alternative, self._participant_identifier())
 
     # Checks if the goal should be incremented
     def record_goal(self, goal_name):
@@ -133,7 +121,7 @@ class WebUser(object):
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
                 if enrollment.experiment.is_displaying_alternatives():
-                    self._increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
+                    enrollment.experiment.increment_goal_count(enrollment.alternative, goal_name, self._participant_identifier())
             return
         # If confirmed human
         if self._is_verified_human():
@@ -142,7 +130,7 @@ class WebUser(object):
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
                 if experiment_manager[experiment_name].is_displaying_alternatives():
-                    self._increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
+                    experiment_manager[experiment_name].increment_goal_count(alternative, goal_name, self._participant_identifier())
             return
         else:
             # TODO: store temp goals and convert later when is_human is triggered
