@@ -10,11 +10,18 @@ REDIS_EXPERIMENTS_DB = getattr(settings, 'EXPERIMENTS_REDIS_DB', 0)
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_EXPERIMENTS_DB)
 
 COUNTER_CACHE_KEY = 'experiments:%s'
+COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
 
 def increment(key, participant_identifier):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        r.hincrby(cache_key, participant_identifier, 1)
+        freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+        new_value = r.hincrby(cache_key, participant_identifier, 1)
+
+        # Maintain histogram of per-user counts
+        if new_value > 1:
+            r.hincrby(freq_cache_key, new_value - 1, -1)
+        r.hincrby(freq_cache_key, new_value, 1)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         pass
@@ -27,10 +34,22 @@ def get(key):
         # Handle Redis failures gracefully
         return 0
 
+
+def get_frequencies(key):
+    try:
+        freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+        return dict((int(k),int(v)) for (k,v) in r.hgetall(freq_cache_key).items() if int(v))
+    except (ConnectionError, ResponseError):
+        # Handle Redis failures gracefully
+        return tuple()
+
 def reset(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        return r.delete(cache_key)
+        r.delete(cache_key)
+        freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+        r.delete(freq_cache_key)
+        return True
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return False
@@ -40,6 +59,9 @@ def reset_pattern(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
         for key in r.keys(cache_key):
+            r.delete(key)
+        freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+        for key in r.keys(freq_cache_key):
             r.delete(key)
         return True
     except (ConnectionError, ResponseError):
