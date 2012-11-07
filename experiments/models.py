@@ -14,6 +14,11 @@ from gargoyle.models import Switch
 import datetime
 import random
 
+from experiments import counters
+
+PARTICIPANT_KEY = '%s:%s:participant'
+GOAL_KEY = '%s:%s:%s:goal'
+
 CONTROL_GROUP = 'control'
 
 CONTROL_STATE = 0
@@ -73,6 +78,12 @@ class Experiment(models.Model):
 
     def random_alternative(self):
         return random.choice(self.alternatives.keys())
+
+    def participant_count(self, alternative):
+        return counters.get(PARTICIPANT_KEY % (self.name, alternative))
+
+    def goal_count(self, alternative, goal):
+        return counters.get(GOAL_KEY % (self.name, alternative, goal))
 
     def __unicode__(self):
         return self.name

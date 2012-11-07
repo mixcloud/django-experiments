@@ -8,8 +8,7 @@ from experiments import signals, counters
 
 import re
 
-PARTICIPANT_KEY = '%s:%s:participant'
-GOAL_KEY = '%s:%s:%s:goal'
+from experiments.models import PARTICIPANT_KEY, GOAL_KEY
 
 # Known bots user agents to drop from experiments
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)

@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
 from experiments import stats, counters
-from experiments.utils import WebUser, PARTICIPANT_KEY, GOAL_KEY
+from experiments.utils import WebUser
 from experiments.models import Experiment, ENABLED_STATE
 
 request_factory = RequestFactory()
@@ -66,7 +66,7 @@ class WebUserTests:
         raise NotImplementedError
 
     def participants(self, alternative):
-        return counters.get(PARTICIPANT_KEY % (self.experiment.name, alternative))
+        return self.experiment.participant_count(alternative)
 
     def enrollment_initially_none(self,):
         experiment_user = WebUser(self.request)
@@ -82,9 +82,9 @@ class WebUserTests:
         self.confirm_human(experiment_user)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
 
-        self.assertEqual(counters.get(GOAL_KEY % (self.experiment.name, TEST_ALTERNATIVE, TEST_GOAL)), 0)
+        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0)
         experiment_user.record_goal(TEST_GOAL)
-        self.assertEqual(counters.get(GOAL_KEY % (self.experiment.name, TEST_ALTERNATIVE, TEST_GOAL)), 1)
+        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_can_record_goal_multiple_times(self):
         experiment_user = WebUser(self.request)
@@ -94,7 +94,7 @@ class WebUserTests:
         experiment_user.record_goal(TEST_GOAL)
         experiment_user.record_goal(TEST_GOAL)
         experiment_user.record_goal(TEST_GOAL)
-        self.assertEqual(counters.get(GOAL_KEY % (self.experiment.name, TEST_ALTERNATIVE, TEST_GOAL)), 1)
+        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_counts_increment_immediately_once_confirmed_human(self):
         experiment_user = WebUser(self.request)
