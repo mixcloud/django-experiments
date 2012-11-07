@@ -156,22 +156,6 @@ class WebUser(object):
             alternative=alternative,
         )    
 
-    def _should_increment(self, experiment):
-        # Increments goal if enabled+gargoyle switch conditions met or just enabled
-        # Goal uniquely incremented for all enrollments at once
-
-        if experiment.state == CONTROL_STATE:
-            # Control state, experiment not running
-            return False
-        elif experiment.state == GARGOYLE_STATE and experiment.switch_key:
-            # Gargoyle state only increment actives.
-            if gargoyle.is_active(experiment.switch_key, self.request):
-                return True
-        elif experiment.state == ENABLED_STATE:
-            return True
-        else:
-            raise ValueError('Unrecognised experiment state %s' % (experiment.state,))
-
     # Checks if the goal should be incremented
     def record_goal(self, goal_name):
         # Bots don't register goals
@@ -183,7 +167,7 @@ class WebUser(object):
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
-                if self._should_increment(enrollment.experiment):
+                if enrollment.experiment.enabled():
                     self._increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
             return
         # If confirmed human
@@ -192,7 +176,7 @@ class WebUser(object):
             if not enrollments:
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
-                if self._should_increment(experiment_manager[experiment_name]):
+                if experiment_manager[experiment_name].enabled():
                     self._increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
             return
         else:
