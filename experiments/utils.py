@@ -156,7 +156,7 @@ class WebUser(object):
             alternative=alternative,
         )    
 
-    def _should_increment(self, experiment, goals, goal_name):
+    def _should_increment(self, experiment):
         # Increments goal if enabled+gargoyle switch conditions met or just enabled
         # Goal uniquely incremented for all enrollments at once
 
@@ -166,11 +166,9 @@ class WebUser(object):
         elif experiment.state == GARGOYLE_STATE and experiment.switch_key:
             # Gargoyle state only increment actives.
             if gargoyle.is_active(experiment.switch_key, self.request):
-                if goal_name not in goals: # Check if already recorded for this enrollment
-                    return True
-        elif experiment.state == ENABLED_STATE:
-            if goal_name not in goals: # Check if already recorded for this enrollment
                 return True
+        elif experiment.state == ENABLED_STATE:
+            return True
         else:
             raise ValueError('Unrecognised experiment state %s' % (experiment.state,))
 
@@ -185,7 +183,7 @@ class WebUser(object):
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
-                if self._should_increment(enrollment.experiment, enrollment.goals, goal_name):
+                if self._should_increment(enrollment.experiment):
                     self._increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
                     enrollment.goals.append(goal_name)
                     enrollment.save()
@@ -196,7 +194,7 @@ class WebUser(object):
             if not enrollments:
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
-                if self._should_increment(experiment_manager[experiment_name], goals, goal_name):
+                if self._should_increment(experiment_manager[experiment_name]):
                     self._increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
                     goals.append(goal_name)
 
