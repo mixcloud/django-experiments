@@ -38,12 +38,23 @@ class Experiment(models.Model):
     start_date = models.DateTimeField(default=datetime.datetime.now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
-    def enabled(self, request):
+    def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
             return False
-        elif experiment.state == ENABLED_STATE:
+        elif self.state == ENABLED_STATE:
             return True
-        elif experiment.state == GARGOYLE_STATE:
+        elif self.state == GARGOYLE_STATE:
+            return True
+        else:
+            raise Exception("Invalid experiment state %s!" % experiment.state)
+        
+
+    def is_accepting_new_users(self, request):
+        if self.state == CONTROL_STATE:
+            return False
+        elif self.state == ENABLED_STATE:
+            return True
+        elif self.state == GARGOYLE_STATE:
             return gargoyle.is_active(self.switch_key, request)
         else:
             raise Exception("Invalid experiment state %s!" % experiment.state)

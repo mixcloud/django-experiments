@@ -167,7 +167,7 @@ class WebUser(object):
             if not enrollments:
                 return
             for enrollment in enrollments: # Looks up by PK so no point caching.
-                if enrollment.experiment.enabled():
+                if enrollment.experiment.is_displaying_alternatives():
                     self._increment_goal_count(enrollment.experiment, enrollment.alternative, goal_name)
             return
         # If confirmed human
@@ -176,7 +176,7 @@ class WebUser(object):
             if not enrollments:
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
-                if experiment_manager[experiment_name].enabled():
+                if experiment_manager[experiment_name].is_displaying_alternatives():
                     self._increment_goal_count(experiment_manager[experiment_name], alternative, goal_name)
             return
         else:
@@ -185,23 +185,24 @@ class WebUser(object):
             pass
 
     def is_enrolled(self, experiment_name, alternative):
-        """ does the real work """
+        chosen_alternative = CONTROL_GROUP
+
         try:
             experiment = experiment_manager[experiment_name] # use cache where possible
         except KeyError:
-            return alternative == CONTROL_GROUP
+            pass
+        else:
+            if experiment.is_displaying_alternatives():
+                experiment.ensure_alternative_exists(alternative)
 
-        if not experiment.enabled():
-            return alternative == CONTROL_GROUP
+                assigned_alternative = self.get_enrollment(experiment)
+                if assigned_alternative:
+                    chosen_alternative = assigned_alternative
+                elif experiment.is_accepting_new_users(request):
+                    chosen_alternative = experiment.random_alternative()
+                    self.set_enrollment(experiment, chosen_alternative)
 
-        experiment.ensure_alternative_exists(alternative)
-
-        assigned_alternative = self.get_enrollment(experiment)
-        if assigned_alternative is None:
-            assigned_alternative = experiment.random_alternative()
-            self.set_enrollment(experiment, assigned_alternative)
-
-        return alternative == assigned_alternative
+        return alternative == chosen_alternative
 
 
 class StaticUser(WebUser):
