@@ -2,9 +2,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from django.db import IntegrityError
 
-from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE, GARGOYLE_STATE
+from experiments.models import Enrollment, CONTROL_GROUP
 from experiments.manager import experiment_manager
-from gargoyle.manager import gargoyle
 from experiments import signals, counters
 
 import re
@@ -184,7 +183,7 @@ class WebUser(object):
             # if verify human is called quick enough this should rarely happen.
             pass
 
-    def is_enrolled(self, experiment_name, alternative):
+    def is_enrolled(self, experiment_name, alternative, request):
         chosen_alternative = CONTROL_GROUP
 
         try:

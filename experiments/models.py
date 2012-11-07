@@ -50,7 +50,7 @@ class Experiment(models.Model):
         elif self.state == TRACK_STATE:
             return True
         else:
-            raise Exception("Invalid experiment state %s!" % experiment.state)
+            raise Exception("Invalid experiment state %s!" % self.state)
         
 
     def is_accepting_new_users(self, request):
@@ -63,7 +63,7 @@ class Experiment(models.Model):
         elif self.state == TRACK_STATE:
             return False
         else:
-            raise Exception("Invalid experiment state %s!" % experiment.state)
+            raise Exception("Invalid experiment state %s!" % self.state)
 
     def ensure_alternative_exists(self, alternative):
         if alternative not in self.alternatives:

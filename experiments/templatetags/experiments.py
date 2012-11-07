@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 from django import template
 
-from experiments.models import Experiment
-from experiments.manager import experiment_manager
 from experiments.utils import StaticUser, WebUser
 import random
 
@@ -32,7 +30,7 @@ class ExperimentNode(template.Node):
             user = request.experiment_user
 
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative):
+        if user.is_enrolled(self.experiment_name, self.alternative, request):
             response = self.node_list.render(context)
         else:
             response = ""
