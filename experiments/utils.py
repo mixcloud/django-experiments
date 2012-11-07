@@ -4,7 +4,7 @@ from django.db import IntegrityError
 
 from experiments.models import Enrollment, CONTROL_GROUP
 from experiments.manager import experiment_manager
-from experiments import signals, counters
+from experiments import counters
 
 import re
 
@@ -56,38 +56,13 @@ class WebUser(object):
         counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
         count = counters.increment(counter_key, self._participant_identifier())
 
-        signals.experiment_incr_participant.send(
-            sender=self,
-            request=self.request,
-            experiment=experiment,
-            alternative=alternative_name,
-            user=self.user,
-            participants=count,
-        )  
-
     def _increment_goal_count(self, experiment, alternative_name, goal_name):
         # Increment experiment_name:alternative:participant counter
         counter_key = GOAL_KEY % (experiment.name, alternative_name, goal_name)
         count = counters.increment(counter_key, self._participant_identifier())
 
-        signals.goal_hit.send(
-            sender=self,
-            request=self.request,
-            experiment=experiment,
-            alternative=alternative_name,
-            goal=goal_name,
-            user=self.user,
-            hits=count,
-        )   
-
     def confirm_human(self):
         self.session['experiments_verified_human'] = True
-
-        signals.user_confirmed_human.send(
-            sender=self,
-            request=self.request,
-            user=self.user,
-        )
 
         enrollments = self.session.get('experiments_enrollments', None)
         if not enrollments:
@@ -145,14 +120,6 @@ class WebUser(object):
             if self._is_verified_human():
                 # Increment experiment_name:alternative:participant counter
                 self._increment_participant_count(experiment, alternative)
-
-        signals.experiment_user_added.send(
-            sender=self,
-            request=self.request,
-            experiment=experiment,
-            user=self.user,
-            alternative=alternative,
-        )    
 
     # Checks if the goal should be incremented
     def record_goal(self, goal_name):

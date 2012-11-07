@@ -125,6 +125,8 @@ class Experiment(models.Model):
             except Switch.DoesNotExist:
                 pass
 
+        counters.reset_pattern(self.name + "*")
+
         super(Experiment, self).delete(*args, **kwargs)
 
 

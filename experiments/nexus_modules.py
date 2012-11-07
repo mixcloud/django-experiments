@@ -9,7 +9,6 @@ from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.significance import chi_square_p_value
-from experiments import signals, counters
 
 import nexus
 
@@ -168,13 +167,6 @@ class ExperimentsModule(nexus.NexusModule):
 
         experiment.save()
 
-        signals.experiment_state_updated.send(
-            sender=self,
-            request=request,
-            experiment=experiment,
-            state=state,
-        )        
-
         response = {
             "success": True,
             "experiment": experiment.to_dict_serialized(),
@@ -207,12 +199,6 @@ class ExperimentsModule(nexus.NexusModule):
         if not created:
             raise ExperimentException("Experiment with name %s already exists" % name)
 
-        signals.experiment_added.send(
-            sender=self,
-            request=request,
-            experiment=experiment,
-        )
-
         response = {
             'success': True,
             'experiment': experiment.to_dict_serialized(),
@@ -232,12 +218,6 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.relevant_goals = request.POST.get("goals")
         experiment.save()
 
-        signals.experiment_updated.send(
-            sender=self,
-            request=request,
-            experiment=experiment,
-        )
-
         response = {
             'success': True,
             'experiment': experiment.to_dict_serialized()
@@ -252,11 +232,7 @@ class ExperimentsModule(nexus.NexusModule):
         if not request.user.has_perm('experiments.delete_experiment'):
             raise ExperimentException("You don't have permission to do that!")
         experiment = Experiment.objects.get(name=request.POST.get("name"))
-        signals.experiment_deleted.send(
-            sender=self,
-            request=request,
-            experiment=experiment,
-        )
+
         experiment.enrollment_set.all().delete()
         experiment.delete()
         return {'successful': True}
