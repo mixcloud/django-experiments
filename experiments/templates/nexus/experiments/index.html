@@ -96,6 +96,10 @@
 
             <td class="state">
                 <div data-experiment-name="{{experiment.name}}" class="state">
+                    <button class="xtrasmall button {% if experiment.state == 3 %}toggled{% endif %}" data-state="3">
+                        Track
+                    </button>
+
                     <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"s{% endif %}>
                         Gargoyle
                     </button>
@@ -196,6 +200,10 @@
 
                 <td class="state">
                     <div class = "state" data-experiment-name="${name}">
+                        <button class="xtrasmall button {{if state == 3}}toggled{{/if}}" data-state="3">
+                            Track
+                        </button>
+
                         <button class="xtrasmall button {{if state == 2}}toggled{{/if}}" data-state="2" {{ if !switch_key }}disabled="disabled"{{ /if }}>
                             Gargoyle
                         </button>
