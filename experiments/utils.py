@@ -78,9 +78,6 @@ class WebUser(object):
 
         return alternative == chosen_alternative
 
-    def _participant_identifier(self):
-        raise NotImplementedError()
-
 
 class ControlGroupUser(WebUser):
     def get_enrollment(self, experiment):
@@ -91,8 +88,6 @@ class ControlGroupUser(WebUser):
         pass
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == CONTROL_GROUP
-    def _participant_identifier(self):
-        return None
 
 
 class AuthenticatedUser(WebUser):
