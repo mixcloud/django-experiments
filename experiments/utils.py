@@ -16,9 +16,7 @@ def record_goal(request, goal_name):
     experiment_user.record_goal(goal_name)
 
 class WebUser(object):
-    """
-    Wrapper class that implements an 'ExperimentUser' object from a web request.
-    """
+    """Represents a user (either authenticated or session based) which can take part in experiments"""
     def __init__(self, request):
         self.request = request
         self.user = request.user
@@ -45,6 +43,7 @@ class WebUser(object):
             return 'session:%s' % (self.session.session_key,)
 
     def confirm_human(self):
+        """Mark that this is a real human being (not a bot) and thus results should be counted"""
         self.session['experiments_verified_human'] = True
 
         enrollments = self.session.get('experiments_enrollments', None)
@@ -57,6 +56,9 @@ class WebUser(object):
 
 
     def get_enrollment(self, experiment):
+        """Get the name of the alternative this user is enrolled in for the specified experiment
+        
+        `experiment` is an instance of Experiment. If the user is not currently enrolled returns None."""
         if self._is_bot():
             # Bot/Spider, so send back control group
             return CONTROL_GROUP
@@ -73,6 +75,10 @@ class WebUser(object):
             return None
 
     def set_enrollment(self, experiment, alternative):
+        """Explicitly set the alternative the user is enrolled in for the specified experiment.
+
+        This allows you to change a user between alternatives. The user and goal counts for the new
+        alternative will be increment, but those for the old one will not be decremented."""
         if self._is_bot():
             # Bot/Spider, so don't enroll
             return
@@ -97,6 +103,9 @@ class WebUser(object):
 
     # Checks if the goal should be incremented
     def record_goal(self, goal_name):
+        """Record that this user has performed a particular goal
+
+        This will update the goal stats for all experiments the user is enrolled in."""
         # Bots don't register goals
         if self._is_bot():
             return
@@ -122,6 +131,11 @@ class WebUser(object):
             pass
 
     def is_enrolled(self, experiment_name, alternative, request):
+        """Test if the user is enrolled in the supplied alternative for the given experiment.
+
+        The supplied alternative will be added to the list of possible alternatives for the
+        experiment if it is not already there. If the user is not yet enrolled in the supplied
+        experiment they will be enrolled, and an alternative chosen at random."""
         chosen_alternative = CONTROL_GROUP
 
         try:
