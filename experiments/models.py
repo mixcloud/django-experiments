@@ -117,15 +117,9 @@ class Experiment(models.Model):
         super(Experiment, self).delete(*args, **kwargs)
 
 
-
 class ExperimentManager(ModelDict):
-    def __init__(self, *args, **kwargs):
-        self._registry = {}
-        super(ExperimentManager, self).__init__(*args, **kwargs)
+    pass
 
-    def __getitem__(self, key):
-        experiment = super(ExperimentManager, self).__getitem__(key)
-        return experiment
 
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
