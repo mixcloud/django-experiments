@@ -2,7 +2,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from django.db import IntegrityError
 
-from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE
+from experiments.models import Enrollment, CONTROL_GROUP, ENABLED_STATE, CONTROL_STATE, GARGOYLE_STATE
 from experiments.manager import experiment_manager
 from gargoyle.manager import gargoyle
 from experiments import signals, counters
@@ -163,15 +163,16 @@ class WebUser(object):
         if experiment.state == CONTROL_STATE:
             # Control state, experiment not running
             return False
-        elif experiment.state == ENABLED_STATE and experiment.switch_key:
+        elif experiment.state == GARGOYLE_STATE and experiment.switch_key:
             # Gargoyle state only increment actives.
             if gargoyle.is_active(experiment.switch_key, self.request):
                 if goal_name not in goals: # Check if already recorded for this enrollment
                     return True
-
-        if goal_name not in goals: # Check if already recorded for this enrollment
-            return True
-        return False
+        elif experiment.state == ENABLED_STATE:
+            if goal_name not in goals: # Check if already recorded for this enrollment
+                return True
+        else:
+            raise ValueError('Unrecognised experiment state %s' % (experiment.state,))
 
     # Checks if the goal should be incremented
     def record_goal(self, goal_name):
