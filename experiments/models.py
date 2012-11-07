@@ -93,13 +93,6 @@ class Experiment(models.Model):
         return simplejson.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
     def save(self, *args, **kwargs):
-        # Delete existing switch
-        if getattr(settings, 'EXPERIMENTS_SWITCH_AUTO_DELETE', True):
-            try:
-                Switch.objects.get(key=Experiment.objects.get(name=self.name).switch_key).delete()
-            except (Switch.DoesNotExist, Experiment.DoesNotExist):
-                pass
-
         # Create new switch
         if self.switch_key and getattr(settings, 'EXPERIMENTS_SWITCH_AUTO_CREATE', True):
             try:
