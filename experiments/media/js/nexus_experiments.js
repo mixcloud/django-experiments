@@ -100,8 +100,10 @@ $(document).ready(function () {
     $(".addExperiment").click(function (ev) {
         ev.preventDefault();
         $.facebox($("#experimentForm").tmpl({
-            add: true,
-            all_goals: nexus_experiments_all_goals
+            add:                 true,
+            relevant_chi2_goals: [],
+            relevant_mwu_goals:  [],
+            all_goals:           nexus_experiments_all_goals
         }));
     });
 
