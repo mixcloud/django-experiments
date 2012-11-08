@@ -1,3 +1,62 @@
+from experiments.stats import zprob
+
+def mann_whitney(a_distribution, b_distribution, use_continuity=True):
+    """Returns (u, p_value)"""
+    MINIMUM_VALUES = 20
+
+    all_values = sorted(set(a_distribution.keys() + b_distribution.keys()))
+
+    count_so_far = 0
+    a_rank_sum = 0
+    b_rank_sum = 0
+    a_count = 0
+    b_count = 0
+
+    variance_adjustment = 0
+
+    for v in all_values:
+        a_for_value = a_distribution.get(v, 0)
+        b_for_value = b_distribution.get(v, 0)
+        total_for_value = a_for_value + b_for_value
+        average_rank = count_so_far + (1 + total_for_value) / 2.0
+
+        a_rank_sum += average_rank * a_for_value
+        b_rank_sum += average_rank * b_for_value
+        a_count += a_for_value
+        b_count += b_for_value
+        count_so_far += total_for_value
+
+        variance_adjustment += total_for_value**3 - total_for_value
+
+    if a_count < MINIMUM_VALUES or b_count < MINIMUM_VALUES:
+        return 0, None
+
+    a_u = a_rank_sum - a_count * (a_count + 1) / 2.0
+    b_u = b_rank_sum - b_count * (b_count + 1) / 2.0
+
+    small_u = min(a_u, b_u)
+    big_u = max(a_u, b_u)
+
+    # These need adjusting for the huge number of ties we will have
+    total_count = float(a_count + b_count)
+    u_distribution_mean = a_count * b_count / 2.0
+    u_distribution_sd = (
+        (a_count * b_count / (total_count * (total_count-1))) ** 0.5 *
+        ((total_count**3 - total_count - variance_adjustment)/12.0) ** 0.5 )
+
+    if u_distribution_sd == 0:
+        return small_u, None
+
+    if use_continuity:
+        # normal approximation for prob calc with continuity correction
+        z_score = abs((big_u - 0.5 - u_distribution_mean) / u_distribution_sd)
+    else:
+        # normal approximation for prob calc
+        z_score = abs((big_u - u_distribution_mean) / u_distribution_sd)
+
+    return small_u, 1 - zprob(z_score)
+
+
 def chi_square_p_value(matrix):
     """
     Accepts a matrix (an array of arrays, where each child array represents a row)
