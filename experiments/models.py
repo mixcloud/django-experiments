@@ -36,7 +36,8 @@ class Experiment(models.Model):
     name = models.CharField(primary_key=True, max_length=128)
     description = models.TextField(default="", blank=True, null=True)
     alternatives = JSONField(default="{}", blank=True)
-    relevant_goals = models.TextField(default = "", null=True, blank=True)
+    relevant_chi2_goals = models.TextField(default = "", null=True, blank=True)
+    relevant_mwu_goals = models.TextField(default = "", null=True, blank=True)
     switch_key = models.CharField(default = "", max_length=50, null=True, blank=True)
 
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
@@ -109,7 +110,8 @@ class Experiment(models.Model):
             'state': self.state,
             'switch_key': self.switch_key,
             'description': self.description,
-            'relevant_goals': self.relevant_goals,
+            'relevant_chi2_goals': self.relevant_chi2_goals,
+            'relevant_mwu_goals': self.relevant_mwu_goals,
         }
         return data
 
@@ -148,7 +150,6 @@ class Enrollment(models.Model):
     experiment = models.ForeignKey(Experiment)
     enrollment_date = models.DateField(db_index=True, auto_now_add=True)
     alternative = models.CharField(max_length=50)
-    goals = JSONField(default="[]", blank=True)
 
     class Meta:
         unique_together = ('user', 'experiment')

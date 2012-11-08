@@ -11,6 +11,7 @@ from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTRO
 from experiments.significance import chi_square_p_value, mann_whitney
 
 import nexus
+import json as json_module
 
 def rate(a, b):
     if not b or a == None:
@@ -116,16 +117,22 @@ class ExperimentsModule(nexus.NexusModule):
 
         return self.render_to_response("nexus/experiments/index.html", {
             "experiments": [e.to_dict() for e in experiments],
-            "sorted_by": sort_by
+            "all_goals": json_module.dumps(getattr(settings, 'EXPERIMENTS_GOALS', [])),
+            "sorted_by": sort_by,
         }, request)
 
     def results(self, request, name):
         experiment = Experiment.objects.get(name=name)
 
         try:
-            relevant_goals = experiment.relevant_goals.replace(" ", "").split(",")
+            chi2_goals = experiment.relevant_chi2_goals.replace(" ", "").split(",")
         except AttributeError:
-            relevant_goals = [u'']
+            chi2_goals = [u'']
+        try:
+            mwu_goals = experiment.relevant_mwu_goals.replace(" ", "").split(",")
+        except AttributeError:
+            mwu_goals = [u'']
+        relevant_goals = set(chi2_goals + mwu_goals)
 
         alternatives = {}
         for alternative_name in experiment.alternatives.keys():
@@ -147,11 +154,15 @@ class ExperimentsModule(nexus.NexusModule):
                     alternative_participants = experiment.participant_count(alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
                     alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
-                    alternative_conversion_distribution = experiment.goal_distribution(alternative_name, goal)
-                    alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
-                    alternative_distribution_confidence = mann_whitney_confidence(
-                        alternative_conversion_distribution, alternative_participants,
-                        control_conversion_distribution, control_participants)
+                    if goal in mwu_goals:
+                        alternative_conversion_distribution = experiment.goal_distribution(alternative_name, goal)
+                        alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
+                        alternative_distribution_confidence = mann_whitney_confidence(
+                            alternative_conversion_distribution, alternative_participants,
+                            control_conversion_distribution, control_participants)
+                    else:
+                        alternative_average_goal_actions = None
+                        alternative_distribution_confidence = None
                     alternative = {
                         'conversions': alternative_conversions,
                         'conversion_rate': alternative_conversion_rate,
@@ -168,7 +179,12 @@ class ExperimentsModule(nexus.NexusModule):
                 'average_goal_actions': control_average_goal_actions,
             }
 
-            results[goal] = {"control": control, "alternatives": alternatives_conversions, 'relevant': goal in relevant_goals or relevant_goals == [u'']}
+            results[goal] = {
+                "control": control,
+                "alternatives": alternatives_conversions,
+                "relevant": goal in relevant_goals or relevant_goals == set([u'']),
+                "mwu" : goal in mwu_goals
+            }
 
         return self.render_to_response("nexus/experiments/results.html", {
             'experiment': experiment.to_dict(),
@@ -222,7 +238,8 @@ class ExperimentsModule(nexus.NexusModule):
             defaults     = dict(
                 switch_key = request.POST.get("switch_key"),
                 description = request.POST.get("desc"),
-                relevant_goals = request.POST.get("goals"),                
+                relevant_chi2_goals = request.POST.get("chi2_goals"),
+                relevant_mwu_goals = request.POST.get("mwu_goals"),
             ),
         )
 
@@ -245,7 +262,8 @@ class ExperimentsModule(nexus.NexusModule):
 
         experiment.switch_key = request.POST.get("switch_key")
         experiment.description = request.POST.get("desc")
-        experiment.relevant_goals = request.POST.get("goals")
+        experiment.relevant_chi2_goals = request.POST.get("chi2_goals")
+        experiment.relevant_mwu_goals = request.POST.get("mwu_goals")
         experiment.save()
 
         response = {

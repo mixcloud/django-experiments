@@ -99,18 +99,24 @@ $(document).ready(function () {
 
     $(".addExperiment").click(function (ev) {
         ev.preventDefault();
-        $.facebox($("#experimentForm").tmpl({ add: true }));
+        $.facebox($("#experimentForm").tmpl({
+            add: true,
+            all_goals: nexus_experiments_all_goals
+        }));
     });
 
     $(".experiments .edit").live("click", function () {
         var row = $(this).parents("tr:first");
         $.facebox($("#experimentForm").tmpl({
-            add:            false,
-            curname:        row.attr("data-experiment-name"),
-            name:           row.attr("data-experiment-name"),
-            switch_key:     row.attr("data-experiment-switch"),
-            desc:           row.attr("data-experiment-desc"),
-            relevant_goals: row.attr("data-experiment-goals"),
+            add:                 false,
+            curname:             row.attr("data-experiment-name"),
+            name:                row.attr("data-experiment-name"),
+            switch_key:          row.attr("data-experiment-switch"),
+            desc:                row.attr("data-experiment-desc"),
+            relevant_goals:      row.attr("data-experiment-goals"),
+            relevant_chi2_goals: row.attr("data-experiment-chi2-goals").split(","),
+            relevant_mwu_goals:  row.attr("data-experiment-mwu-goals").split(","),
+            all_goals:           nexus_experiments_all_goals
         }));
     });
 
@@ -123,13 +129,21 @@ $(document).ready(function () {
         var action = $(this).attr("data-action");
         var curname = $(this).attr("data-curname");
 
+        var relevant_chi2_goals = $("#facebox input[name=relevant_chi2_goals]:checked").map(function(){
+            return $(this).val()
+        }).get().join(",");
+        var relevant_mwu_goals = $("#facebox input[name=relevant_mwu_goals]:checked").map(function(){
+            return $(this).val()
+        }).get().join(",");
+
         api(action == "add" ? EXPERIMENT.addExperiment : EXPERIMENT.updateExperiment,
             {
                 curname: curname,
                 name:       $("#facebox input[name=name]").val(),
                 switch_key: $("#facebox input[name=switch_key]").val(),
                 desc:       $("#facebox textarea[name=desc]").val(),
-                goals:      $("#facebox textarea[name=relevant_goals]").val()
+                chi2_goals: relevant_chi2_goals,
+                mwu_goals:  relevant_mwu_goals
             },
 
             function (response) {

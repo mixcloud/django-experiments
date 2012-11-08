@@ -24,6 +24,7 @@
             deleteExperiment: "{% url experiments:delete %}",
             updateState:      "{% url experiments:state %}",
         };
+        nexus_experiments_all_goals = {{ all_goals|safe }};
     </script>
 
     <script src="{% url nexus:media 'experiments' 'js/string_score.min.js' %}"></script>
@@ -60,7 +61,7 @@
 
     <table class="experiments {% if not experiments %}empty{% endif %}">
         {% for experiment in experiments %}
-        <tr data-experiment-name="{{ experiment.name }}" data-experiment-switch="{{ experiment.switch_key }}" data-experiment-desc="{{ experiment.description }}" data-experiment-goals="{{ experiment.relevant_goals }}" class="collapsed">
+        <tr data-experiment-name="{{ experiment.name }}" data-experiment-switch="{{ experiment.switch_key }}" data-experiment-desc="{{ experiment.description }}" data-experiment-chi2-goals="{{ experiment.relevant_chi2_goals }}" data-experiment-mwu-goals="{{ experiment.relevant_mwu_goals }}" class="collapsed">
             <td class="name">
                 <h4>{{ experiment.name }}
                 <a href="{% url experiments:results experiment.name %}">(View Results)</a>
@@ -158,7 +159,18 @@
                 <tr>
                     <th>Relevant Goals:</th>
                     <td>
-                        <textarea name="relevant_goals">{{ if relevant_goals }}${relevant_goals}{{ /if }}</textarea>
+                        <div class="select-list-header">
+                            <div class="label-header">Goal</div>
+                            <div class="checkbox-header">&Chi;&sup2;</div>
+                            <div class="checkbox-header">U</div>
+                        </div>
+                        <div class="select-list-container">
+                            {{each all_goals}}
+                                <label>${$value}</label>
+                                 <input type="checkbox" name="relevant_chi2_goals" value="${$value}" {{if relevant_chi2_goals && relevant_chi2_goals.indexOf($value)>-1 }}checked{{/if}}>
+                                <input type="checkbox" name="relevant_mwu_goals" value="${$value}" {{if relevant_mwu_goals && relevant_mwu_goals.indexOf($value)>-1 }}checked{{/if}}>
+                            {{/each}}
+                        </div>
                         <p>Comma separated list of relevant goals.</p>
                     </td>
                 </tr>
@@ -174,7 +186,7 @@
             </table>
         </script>
         <script type="text/x-jquery-tmpl" id="experimentData">
-            <tr data-experiment-name="${name}" data-experiment-switch="${switch_key}" data-experiment-desc="${description}" data-experiment-goals="${relevant_goals}">
+            <tr data-experiment-name="${name}" data-experiment-switch="${switch_key}" data-experiment-desc="${description}" data-experiment-chi2-goals="${relevant_chi2_goals}" data-experiment-mwu-goals="${relevant_mwu_goals}">
                 <td class="name">
                     <h4>
                         ${name}
