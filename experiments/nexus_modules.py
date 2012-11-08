@@ -8,7 +8,7 @@ from django.utils import simplejson
 from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
-from experiments.significance import chi_square_p_value
+from experiments.significance import chi_square_p_value, mann_whitney
 
 import nexus
 
@@ -22,13 +22,30 @@ def improvement(a, b):
         return None
     return (a - b) * 100. / b
 
-def confidence(a_count, a_conversion, b_count, b_conversion):
+def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     contingency_table = [[a_count - a_conversion, a_conversion],
                          [b_count - b_conversion, b_conversion]]
 
     chi_square, p_value = chi_square_p_value(contingency_table)
     if p_value is not None:
         return (1 - p_value) * 100
+    else:
+        return None
+
+def average_actions(distribution, count):
+    if not count:
+        return 0
+    total_actions = sum(actions*frequency for (actions, frequency) in distribution.items())
+    return total_actions / float(count)
+
+def mann_whitney_confidence(a_distribution, a_count, b_distribution, b_count):
+    a_zeros = a_count - sum(a_distribution.values())
+    a_distribution[0] = a_zeros
+    b_zeros = b_count - sum(b_distribution.values())
+    b_distribution[0] = b_zeros
+    p_value = mann_whitney(a_distribution, b_distribution)[1]
+    if p_value is not None:
+        return (1 - p_value * 2) * 100 # Two tailed probability
     else:
         return None
 
@@ -122,21 +139,34 @@ class ExperimentsModule(nexus.NexusModule):
             alternatives_conversions = {}
             control_conversions = experiment.goal_count(CONTROL_GROUP, goal)
             control_conversion_rate = rate(control_conversions, control_participants)
+            control_conversion_distribution = experiment.goal_distribution(CONTROL_GROUP, goal)
+            control_average_goal_actions = average_actions(control_conversion_distribution, control_participants)
             for alternative_name in experiment.alternatives.keys():
                 if not alternative_name == CONTROL_GROUP:
                     alternative_conversions = experiment.goal_count(alternative_name, goal)
                     alternative_participants = experiment.participant_count(alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
-                    alternative_confidence = confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
+                    alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
+                    alternative_conversion_distribution = experiment.goal_distribution(alternative_name, goal)
+                    alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
+                    alternative_distribution_confidence = mann_whitney_confidence(
+                        alternative_conversion_distribution, alternative_participants,
+                        control_conversion_distribution, control_participants)
                     alternative = {
                         'conversions': alternative_conversions,
                         'conversion_rate': alternative_conversion_rate,
                         'improvement': improvement(alternative_conversion_rate, control_conversion_rate),
                         'confidence': alternative_confidence,
+                        'average_goal_actions': alternative_average_goal_actions,
+                        'mann_whitney_confidence': alternative_distribution_confidence,
                     }
                     alternatives_conversions[alternative_name] = alternative
 
-            control = {'conversions':control_conversions, 'conversion_rate':control_conversion_rate}
+            control = {
+                'conversions':control_conversions,
+                'conversion_rate':control_conversion_rate,
+                'average_goal_actions': control_average_goal_actions,
+            }
 
             results[goal] = {"control": control, "alternatives": alternatives_conversions, 'relevant': goal in relevant_goals or relevant_goals == [u'']}
 

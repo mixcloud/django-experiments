@@ -94,6 +94,9 @@ class Experiment(models.Model):
     def goal_count(self, alternative, goal):
         return counters.get(GOAL_KEY % (self.name, alternative, goal))
 
+    def goal_distribution(self, alternative, goal):
+        return counters.get_frequencies(GOAL_KEY % (self.name, alternative, goal))
+
     def __unicode__(self):
         return self.name
 
