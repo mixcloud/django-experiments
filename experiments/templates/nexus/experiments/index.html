@@ -161,14 +161,18 @@
                     <td>
                         <div class="select-list-header">
                             <div class="label-header">Goal</div>
-                            <div class="checkbox-header">&Chi;&sup2;</div>
-                            <div class="checkbox-header">U</div>
+                            <div class="checkbox-header">
+                                <a href="http://en.wikipedia.org/wiki/Chi-squared_test" target="_blank" title="Used when optimising for conversion rate">&Chi;&sup2;</a>
+                            </div>
+                            <div class="checkbox-header">
+                                <a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" target="_blank" title="Used when optimising for number of times users perform an action. (Advanced.)">U</a>
+                            </div>
                         </div>
                         <div class="select-list-container">
                             {{each all_goals}}
                                 <label>${$value}</label>
-                                 <input type="checkbox" name="relevant_chi2_goals" value="${$value}" {{if relevant_chi2_goals && relevant_chi2_goals.indexOf($value)>-1 }}checked{{/if}}>
-                                <input type="checkbox" name="relevant_mwu_goals" value="${$value}" {{if relevant_mwu_goals && relevant_mwu_goals.indexOf($value)>-1 }}checked{{/if}}>
+                                 <input type="checkbox" name="relevant_chi2_goals" value="${$value}" {{if relevant_chi2_goals.indexOf($value)>-1 }}checked{{/if}}>
+                                <input type="checkbox" name="relevant_mwu_goals" value="${$value}" {{if relevant_mwu_goals.indexOf($value)>-1 }}checked{{/if}}>
                             {{/each}}
                         </div>
                         <p>Comma separated list of relevant goals.</p>
