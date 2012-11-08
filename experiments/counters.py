@@ -9,7 +9,7 @@ REDIS_EXPERIMENTS_DB = getattr(settings, 'EXPERIMENTS_REDIS_DB', 0)
 
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_EXPERIMENTS_DB)
 
-COUNTER_CACHE_KEY = 'experiments:%s'
+COUNTER_CACHE_KEY = 'experiments:participants:%s'
 COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
 
 def increment(key, participant_identifier):
