@@ -1,4 +1,4 @@
-from experiments.stats import zprob
+from experiments.stats import zprob, chisqprob
 
 def mann_whitney(a_distribution, b_distribution, use_continuity=True):
     """Returns (u, p_value)"""
@@ -80,10 +80,6 @@ def chi_square_p_value(matrix):
     
     Code adapted from http://codecomments.wordpress.com/2008/02/13/computing-chi-squared-p-value-from-contingency-table-in-python/
     """
-    try:
-        from scipy.stats import chisqprob
-    except ImportError:
-        from experiments.stats import chisqprob
     num_rows = len(matrix)
     num_columns = len(matrix[0])
     
