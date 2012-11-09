@@ -154,6 +154,9 @@ class Enrollment(models.Model):
     class Meta:
         unique_together = ('user', 'experiment')
 
+    def __unicode__(self):
+        return u'%s - %s' % (self.user, self.experiment)
+
     def to_dict(self):
         data = {
             'user': self.user,
