@@ -2,9 +2,7 @@ from __future__ import absolute_import
 
 from django import template
 
-from experiments.models import Experiment
-from experiments.manager import experiment_manager
-from experiments.utils import StaticUser, WebUser
+from experiments.utils import create_user
 import random
 
 register = template.Library()
@@ -23,16 +21,13 @@ class ExperimentNode(template.Node):
         # Get User object
         request = context.get('request', None)
 
-        if request is None:
-            user = StaticUser()
-        else:
-            # Create experiment_user in session if not already
-            if not hasattr(request, 'experiment_user'):
-                request.experiment_user = WebUser(request)
+        if request and hasattr(request, 'experiment_user'):
             user = request.experiment_user
+        else:
+            user = create_user(request)
 
         # Should we render?
-        if Experiment.show_alternative(self.experiment_name, user, self.alternative, experiment_manager):
+        if user.is_enrolled(self.experiment_name, self.alternative, request):
             response = self.node_list.render(context)
         else:
             response = ""

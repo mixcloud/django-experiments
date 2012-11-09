@@ -25,6 +25,10 @@
     <div class="results header top">
         <h2 class="experiment">{{ experiment.name }}</h2>
         <div data-experiment-name="{{experiment.name}}" class="results state">
+            <button class="xtrasmall button {% if experiment.state == 3 %}toggled{% endif %}" data-state="3">
+                Track
+            </button>
+
             <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"{% endif %}>
                 Gargoyle
             </button>

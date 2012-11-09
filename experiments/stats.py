@@ -3,7 +3,8 @@ from math import fabs, exp, sqrt, log, pi
 def flatten(iterable):
     for el in iterable:
         if isinstance(el, (list, tuple)):
-            yield flatten(el)
+            for sub_el in flatten(el):
+                yield sub_el
         else:
             yield el
 
