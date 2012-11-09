@@ -18,13 +18,13 @@ def record_goal(request, goal_name):
 
 def create_user(request):
     if BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
-        return ControlGroupUser()
+        return DummyUser()
     elif request and request.user and request.user.is_authenticated():
         return AuthenticatedUser(request.user)
     elif request and request.session:
         return SessionUser(request.session)
     else:
-        return ControlGroupUser()
+        return DummyUser()
 
 
 class WebUser(object):
@@ -79,7 +79,7 @@ class WebUser(object):
         return alternative == chosen_alternative
 
 
-class ControlGroupUser(WebUser):
+class DummyUser(WebUser):
     def get_enrollment(self, experiment):
         return CONTROL_GROUP
     def set_enrollment(self, experiment, alternative):
@@ -159,6 +159,9 @@ class SessionUser(WebUser):
             pass
 
     def confirm_human(self):
+        if self.session.get('experiments_verified_human', False):
+            return
+
         self.session['experiments_verified_human'] = True
 
         enrollments = self.session.get('experiments_enrollments', None)

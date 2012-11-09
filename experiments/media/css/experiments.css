@@ -249,6 +249,35 @@ Facebox css
     text-align: right;
 }
 
+#facebox div.select-list-container {
+    max-height: 20ex;
+    overflow: scroll;
+    border: 1px solid #ccc;
+    width: 230px;
+    padding: 2px; 3px;
+}
+
+#facebox table.experimentForm td div.select-list-container input {
+    width: 15px;
+}
+
+#facebox table.experimentForm td div.select-list-container label {
+    width: 180px;
+    display: inline-block;
+}
+
+#facebox table.experimentForm td div.select-list-header div.label-header {
+    width: 180px;
+    display: inline-block;
+    margin-left: 3px;
+}
+
+#facebox table.experimentForm td div.select-list-header div.checkbox-header {
+    width: 15px;
+    display: inline-block;
+    text-align: center;
+}
+
 /*
 Results page header
 */

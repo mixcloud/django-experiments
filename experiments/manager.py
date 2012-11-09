@@ -1,5 +1,5 @@
 from django.conf import settings
-from models import Experiment
+from experiments.models import Experiment
 from modeldict import ModelDict
 
 
