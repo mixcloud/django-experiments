@@ -2,7 +2,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404
 
-from experiments.utils import WebUser, record_goal
+from experiments.utils import create_user, record_goal
 from experiments.models import Experiment
 
 TRANSPARENT_1X1_PNG = \
@@ -18,7 +18,7 @@ TRANSPARENT_1X1_PNG = \
 
 @never_cache
 def confirm_human(request):
-    experiment_user = WebUser(request)
+    experiment_user = create_user(request)
     experiment_user.confirm_human()
     return HttpResponse(status=204)
 
@@ -32,6 +32,6 @@ def change_alternative(request, experiment_name, alternative_name):
     if alternative_name not in experiment.alternatives.keys():
         return HttpResponseBadRequest()
 
-    experiment_user = WebUser(request)
+    experiment_user = create_user(request)
     experiment_user.set_enrollment(experiment, alternative_name)
     return HttpResponse('OK')

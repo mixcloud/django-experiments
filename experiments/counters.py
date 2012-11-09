@@ -12,27 +12,23 @@ r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=RE
 
 COUNTER_CACHE_KEY = 'experiments:%s'
 
-def counter_increment(key, increment=1):
+def increment(key, participant_identifier):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        r.incr(cache_key, increment)
-        return int(r.get(cache_key))
+        r.sadd(cache_key, participant_identifier)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         pass
 
-def counter_get(key):
+def get(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
-        count = r.get(cache_key)
+        return r.scard(cache_key)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return 0
-    if not count:
-        return 0
-    return int(count)
 
-def counter_reset(key):
+def reset(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
         return r.delete(cache_key)
@@ -40,7 +36,7 @@ def counter_reset(key):
         # Handle Redis failures gracefully
         return False
 
-def counter_reset_pattern(key):
+def reset_pattern(key):
     #similar to above, but can pass pattern as arg instead
     try:
         cache_key = COUNTER_CACHE_KEY % key
