@@ -159,6 +159,9 @@ class SessionUser(WebUser):
             pass
 
     def confirm_human(self):
+        if self.session.get('experiments_verified_human', False):
+            return
+
         self.session['experiments_verified_human'] = True
 
         enrollments = self.session.get('experiments_enrollments', None)
