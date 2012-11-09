@@ -95,6 +95,26 @@ class WebUser(object):
             self.increment_participant_count(experiment_manager[experiment_name], alternative)
 
 
+    def get_enrollments(self):
+        """ Returns a list dictionaries including experiments and the
+            alternatives to which this user is enrolled.  Each dictionary
+            contains the name of the experiment and name of the alternative.
+        """
+        if self.is_bot():
+            return []
+
+        if not self.is_anonymous():
+            enrollments = Enrollment.objects.filter(
+                                               user=self.get_registered_user())
+            return [{'experiment': enrollment.experiment.name,
+                     'alternative': enrollment.alternative}
+                                                 for enrollment in enrollments]
+        else:
+            enrollments = self.session.get('experiments_enrollments', {})
+            return [{'experiment': experiment_name,
+                     'alternative': alternative[0]}
+                   for experiment_name, alternative in enrollments.iteritems()]
+
     def get_enrollment(self, experiment):
         if self.is_bot():
             # Bot/Spider, so send back control group

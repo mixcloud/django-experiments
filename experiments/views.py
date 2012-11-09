@@ -1,3 +1,5 @@
+import random
+
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404
