@@ -92,11 +92,22 @@
                         {{ goal }}
                     </td>
 
-                    <td class="conversion1 even">{{ data.control.conversions|intcomma }} <small>({{ data.control.conversion_rate|floatformat:2 }}%)</small></td>
+                    <td class="conversion1 even">
+                        {{ data.control.conversions|intcomma }} <small>({{ data.control.conversion_rate|floatformat:2 }}%
+                        {% if data.mwu %}
+                        - APU {{ data.control.average_goal_actions|floatformat:2 }}
+                        {% endif %}
+                        )</small></td>
 
                     {% for alternative_name, results in data.alternatives.items %}
                         {% if alternative_name != 'control' %}
-                            <td class="conversion2 {% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">{{ results.conversions|intcomma }}<small> ({{ results.conversion_rate|floatformat:2 }}%)</small></td>
+                            <td class="conversion2 {% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
+                                {{ results.conversions|intcomma }}<small> ({{ results.conversion_rate|floatformat:2 }}%
+                                {% if data.mwu %}
+                                    - APU {{ results.average_goal_actions|floatformat:2 }}
+                                {% endif %}
+                                )</small>
+                            </td>
                             <td title="Improvement" class="improvement {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
                                 {% with results.improvement as improvement %}
                                     {% if improvement != None %}
@@ -133,6 +144,9 @@
                                         N/A
                                     {% endif %}
                                 {% endwith %}
+                                {% if data.mwu %}
+                                    MWU: {{ results.mann_whitney_confidence|floatformat:2 }}%
+                                {% endif %}
                             </td>
                         {% endif %}
                     {% endfor %}

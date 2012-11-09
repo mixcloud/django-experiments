@@ -23,7 +23,7 @@ def confirm_human(request):
     return HttpResponse(status=204)
 
 @never_cache
-def record_experiment_goal(request, goal_name):
+def record_experiment_goal(request, goal_name, cache_buster=None):
     record_goal(request, goal_name)
     return HttpResponse(TRANSPARENT_1X1_PNG, mimetype="image/png")
 

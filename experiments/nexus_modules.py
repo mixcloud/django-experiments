@@ -4,13 +4,13 @@ from functools import wraps
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.utils import simplejson
 from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
-from experiments.significance import chi_square_p_value
+from experiments.significance import chi_square_p_value, mann_whitney
 
 import nexus
+import json
 
 def rate(a, b):
     if not b or a == None:
@@ -22,7 +22,7 @@ def improvement(a, b):
         return None
     return (a - b) * 100. / b
 
-def confidence(a_count, a_conversion, b_count, b_conversion):
+def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     contingency_table = [[a_count - a_conversion, a_conversion],
                          [b_count - b_conversion, b_conversion]]
 
@@ -32,10 +32,27 @@ def confidence(a_count, a_conversion, b_count, b_conversion):
     else:
         return None
 
+def average_actions(distribution, count):
+    if not count:
+        return 0
+    total_actions = sum(actions*frequency for (actions, frequency) in distribution.items())
+    return total_actions / float(count)
+
+def mann_whitney_confidence(a_distribution, a_count, b_distribution, b_count):
+    a_zeros = a_count - sum(a_distribution.values())
+    a_distribution[0] = a_zeros
+    b_zeros = b_count - sum(b_distribution.values())
+    b_distribution[0] = b_zeros
+    p_value = mann_whitney(a_distribution, b_distribution)[1]
+    if p_value is not None:
+        return (1 - p_value * 2) * 100 # Two tailed probability
+    else:
+        return None
+
 class ExperimentException(Exception):
     pass
 
-def json(func):
+def json_result(func):
     "Decorator to make JSON views simpler"
     def wrapper(self, request, *args, **kwargs):
         try:
@@ -63,7 +80,7 @@ def json(func):
                 import traceback
                 traceback.print_exc()
             raise
-        return HttpResponse(simplejson.dumps(response), mimetype="application/json")
+        return HttpResponse(json.dumps(response), mimetype="application/json")
     wrapper = wraps(func)(wrapper)
     return wrapper
 
@@ -99,16 +116,22 @@ class ExperimentsModule(nexus.NexusModule):
 
         return self.render_to_response("nexus/experiments/index.html", {
             "experiments": [e.to_dict() for e in experiments],
-            "sorted_by": sort_by
+            "all_goals": json.dumps(getattr(settings, 'EXPERIMENTS_GOALS', [])),
+            "sorted_by": sort_by,
         }, request)
 
     def results(self, request, name):
         experiment = Experiment.objects.get(name=name)
 
         try:
-            relevant_goals = experiment.relevant_goals.replace(" ", "").split(",")
+            chi2_goals = experiment.relevant_chi2_goals.replace(" ", "").split(",")
         except AttributeError:
-            relevant_goals = [u'']
+            chi2_goals = [u'']
+        try:
+            mwu_goals = experiment.relevant_mwu_goals.replace(" ", "").split(",")
+        except AttributeError:
+            mwu_goals = [u'']
+        relevant_goals = set(chi2_goals + mwu_goals)
 
         alternatives = {}
         for alternative_name in experiment.alternatives.keys():
@@ -122,23 +145,45 @@ class ExperimentsModule(nexus.NexusModule):
             alternatives_conversions = {}
             control_conversions = experiment.goal_count(CONTROL_GROUP, goal)
             control_conversion_rate = rate(control_conversions, control_participants)
+            control_conversion_distribution = experiment.goal_distribution(CONTROL_GROUP, goal)
+            control_average_goal_actions = average_actions(control_conversion_distribution, control_participants)
             for alternative_name in experiment.alternatives.keys():
                 if not alternative_name == CONTROL_GROUP:
                     alternative_conversions = experiment.goal_count(alternative_name, goal)
                     alternative_participants = experiment.participant_count(alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
-                    alternative_confidence = confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
+                    alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
+                    if goal in mwu_goals:
+                        alternative_conversion_distribution = experiment.goal_distribution(alternative_name, goal)
+                        alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
+                        alternative_distribution_confidence = mann_whitney_confidence(
+                            alternative_conversion_distribution, alternative_participants,
+                            control_conversion_distribution, control_participants)
+                    else:
+                        alternative_average_goal_actions = None
+                        alternative_distribution_confidence = None
                     alternative = {
                         'conversions': alternative_conversions,
                         'conversion_rate': alternative_conversion_rate,
                         'improvement': improvement(alternative_conversion_rate, control_conversion_rate),
                         'confidence': alternative_confidence,
+                        'average_goal_actions': alternative_average_goal_actions,
+                        'mann_whitney_confidence': alternative_distribution_confidence,
                     }
                     alternatives_conversions[alternative_name] = alternative
 
-            control = {'conversions':control_conversions, 'conversion_rate':control_conversion_rate}
+            control = {
+                'conversions':control_conversions,
+                'conversion_rate':control_conversion_rate,
+                'average_goal_actions': control_average_goal_actions,
+            }
 
-            results[goal] = {"control": control, "alternatives": alternatives_conversions, 'relevant': goal in relevant_goals or relevant_goals == [u'']}
+            results[goal] = {
+                "control": control,
+                "alternatives": alternatives_conversions,
+                "relevant": goal in relevant_goals or relevant_goals == set([u'']),
+                "mwu" : goal in mwu_goals
+            }
 
         return self.render_to_response("nexus/experiments/results.html", {
             'experiment': experiment.to_dict(),
@@ -147,6 +192,7 @@ class ExperimentsModule(nexus.NexusModule):
             'results': results,
         }, request)
 
+    @json_result
     def state(self, request):
         if not request.user.has_perm('experiments.change_experiment'):
             raise ExperimentException("You do not have permission to do that!")
@@ -173,8 +219,8 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-    state = json(state)
 
+    @json_result
     def add(self, request):
         if not request.user.has_perm('experiments.add_experiment'):
             raise ExperimentException("You do not have permission to do that!")
@@ -192,7 +238,8 @@ class ExperimentsModule(nexus.NexusModule):
             defaults     = dict(
                 switch_key = request.POST.get("switch_key"),
                 description = request.POST.get("desc"),
-                relevant_goals = request.POST.get("goals"),                
+                relevant_chi2_goals = request.POST.get("chi2_goals"),
+                relevant_mwu_goals = request.POST.get("mwu_goals"),
             ),
         )
 
@@ -205,8 +252,8 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-    add = json(add)
 
+    @json_result
     def update(self, request):
         if not request.user.has_perm('experiments.change_experiment'):
             raise ExperimentException("You do not have permission to do that!")
@@ -215,7 +262,8 @@ class ExperimentsModule(nexus.NexusModule):
 
         experiment.switch_key = request.POST.get("switch_key")
         experiment.description = request.POST.get("desc")
-        experiment.relevant_goals = request.POST.get("goals")
+        experiment.relevant_chi2_goals = request.POST.get("chi2_goals")
+        experiment.relevant_mwu_goals = request.POST.get("mwu_goals")
         experiment.save()
 
         response = {
@@ -224,10 +272,10 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-    update = json(update)
 
 
 #    @permission_required(u'experiments.delete_experiment')
+    @json_result
     def delete(self, request):
         if not request.user.has_perm('experiments.delete_experiment'):
             raise ExperimentException("You don't have permission to do that!")
@@ -236,6 +284,5 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.enrollment_set.all().delete()
         experiment.delete()
         return {'successful': True}
-    delete = json(delete)
 
 nexus.site.register(ExperimentsModule, 'experiments')
