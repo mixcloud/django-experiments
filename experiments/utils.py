@@ -61,20 +61,16 @@ class WebUser(object):
         experiment they will be enrolled, and an alternative chosen at random."""
         chosen_alternative = CONTROL_GROUP
 
-        try:
-            experiment = experiment_manager[experiment_name] # use cache where possible
-        except KeyError:
-            pass
-        else:
-            if experiment.is_displaying_alternatives():
-                experiment.ensure_alternative_exists(alternative)
+        experiment = experiment_manager.get(experiment_name, None)
+        if experiment and experiment.is_displaying_alternatives():
+            experiment.ensure_alternative_exists(alternative)
 
-                assigned_alternative = self.get_enrollment(experiment)
-                if assigned_alternative:
-                    chosen_alternative = assigned_alternative
-                elif experiment.is_accepting_new_users(request):
-                    chosen_alternative = experiment.random_alternative()
-                    self.set_enrollment(experiment, chosen_alternative)
+            assigned_alternative = self.get_enrollment(experiment)
+            if assigned_alternative:
+                chosen_alternative = assigned_alternative
+            elif experiment.is_accepting_new_users(request):
+                chosen_alternative = experiment.random_alternative()
+                self.set_enrollment(experiment, chosen_alternative)
 
         return alternative == chosen_alternative
 
@@ -150,8 +146,9 @@ class SessionUser(WebUser):
             if not enrollments:
                 return
             for experiment_name, (alternative, goals) in enrollments.items():
-                if experiment_manager[experiment_name].is_displaying_alternatives():
-                    experiment_manager[experiment_name].increment_goal_count(alternative, goal_name, self._participant_identifier())
+                experiment = experiment_manager.get(experiment_name, None)
+                if experiment and experiment.is_displaying_alternatives():
+                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier())
             return
         else:
             # TODO: store temp goals and convert later when is_human is triggered
@@ -170,7 +167,9 @@ class SessionUser(WebUser):
 
         for experiment_name, data in enrollments.items():
             alternative, goals = data
-            experiment_manager[experiment_name].increment_participant_count(alternative, self._participant_identifier())
+            experiment = experiment_manager.get(experiment_name, None)
+            if experiment:
+                experiment.increment_participant_count(alternative, self._participant_identifier())
 
     def _participant_identifier(self):
         if not self.session.session_key:
