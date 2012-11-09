@@ -5,9 +5,10 @@ from redis.exceptions import ConnectionError, ResponseError
 
 REDIS_HOST = getattr(settings, 'EXPERIMENTS_REDIS_HOST', 'localhost')
 REDIS_PORT = getattr(settings, 'EXPERIMENTS_REDIS_PORT', 6379)
+REDIS_PASSWORD = getattr(settings, 'EXPERIMENTS_REDIS_PASSWORD', None)
 REDIS_EXPERIMENTS_DB = getattr(settings, 'EXPERIMENTS_REDIS_DB', 0)
 
-r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_EXPERIMENTS_DB)
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=REDIS_EXPERIMENTS_DB)
 
 COUNTER_CACHE_KEY = 'experiments:%s'
 
