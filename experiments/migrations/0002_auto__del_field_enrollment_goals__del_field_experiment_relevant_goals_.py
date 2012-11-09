@@ -6,12 +6,6 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Deleting field 'Enrollment.goals'
-        db.delete_column('experiments_enrollment', 'goals')
-
-        # Deleting field 'Experiment.relevant_goals'
-        db.delete_column('experiments_experiment', 'relevant_goals')
-
         # Adding field 'Experiment.relevant_chi2_goals'
         db.add_column('experiments_experiment', 'relevant_chi2_goals', self.gf('django.db.models.fields.TextField')(default='', null=True, blank=True), keep_default=False)
 
@@ -21,12 +15,6 @@ class Migration(SchemaMigration):
 
     def backwards(self, orm):
         
-        # Adding field 'Enrollment.goals'
-        db.add_column('experiments_enrollment', 'goals', self.gf('jsonfield.fields.JSONField')(default='[]', blank=True), keep_default=False)
-
-        # Adding field 'Experiment.relevant_goals'
-        db.add_column('experiments_experiment', 'relevant_goals', self.gf('django.db.models.fields.TextField')(default='', null=True, blank=True), keep_default=False)
-
         # Deleting field 'Experiment.relevant_chi2_goals'
         db.delete_column('experiments_experiment', 'relevant_chi2_goals')
 
