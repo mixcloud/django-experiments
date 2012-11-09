@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.utils import simplejson     
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
@@ -12,6 +11,7 @@ from gargoyle.models import Switch
 
 import datetime
 import random
+import json
 
 from experiments import counters
 
@@ -116,7 +116,7 @@ class Experiment(models.Model):
         return data
 
     def to_dict_serialized(self):
-        return simplejson.dumps(self.to_dict(), cls=DjangoJSONEncoder)
+        return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
     def save(self, *args, **kwargs):
         # Create new switch

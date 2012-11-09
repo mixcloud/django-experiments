@@ -4,14 +4,13 @@ from functools import wraps
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.utils import simplejson
 from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.significance import chi_square_p_value, mann_whitney
 
 import nexus
-import json as json_module
+import json
 
 def rate(a, b):
     if not b or a == None:
@@ -53,7 +52,7 @@ def mann_whitney_confidence(a_distribution, a_count, b_distribution, b_count):
 class ExperimentException(Exception):
     pass
 
-def json(func):
+def json_result(func):
     "Decorator to make JSON views simpler"
     def wrapper(self, request, *args, **kwargs):
         try:
@@ -81,7 +80,7 @@ def json(func):
                 import traceback
                 traceback.print_exc()
             raise
-        return HttpResponse(simplejson.dumps(response), mimetype="application/json")
+        return HttpResponse(json.dumps(response), mimetype="application/json")
     wrapper = wraps(func)(wrapper)
     return wrapper
 
@@ -117,7 +116,7 @@ class ExperimentsModule(nexus.NexusModule):
 
         return self.render_to_response("nexus/experiments/index.html", {
             "experiments": [e.to_dict() for e in experiments],
-            "all_goals": json_module.dumps(getattr(settings, 'EXPERIMENTS_GOALS', [])),
+            "all_goals": json.dumps(getattr(settings, 'EXPERIMENTS_GOALS', [])),
             "sorted_by": sort_by,
         }, request)
 
@@ -193,6 +192,7 @@ class ExperimentsModule(nexus.NexusModule):
             'results': results,
         }, request)
 
+    @json_result
     def state(self, request):
         if not request.user.has_perm('experiments.change_experiment'):
             raise ExperimentException("You do not have permission to do that!")
@@ -219,8 +219,8 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-    state = json(state)
 
+    @json_result
     def add(self, request):
         if not request.user.has_perm('experiments.add_experiment'):
             raise ExperimentException("You do not have permission to do that!")
@@ -252,8 +252,8 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-    add = json(add)
 
+    @json_result
     def update(self, request):
         if not request.user.has_perm('experiments.change_experiment'):
             raise ExperimentException("You do not have permission to do that!")
@@ -272,10 +272,10 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-    update = json(update)
 
 
 #    @permission_required(u'experiments.delete_experiment')
+    @json_result
     def delete(self, request):
         if not request.user.has_perm('experiments.delete_experiment'):
             raise ExperimentException("You don't have permission to do that!")
@@ -284,6 +284,5 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.enrollment_set.all().delete()
         experiment.delete()
         return {'successful': True}
-    delete = json(delete)
 
 nexus.site.register(ExperimentsModule, 'experiments')
