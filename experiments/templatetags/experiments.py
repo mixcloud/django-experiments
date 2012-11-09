@@ -1,15 +1,16 @@
 from __future__ import absolute_import
 
 from django import template
+from django.core.urlresolvers import reverse
 
 from experiments.utils import create_user
-import random
+from uuid import uuid4
 
 register = template.Library()
 
 @register.inclusion_tag('experiments/goal.html')
 def experiment_goal(goal_name):
-    return { 'goal_name': goal_name, 'random_number': random.randint(1,1000000) }
+    return { 'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}) }
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative):
