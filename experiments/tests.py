@@ -111,6 +111,9 @@ class WebUserTests:
         self.request = request_factory.get('/')
         self.request.session = DatabaseSession()
 
+    def tearDown(self):
+        self.experiment.delete()
+
     def confirm_human(self, experiment_user):
         pass
 
@@ -176,6 +179,10 @@ class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
         self.request.user = User(username='brian')
         self.request.user.save()
 
+    def tearDown(self):
+        self.request.user.delete()
+        super(WebUserAuthenticatedTestCase, self).tearDown()
+
 
 class BotTestCase(TestCase):
     def setUp(self):
@@ -194,3 +201,7 @@ class BotTestCase(TestCase):
         self.assertEqual(experiment_user.get_enrollment(self.experiment), CONTROL_GROUP, "Bot alternative is not control")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE, self.request), False, "Bot in test alternative")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")
+
+    def tearDown(self):
+        self.experiment.delete()
+
