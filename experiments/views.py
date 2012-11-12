@@ -3,6 +3,7 @@ from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404
 
 from experiments.utils import create_user, record_goal
+from experiments import record_goal
 from experiments.models import Experiment
 
 TRANSPARENT_1X1_PNG = \
@@ -24,7 +25,7 @@ def confirm_human(request):
 
 @never_cache
 def record_experiment_goal(request, goal_name, cache_buster=None):
-    record_goal(request, goal_name)
+    record_goal(goal_name, request)
     return HttpResponse(TRANSPARENT_1X1_PNG, mimetype="image/png")
 
 def change_alternative(request, experiment_name, alternative_name):
