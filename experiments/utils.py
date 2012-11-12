@@ -151,9 +151,9 @@ class SessionUser(WebUser):
                     experiment.increment_goal_count(alternative, goal_name, self._participant_identifier())
             return
         else:
-            # TODO: store temp goals and convert later when is_human is triggered
-            # if verify human is called quick enough this should rarely happen.
-            pass
+            goals = self.session.get('experiments_goals', [])
+            goals.append(goal_name) # Note, duplicates are allowed
+            self.session['experiments_goals'] = goals
 
     def confirm_human(self):
         if self.session.get('experiments_verified_human', False):
@@ -165,11 +165,18 @@ class SessionUser(WebUser):
         if not enrollments:
             return
 
+        # Replay enrollments
         for experiment_name, data in enrollments.items():
             alternative, goals = data
             experiment = experiment_manager.get(experiment_name, None)
             if experiment:
                 experiment.increment_participant_count(alternative, self._participant_identifier())
+
+        # Replay goals
+        if 'experiments_goals' in self.session:
+            for goal_name in self.session['experiments_goals']:
+                self.record_goal(goal_name) # Now we have verified human, these will be set
+            del self.session['experiments_goals']
 
     def _participant_identifier(self):
         if not self.session.session_key:

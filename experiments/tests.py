@@ -167,10 +167,13 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
     def test_confirm_human_increments_counts(self):
         experiment_user = create_user(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.record_goal(TEST_GOAL)
 
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 0, "Counted participant before confirmed human")
+        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")
         experiment_user.confirm_human()
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 1, "Did not count participant after confirm human")
+        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
 
 
 class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
