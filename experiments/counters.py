@@ -39,7 +39,11 @@ def get(key):
 def get_frequencies(key):
     try:
         freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
-        return dict((int(k),int(v)) for (k,v) in r.hgetall(freq_cache_key).items() if int(v))
+        # In some cases when there are concurrent updates going on, there can
+        # briefly be a negative result for some frequency count. We discard these
+        # as they shouldn't really affect the result, and they are about to become
+        # zero anyway.
+        return dict((int(k),int(v)) for (k,v) in r.hgetall(freq_cache_key).items() if int(v) > 0)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return tuple()

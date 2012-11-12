@@ -38,11 +38,13 @@ def average_actions(distribution, count):
     total_actions = sum(actions*frequency for (actions, frequency) in distribution.items())
     return total_actions / float(count)
 
+def fixup_distribution(distribution, count):
+    zeros = count - sum(distribution.values())
+    distribution[0] = zeros
+
 def mann_whitney_confidence(a_distribution, a_count, b_distribution, b_count):
-    a_zeros = a_count - sum(a_distribution.values())
-    a_distribution[0] = a_zeros
-    b_zeros = b_count - sum(b_distribution.values())
-    b_distribution[0] = b_zeros
+    fixup_distribution(a_distribution, a_count)
+    fixup_distribution(b_distribution, b_count)
     p_value = mann_whitney(a_distribution, b_distribution)[1]
     if p_value is not None:
         return (1 - p_value * 2) * 100 # Two tailed probability
