@@ -23,17 +23,17 @@ def _record_goal(goal_name, request=None, session=None, user=None):
 
 
 def create_user(request=None, session=None, user=None):
-    if request and not user:
+    if request and hasattr(request, 'user') and not user:
         user = request.user
-    if request and not session:
+    if request and hasattr(request, 'session') and not session:
         session = request.session
 
     if request and BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
         return DummyUser()
     elif user and user.is_authenticated():
-        return AuthenticatedUser(request.user)
+        return AuthenticatedUser(user)
     elif session:
-        return SessionUser(request.session)
+        return SessionUser(session)
     else:
         return DummyUser()
 
