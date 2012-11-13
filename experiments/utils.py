@@ -31,9 +31,9 @@ def create_user(request=None, session=None, user=None):
     if request and BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
         return DummyUser()
     elif user and user.is_authenticated():
-        return AuthenticatedUser(request.user)
+        return AuthenticatedUser(user)
     elif session:
-        return SessionUser(request.session)
+        return SessionUser(session)
     else:
         return DummyUser()
 
