@@ -9,11 +9,6 @@ experiments = function() {
     };
 }();
 
-$(function(){
-    $('[data-experiments-goal]').each(function() {
-        $(this).bind('click', function() {
-            $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
-        });
-    });
+$(document).delegate('[data-experiments-goal]', 'click', function() {
+    $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
 });
-
