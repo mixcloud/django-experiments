@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.utils.unittest import TestCase
+from django.test import TestCase
 from django.test.client import RequestFactory
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
@@ -89,10 +89,6 @@ class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
         super(WebUserAuthenticatedTestCase, self).setUp()
         self.request.user = User(username='brian')
         self.request.user.save()
-
-    def tearDown(self):
-        self.request.user.delete()
-        super(WebUserAuthenticatedTestCase, self).tearDown()
 
 
 class BotTestCase(TestCase):
