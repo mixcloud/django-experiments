@@ -84,16 +84,32 @@ class Experiment(models.Model):
         counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
         counters.increment(counter_key, participant_identifier)
 
-    def increment_goal_count(self, alternative_name, goal_name, participant_identifier):
+    def increment_goal_count(self, alternative_name, goal_name, participant_identifier, count=1):
         # Increment experiment_name:alternative:participant counter
         counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
-        counters.increment(counter_key, participant_identifier)
+        counters.increment(counter_key, participant_identifier, count)
+
+    def remove_participant(self, alternative_name, participant_identifier):
+        # Remove participation record
+        counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
+        counters.clear(counter_key, participant_identifier)
+
+        # Remove goal records
+        goal_names = getattr(settings, 'EXPERIMENTS_GOALS', [])
+        for goal_name in goal_names:
+            counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
+            counters.clear(counter_key, participant_identifier)
 
     def participant_count(self, alternative):
         return counters.get(PARTICIPANT_KEY % (self.name, alternative))
 
     def goal_count(self, alternative, goal):
         return counters.get(GOAL_KEY % (self.name, alternative, goal))
+
+    def participant_goal_frequencies(self, alternative, participant_identifier):
+        goal_names = getattr(settings, 'EXPERIMENTS_GOALS', [])
+        for goal in goal_names:
+            yield goal, counters.get_frequency(GOAL_KEY % (self.name, alternative, goal), participant_identifier)
 
     def goal_distribution(self, alternative, goal):
         return counters.get_frequencies(GOAL_KEY % (self.name, alternative, goal))

@@ -23,9 +23,9 @@ def _record_goal(goal_name, request=None, session=None, user=None):
 
 
 def create_user(request=None, session=None, user=None):
-    if request and not user:
+    if request and hasattr(request, 'user') and not user:
         user = request.user
-    if request and not session:
+    if request and hasattr(request, 'session') and not session:
         session = request.session
 
     if request and BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
@@ -54,7 +54,7 @@ class WebUser(object):
         alternative will be increment, but those for the old one will not be decremented."""
         raise NotImplementedError
 
-    def record_goal(self, goal_name):
+    def record_goal(self, goal_name, count=1):
         """Record that this user has performed a particular goal
 
         This will update the goal stats for all experiments the user is enrolled in."""
@@ -85,16 +85,58 @@ class WebUser(object):
 
         return alternative == chosen_alternative
 
+    def incorporate(self, other_user):
+        """Incorporate all enrollments and goals performed by the other user
+
+        If this user is not enrolled in a given experiment, the results for the
+        other user are incorporated. For experiments this user is already
+        enrolled in the results of the other user are discarded.
+
+        This takes a relatively large amount of time for each experiment the other
+        user is enrolled in."""
+        for experiment, alternative in other_user._get_all_enrollments():
+            if not self.get_enrollment(experiment):
+                self.set_enrollment(experiment, alternative)
+                goals = experiment.participant_goal_frequencies(alternative, other_user._participant_identifier())
+                for goal_name, count in goals:
+                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
+            other_user._cancel_enrollment(experiment)
+
+    def _participant_identifier(self):
+        "Unique identifier for this user in the counter store"
+        raise NotImplementedError
+
+    def _get_all_enrollments(self):
+        "Return experiment, alternative tuples for all experiments the user is enrolled in"
+        raise NotImplementedError
+
+    def _cancel_enrollment(self, experiment):
+        "Remove the enrollment and any goals the user has against this experiment"
+        raise NotImplementedError
+
 
 class DummyUser(WebUser):
     def get_enrollment(self, experiment):
-        return CONTROL_GROUP
+        return None
     def set_enrollment(self, experiment, alternative):
         pass
-    def record_goal(self, goal_name):
+    def record_goal(self, goal_name, count=1):
         pass
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == CONTROL_GROUP
+    def incorporate(self, other_user):
+        for experiment, alternative in other_user._get_all_enrollments():
+            other_user._cancel_enrollment(experiment)
+    def _participant_identifier(self):
+        return ""
+    def _get_all_enrollments(self):
+        return []
+    def _is_enrolled_in_experiment(self, experiment):
+        return False
+    def _cancel_enrollment(self, experiment):
+        pass
+    def _get_goal_counts(self, experiment, alternative):
+        return {}
 
 
 class AuthenticatedUser(WebUser):
@@ -120,16 +162,28 @@ class AuthenticatedUser(WebUser):
             enrollment.save()
         experiment.increment_participant_count(alternative, self._participant_identifier())
 
-    def record_goal(self, goal_name):
-        enrollments = Enrollment.objects.filter(user=self.user)
-        if not enrollments:
-            return
-        for enrollment in enrollments: # Looks up by PK so no point caching.
-            if enrollment.experiment.is_displaying_alternatives():
-                enrollment.experiment.increment_goal_count(enrollment.alternative, goal_name, self._participant_identifier())
+    def record_goal(self, goal_name, count=1):
+        for experiment, alternative in self._get_all_enrollments():
+            if experiment.is_displaying_alternatives():
+                experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
 
     def _participant_identifier(self):
         return 'user:%d' % (self.user.pk,)
+
+    def _get_all_enrollments(self):
+        enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
+        if enrollments:
+            for enrollment in enrollments:
+                yield enrollment.experiment, enrollment.alternative
+
+    def _cancel_enrollment(self, experiment):
+        try:
+            enrollment = Enrollment.objects.get(user=self.user, experiment=experiment)
+        except Enrollment.DoesNotExist:
+            pass
+        else:
+            experiment.remove_participant(enrollment.alternative, self._participant_identifier())
+            enrollment.delete()
 
 
 class SessionUser(WebUser):
@@ -151,16 +205,11 @@ class SessionUser(WebUser):
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
 
-    def record_goal(self, goal_name):
+    def record_goal(self, goal_name, count=1):
         if self._is_verified_human():
-            enrollments = self.session.get('experiments_enrollments', None)
-            if not enrollments:
-                return
-            for experiment_name, (alternative, goals) in enrollments.items():
-                experiment = experiment_manager.get(experiment_name, None)
-                if experiment and experiment.is_displaying_alternatives():
-                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier())
-            return
+            for experiment, alternative in self._get_all_enrollments():
+                if experiment.is_displaying_alternatives():
+                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
         else:
             goals = self.session.get('experiments_goals', [])
             goals.append(goal_name) # Note, duplicates are allowed
@@ -172,16 +221,9 @@ class SessionUser(WebUser):
 
         self.session['experiments_verified_human'] = True
 
-        enrollments = self.session.get('experiments_enrollments', None)
-        if not enrollments:
-            return
-
         # Replay enrollments
-        for experiment_name, data in enrollments.items():
-            alternative, goals = data
-            experiment = experiment_manager.get(experiment_name, None)
-            if experiment:
-                experiment.increment_participant_count(alternative, self._participant_identifier())
+        for experiment, alternative in self._get_all_enrollments():
+            experiment.increment_participant_count(alternative, self._participant_identifier())
 
         # Replay goals
         if 'experiments_goals' in self.session:
@@ -190,12 +232,30 @@ class SessionUser(WebUser):
             del self.session['experiments_goals']
 
     def _participant_identifier(self):
-        if not self.session.session_key:
-            self.session.save() # Force session key
-        return 'session:%s' % (self.session.session_key,)
+        if 'experiments_session_key' not in self.session:
+            if not self.session.session_key:
+                self.session.save() # Force session key
+            self.session['experiments_session_key'] = self.session.session_key
+        return 'session:%s' % (self.session['experiments_session_key'],)
 
     def _is_verified_human(self):
         if getattr(settings, 'EXPERIMENTS_VERIFY_HUMAN', True):
             return self.session.get('experiments_verified_human', False)
         else:
             return True
+
+    def _get_all_enrollments(self):
+        enrollments = self.session.get('experiments_enrollments', None)
+        if enrollments:
+            for experiment_name, data in enrollments.items():
+                alternative, _ = data
+                experiment = experiment_manager.get(experiment_name, None)
+                if experiment:
+                    yield experiment, alternative
+
+    def _cancel_enrollment(self, experiment):
+        alternative = self.get_enrollment(experiment)
+        if alternative:
+            experiment.remove_participant(alternative, self._participant_identifier())
+            enrollments = self.session.get('experiments_enrollments', None)
+            del enrollments[experiment.name]
