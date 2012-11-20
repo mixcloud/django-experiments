@@ -105,7 +105,7 @@ class BotTestCase(TestCase):
     def test_bot_in_control_group(self):
         experiment_user = create_user(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
-        self.assertEqual(experiment_user.get_enrollment(self.experiment), CONTROL_GROUP, "Bot alternative is not control")
+        self.assertEqual(experiment_user.get_enrollment(self.experiment), None, "Bot enrolled in a group")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE, self.request), False, "Bot in test alternative")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")
 

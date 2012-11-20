@@ -95,7 +95,7 @@ class WebUser(object):
         This takes a relatively large amount of time for each experiment the other
         user is enrolled in."""
         for experiment, alternative in other_user._get_all_enrollments():
-            if not self._is_enrolled_in_experiment(experiment):
+            if not self.get_enrollment(experiment):
                 self.set_enrollment(experiment, alternative)
                 goals = experiment.participant_goal_frequencies(alternative, other_user._participant_identifier())
                 for goal_name, count in goals:
@@ -110,10 +110,6 @@ class WebUser(object):
         "Return experiment, alternative tuples for all experiments the user is enrolled in"
         raise NotImplementedError
 
-    def _is_enrolled_in_experiment(self, experiment):
-        "Test whether the user currently has an enrollment in the supplied experiment"
-        raise NotImplementedError
-
     def _cancel_enrollment(self, experiment):
         "Remove the enrollment and any goals the user has against this experiment"
         raise NotImplementedError
@@ -121,7 +117,7 @@ class WebUser(object):
 
 class DummyUser(WebUser):
     def get_enrollment(self, experiment):
-        return CONTROL_GROUP
+        return None
     def set_enrollment(self, experiment, alternative):
         pass
     def record_goal(self, goal_name, count=1):
@@ -179,9 +175,6 @@ class AuthenticatedUser(WebUser):
         if enrollments:
             for enrollment in enrollments:
                 yield enrollment.experiment, enrollment.alternative
-
-    def _is_enrolled_in_experiment(self, experiment):
-        return Enrollment.objects.filter(user=self.user, experiment=experiment).exists()
 
     def _cancel_enrollment(self, experiment):
         try:
@@ -259,10 +252,6 @@ class SessionUser(WebUser):
                 experiment = experiment_manager.get(experiment_name, None)
                 if experiment:
                     yield experiment, alternative
-
-    def _is_enrolled_in_experiment(self, experiment):
-        enrollments = self.session.get('experiments_enrollments', None)
-        return enrollments and experiment.name in enrollments
 
     def _cancel_enrollment(self, experiment):
         alternative = self.get_enrollment(experiment)
