@@ -4,3 +4,7 @@ from .stats import StatsTestCase
 from .mannwhitney import MannWhitneyTestCase
 from .counter import CounterTestCase
 from .webuser import WebUserAnonymousTestCase, WebUserAuthenticatedTestCase, BotTestCase
+from . import webuser_incorporate
+
+def load_tests(*args, **kwargs):
+    return webuser_incorporate.load_tests(*args, **kwargs)
