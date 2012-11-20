@@ -13,19 +13,32 @@ r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=RE
 COUNTER_CACHE_KEY = 'experiments:participants:%s'
 COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
 
-def increment(key, participant_identifier):
+def increment(key, participant_identifier, count=1):
+    if count == 0:
+        return
+
     try:
         cache_key = COUNTER_CACHE_KEY % key
         freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
-        new_value = r.hincrby(cache_key, participant_identifier, 1)
+        new_value = r.hincrby(cache_key, participant_identifier, count)
 
         # Maintain histogram of per-user counts
-        if new_value > 1:
-            r.hincrby(freq_cache_key, new_value - 1, -1)
+        if new_value > count:
+            r.hincrby(freq_cache_key, new_value - count, -1)
         r.hincrby(freq_cache_key, new_value, 1)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         pass
+
+def clear(key, participant_identifier):
+    # Remove the direct entry
+    cache_key = COUNTER_CACHE_KEY % key
+    pipe = r.pipeline()
+    freq, _ = pipe.hget(key, participant_identifier).hdel(cache_key, participant_identifier).execute()
+
+    # Remove from the histogram
+    freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+    r.hincrby(freq_cache_key, freq, -1)
 
 def get(key):
     try:
@@ -35,6 +48,14 @@ def get(key):
         # Handle Redis failures gracefully
         return 0
 
+def get_frequency(key, participant_identifier):
+    try:
+        cache_key = COUNTER_CACHE_KEY % key
+        freq = r.hget(cache_key, participant_identifier)
+        return int(freq) if freq else 0
+    except (ConnectionError, ResponseError):
+        # Handle Redis failures gracefully
+        return 0
 
 def get_frequencies(key):
     try:
