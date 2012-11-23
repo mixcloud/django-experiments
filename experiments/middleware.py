@@ -12,13 +12,22 @@ class ExperimentsMiddleware(object):
         return response
 
     def process_request(self, request):
-        experiment = request.GET.get('bucket', '')
+        """
+        Allows setting of experiment and alternative via URL Params.
+        """
+        experiment = request.GET.get('exp', '')
+        alternative = request.GET.get('alt', '')
         if experiment is not '':
             try:
                 exp = Experiment.objects.get(name=experiment)
                 user = WebUser(request)
+
+                # If user is not enrolled, set experiment and alternative.
                 if user.get_enrollment(exp) is None:
-                    user.set_enrollment(exp, random.choice(exp.alternatives.keys()))
+                    if alternative is not '':
+                        user.set_enrollment(exp, alternative)
+                    else:
+                        user.set_enrollment(exp, random.choice(exp.alternatives.keys()))
             except Experiment.DoesNotExist:
-                pass
+                return None
         return None
