@@ -24,10 +24,12 @@ class ExperimentsMiddleware(object):
 
                 # If user is not enrolled, set experiment and alternative.
                 if user.get_enrollment(exp) is None:
-                    if alternative is not '':
+                    if (alternative is not '' 
+                            and alternative in exp.alternatives):
                         user.set_enrollment(exp, alternative)
                     else:
-                        user.set_enrollment(exp, random.choice(exp.alternatives.keys()))
+                        user.set_enrollment(exp,
+                                    random.choice(exp.alternatives.keys()))
             except Experiment.DoesNotExist:
                 return None
         return None
