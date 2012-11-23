@@ -14,7 +14,7 @@ register = template.Library()
 
 @register.inclusion_tag('experiments/goal.html')
 def experiment_goal(goal_name):
-    return { 'goal_name': goal_name, 'random_number': random.randint(1,1000000) }
+    return { 'goal_name': goal_name, 'random_number': random.randint(1, 1000000) }
 
 @register.inclusion_tag('experiments/enrollments.html', takes_context=True)
 def enrollments(context):
@@ -83,3 +83,39 @@ def experiment(parser, token):
                 "{% experiment experiment_name alternative %}")
     
     return ExperimentNode(node_list, experiment_name, alternative)
+
+@register.filter(name='is_enrolled')
+def is_enrolled(request, args):
+    """
+    is_enrolled filter has the following syntax:
+
+    {% request|is_enrolled:"<experiment_name>[,<alternative>]"  %}
+
+    If alternative is no specified, this filter returns simply whether
+    the given request is enrolled in the experiment. Otherwise, the filter
+    will return whether the given request is enrolled in both experiment
+    and alternative.
+    """
+    # Create experiment_user in session if not already.
+    user = WebUser(request)
+
+    # Extract experiment and alternative from args.
+    args = args.split(',')
+    if not 0 < len(args) < 3:
+        return False
+    alternative = None
+    experiment_name = args[0].strip()
+    if len(args) == 2:
+        alternative = args[1].strip()
+
+    try:
+        exp = Experiment.objects.get(name=experiment_name)
+        alt = user.get_enrollment(exp)
+        if alt is not None:
+            if alternative is None:
+                return True
+            elif alt == alternative:
+                return True
+    except Experiment.DoesNotExist:
+        return False
+    return False
