@@ -177,6 +177,10 @@ alternative. This information is stored in the enrollment, a unique
 combination of the user, the experiment and which alternative they are
 assigned to.
 
+Make sure the experiment tag has access to the request object (not an
+issue for regular templates but you might have to manually add it
+inside an inclusion tag) or it will silently fail to work.
+
 \*\ *Experiments will be dynamically created by default if they are
 defined in a template but not in the admin. This can be overridden in
 settings.*
@@ -230,6 +234,8 @@ This will be fired when the user loads the page. This is not the only way of fir
     ::
     
         <span data-experiments-goal="registration">Complete Registration</span>
+
+Multiple goals can be recorded via the cookie using space as a separator.
 
 The goal is independent from the experiment as many experiments can all
 have the same goal. The goals are defined in the settings.py file for
