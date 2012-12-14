@@ -31,14 +31,18 @@ def increment(key, participant_identifier, count=1):
         pass
 
 def clear(key, participant_identifier):
-    # Remove the direct entry
-    cache_key = COUNTER_CACHE_KEY % key
-    pipe = r.pipeline()
-    freq, _ = pipe.hget(key, participant_identifier).hdel(cache_key, participant_identifier).execute()
+    try:
+        # Remove the direct entry
+        cache_key = COUNTER_CACHE_KEY % key
+        pipe = r.pipeline()
+        freq, _ = pipe.hget(key, participant_identifier).hdel(cache_key, participant_identifier).execute()
 
-    # Remove from the histogram
-    freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
-    r.hincrby(freq_cache_key, freq, -1)
+        # Remove from the histogram
+        freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+        r.hincrby(freq_cache_key, freq, -1)
+    except (ConnectionError, ResponseError):
+        # Handle Redis failures gracefully
+        pass
 
 def get(key):
     try:
