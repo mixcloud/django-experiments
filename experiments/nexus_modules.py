@@ -138,6 +138,7 @@ class ExperimentsModule(nexus.NexusModule):
         alternatives = {}
         for alternative_name in experiment.alternatives.keys():
             alternatives[alternative_name] = experiment.participant_count(alternative_name)
+        alternatives = sorted(alternatives.items())
 
         control_participants = experiment.participant_count(CONTROL_GROUP)
 
@@ -182,7 +183,7 @@ class ExperimentsModule(nexus.NexusModule):
 
             results[goal] = {
                 "control": control,
-                "alternatives": alternatives_conversions,
+                "alternatives": sorted(alternatives_conversions.items()),
                 "relevant": goal in relevant_goals or relevant_goals == set([u'']),
                 "mwu" : goal in mwu_goals
             }

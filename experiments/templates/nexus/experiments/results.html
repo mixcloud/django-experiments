@@ -76,7 +76,7 @@
             <tr>
                 <td class="goal odd"></td>
                 <td class="conversion1 even">control <small>({{ control_participants|intcomma }})</small></td>
-                {% for alternative, participants in alternatives.items %}
+                {% for alternative, participants in alternatives %}
                      {% if alternative != 'control' %}
                          <td colspan="3" class="conversion2 {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">{{ alternative }} <small>({{ participants|intcomma }})</small></td>
                      {% endif %}
@@ -99,7 +99,7 @@
                         {% endif %}
                         )</small></td>
 
-                    {% for alternative_name, results in data.alternatives.items %}
+                    {% for alternative_name, results in data.alternatives %}
                         {% if alternative_name != 'control' %}
                             <td class="conversion2 {% if forloop.counter|divisibleby:2 %}even{% else %}odd{% endif %}">
                                 {{ results.conversions|intcomma }}<small> ({{ results.conversion_rate|floatformat:2 }}%
