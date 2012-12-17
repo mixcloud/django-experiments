@@ -15,11 +15,11 @@ BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|li
 
 
 def record_goal(request, goal_name):
-    warnings.warn('experiments.utils.record_goal is deprecated. Please use participant().goal() instead.', DeprecationWarning)
     _record_goal(goal_name, request)
 
 
 def _record_goal(goal_name, request=None, session=None, user=None):
+    warnings.warn('record_goal is deprecated. Please use participant().goal() instead.', DeprecationWarning)
     experiment_user = participant(request, session, user)
     experiment_user.goal(goal_name)
 
