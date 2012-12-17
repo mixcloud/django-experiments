@@ -16,7 +16,7 @@ class WebUserIncorporateTestCase(object):
 
         try:
             experiment = Experiment.objects.create(name='backgroundcolor', state=ENABLED_STATE)
-            self.incorporated.set_enrollment(experiment, 'blue')
+            self.incorporated.set_alternative('backgroundcolor', 'blue')
             self.incorporating.incorporate(self.incorporated)
             self.assertEqual(self.incorporating.get_alternative('backgroundcolor'), 'blue')
         finally:

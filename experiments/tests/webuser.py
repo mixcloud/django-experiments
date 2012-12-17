@@ -35,13 +35,13 @@ class WebUserTests:
 
     def test_user_enrolls(self):
         experiment_user = participant(self.request)
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), TEST_ALTERNATIVE)
 
     def test_record_goal_increments_counts(self):
         experiment_user = participant(self.request)
         self.confirm_human(experiment_user)
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
 
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0)
         experiment_user.goal(TEST_GOAL)
@@ -50,7 +50,7 @@ class WebUserTests:
     def test_can_record_goal_multiple_times(self):
         experiment_user = participant(self.request)
         self.confirm_human(experiment_user)
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
 
         experiment_user.goal(TEST_GOAL)
         experiment_user.goal(TEST_GOAL)
@@ -61,7 +61,7 @@ class WebUserTests:
         experiment_user = participant(self.request)
         self.confirm_human(experiment_user)
 
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 1, "Did not count participant after confirm human")
 
 
@@ -75,7 +75,7 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
 
     def test_confirm_human_increments_counts(self):
         experiment_user = participant(self.request)
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         experiment_user.goal(TEST_GOAL)
 
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 0, "Counted participant before confirmed human")
@@ -100,12 +100,12 @@ class BotTestCase(TestCase):
 
     def test_user_does_not_enroll(self):
         experiment_user = participant(self.request)
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(self.experiment.participant_count(TEST_ALTERNATIVE), 0, "Bot counted towards results")
 
     def test_bot_in_control_group(self):
         experiment_user = participant(self.request)
-        experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), 'control', "Bot enrolled in a group")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE, self.request), False, "Bot in test alternative")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")

@@ -57,7 +57,7 @@ class WebUser(object):
                 chosen_alternative = assigned_alternative
             elif experiment.is_accepting_new_users(None): # TODO: Parameter here
                 chosen_alternative = experiment.random_alternative()
-                self.set_enrollment(experiment, chosen_alternative)
+                self._set_enrollment(experiment, chosen_alternative)
 
         return chosen_alternative
 
@@ -69,6 +69,16 @@ class WebUser(object):
             if alternative is not None:
                 return alternative
         return 'control'
+
+    def set_alternative(self, experiment_name, alternative):
+        """Explicitly set the alternative the user is enrolled in for the specified experiment.
+
+        This allows you to change a user between alternatives. The user and goal counts for the new
+        alternative will be increment, but those for the old one will not be decremented. The user will
+        be enrolled in the experiment even if the experiment would not normally accept this user."""
+        experiment = experiment_manager.get(experiment_name, None)
+        if experiment:
+            self._set_enrollment(experiment, alternative)
 
     def goal(self, goal_name, count=1):
         """Record that this user has performed a particular goal
@@ -91,7 +101,7 @@ class WebUser(object):
         user is enrolled in."""
         for experiment, alternative in other_user._get_all_enrollments():
             if not self._get_enrollment(experiment):
-                self.set_enrollment(experiment, alternative)
+                self._set_enrollment(experiment, alternative)
                 goals = experiment.participant_goal_frequencies(alternative, other_user._participant_identifier())
                 for goal_name, count in goals:
                     experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
@@ -103,7 +113,7 @@ class WebUser(object):
         `experiment` is an instance of Experiment. If the user is not currently enrolled returns None."""
         raise NotImplementedError
 
-    def set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative):
         """Explicitly set the alternative the user is enrolled in for the specified experiment.
 
         This allows you to change a user between alternatives. The user and goal counts for the new
@@ -136,7 +146,7 @@ class WebUser(object):
 class DummyUser(WebUser):
     def _get_enrollment(self, experiment):
         return None
-    def set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative):
         pass
     def goal(self, goal_name, count=1):
         pass
@@ -168,7 +178,7 @@ class AuthenticatedUser(WebUser):
         except Enrollment.DoesNotExist:
             return None
 
-    def set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative):
         try:
             enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative':alternative})
         except IntegrityError, exc:
@@ -216,7 +226,7 @@ class SessionUser(WebUser):
             return alternative
         return None
 
-    def set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative):
         enrollments = self.session.get('experiments_enrollments', {})
         enrollments[experiment.name] = (alternative, [])
         self.session['experiments_enrollments'] = enrollments

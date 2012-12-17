@@ -33,6 +33,5 @@ def change_alternative(request, experiment_name, alternative_name):
     if alternative_name not in experiment.alternatives.keys():
         return HttpResponseBadRequest()
 
-    experiment_user = participant(request)
-    experiment_user.set_enrollment(experiment, alternative_name)
+    participant(request).set_alternative(experiment_name, alternative_name)
     return HttpResponse('OK')
