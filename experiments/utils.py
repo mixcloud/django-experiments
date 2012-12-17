@@ -33,9 +33,9 @@ def participant(request=None, session=None, user=None):
     if request and BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
         return DummyUser()
     elif user and user.is_authenticated():
-        return AuthenticatedUser(user)
+        return AuthenticatedUser(user, request)
     elif session:
-        return SessionUser(session)
+        return SessionUser(session, request)
     else:
         return DummyUser()
 
@@ -55,7 +55,7 @@ class WebUser(object):
             assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:
                 chosen_alternative = assigned_alternative
-            elif experiment.is_accepting_new_users(None): # TODO: Parameter here
+            elif experiment.is_accepting_new_users(self._gargoyle_key()):
                 chosen_alternative = experiment.random_alternative()
                 self._set_enrollment(experiment, chosen_alternative)
 
@@ -142,6 +142,9 @@ class WebUser(object):
         "Remove the enrollment and any goals the user has against this experiment"
         raise NotImplementedError
 
+    def _gargoyle_key(self):
+        return None
+
 
 class DummyUser(WebUser):
     def _get_enrollment(self, experiment):
@@ -168,8 +171,9 @@ class DummyUser(WebUser):
 
 
 class AuthenticatedUser(WebUser):
-    def __init__(self, user):
+    def __init__(self, user, request=None):
         self.user = user
+        self.request = request
         super(AuthenticatedUser,self).__init__()
 
     def _get_enrollment(self, experiment):
@@ -213,10 +217,14 @@ class AuthenticatedUser(WebUser):
             experiment.remove_participant(enrollment.alternative, self._participant_identifier())
             enrollment.delete()
 
+    def _gargoyle_key(self):
+        return self.request or self.user
+
 
 class SessionUser(WebUser):
-    def __init__(self, session):
+    def __init__(self, session, request=None):
         self.session = session
+        self.request = request
         super(SessionUser,self).__init__()
 
     def _get_enrollment(self, experiment):
@@ -287,3 +295,8 @@ class SessionUser(WebUser):
             experiment.remove_participant(alternative, self._participant_identifier())
             enrollments = self.session.get('experiments_enrollments', None)
             del enrollments[experiment.name]
+
+    def _gargoyle_key(self):
+        return self.request
+
+__all__ = ['participant', 'record_goal']
