@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import IntegrityError
+from django.contrib.auth.models import User
+from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment, CONTROL_GROUP
 from experiments.manager import experiment_manager
@@ -13,16 +15,16 @@ BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|li
 
 
 def record_goal(request, goal_name):
-    warnings.warn('experiments.utils.record_goal is deprecated. Please use experiments.record_goal instead. (Note the signature has changed.)', DeprecationWarning)
+    warnings.warn('experiments.utils.record_goal is deprecated. Please use participant().goal() instead.', DeprecationWarning)
     _record_goal(goal_name, request)
 
 
 def _record_goal(goal_name, request=None, session=None, user=None):
-    experiment_user = create_user(request, session, user)
+    experiment_user = participant(request, session, user)
     experiment_user.record_goal(goal_name)
 
 
-def create_user(request=None, session=None, user=None):
+def participant(request=None, session=None, user=None):
     if request and hasattr(request, 'user') and not user:
         user = request.user
     if request and hasattr(request, 'session') and not session:
