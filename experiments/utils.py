@@ -45,7 +45,21 @@ class WebUser(object):
 
     def enroll(self, experiment_name, alternatives):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
-        pass
+        chosen_alternative = CONTROL_GROUP
+
+        experiment = experiment_manager.get(experiment_name, None)
+        if experiment and experiment.is_displaying_alternatives():
+            for alternative in alternatives:
+                experiment.ensure_alternative_exists(alternative)
+
+            assigned_alternative = self._get_enrollment(experiment)
+            if assigned_alternative:
+                chosen_alternative = assigned_alternative
+            elif experiment.is_accepting_new_users(None): # TODO: Parameter here
+                chosen_alternative = experiment.random_alternative()
+                self.set_enrollment(experiment, chosen_alternative)
+
+        return chosen_alternative
 
     def get_alternative(self, experiment_name):
         """Get the alternative this use is enrolled in. If not enrolled in the experiment returns 'control'"""
@@ -97,24 +111,13 @@ class WebUser(object):
         raise NotImplementedError
 
     def is_enrolled(self, experiment_name, alternative, request):
+        """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
         """Test if the user is enrolled in the supplied alternative for the given experiment.
 
         The supplied alternative will be added to the list of possible alternatives for the
         experiment if it is not already there. If the user is not yet enrolled in the supplied
         experiment they will be enrolled, and an alternative chosen at random."""
-        chosen_alternative = CONTROL_GROUP
-
-        experiment = experiment_manager.get(experiment_name, None)
-        if experiment and experiment.is_displaying_alternatives():
-            experiment.ensure_alternative_exists(alternative)
-
-            assigned_alternative = self._get_enrollment(experiment)
-            if assigned_alternative:
-                chosen_alternative = assigned_alternative
-            elif experiment.is_accepting_new_users(request):
-                chosen_alternative = experiment.random_alternative()
-                self.set_enrollment(experiment, chosen_alternative)
-
+        chosen_alternative = self.enroll(experiment_name, [alternative])
         return alternative == chosen_alternative
 
     def _participant_identifier(self):
