@@ -11,10 +11,11 @@ from experiments.utils import participant
 request_factory = RequestFactory()
 TEST_ALTERNATIVE = 'blue'
 TEST_GOAL = 'buy'
+EXPERIMENT_NAME='backgroundcolor'
 
 class WebUserTests:
     def setUp(self):
-        self.experiment = Experiment(name='backgroundcolor', state=ENABLED_STATE)
+        self.experiment = Experiment(name=EXPERIMENT_NAME, state=ENABLED_STATE)
         self.experiment.save()
         self.request = request_factory.get('/')
         self.request.session = DatabaseSession()
@@ -30,12 +31,12 @@ class WebUserTests:
 
     def enrollment_initially_none(self,):
         experiment_user = participant(self.request)
-        self.assertEqual(experiment_user.get_enrollment(self.experiment), None)
+        self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), None)
 
     def test_user_enrolls(self):
         experiment_user = participant(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
-        self.assertEqual(experiment_user.get_enrollment(self.experiment), TEST_ALTERNATIVE)
+        self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), TEST_ALTERNATIVE)
 
     def test_record_goal_increments_counts(self):
         experiment_user = participant(self.request)
@@ -105,7 +106,7 @@ class BotTestCase(TestCase):
     def test_bot_in_control_group(self):
         experiment_user = participant(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
-        self.assertEqual(experiment_user.get_enrollment(self.experiment), None, "Bot enrolled in a group")
+        self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), 'control', "Bot enrolled in a group")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE, self.request), False, "Bot in test alternative")
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")
 

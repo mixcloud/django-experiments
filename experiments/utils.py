@@ -43,7 +43,47 @@ def participant(request=None, session=None, user=None):
 class WebUser(object):
     """Represents a user (either authenticated or session based) which can take part in experiments"""
 
-    def get_enrollment(self, experiment):
+    def enroll(self, experiment_name, alternatives):
+        """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
+        pass
+
+    def get_alternative(self, experiment_name):
+        """Get the alternative this use is enrolled in. If not enrolled in the experiment returns 'control'"""
+        experiment = experiment_manager.get(experiment_name, None)
+        if experiment and experiment.is_displaying_alternatives():
+            alternative = self._get_enrollment(experiment)
+            if alternative is not None:
+                return alternative
+        return 'control'
+
+    def goal(self, goal_name, count=1):
+        """Record that this user has performed a particular goal
+
+        This will update the goal stats for all experiments the user is enrolled in."""
+        raise NotImplementedError
+
+    def confirm_human(self):
+        """Mark that this is a real human being (not a bot) and thus results should be counted"""
+        pass
+
+    def incorporate(self, other_user):
+        """Incorporate all enrollments and goals performed by the other user
+
+        If this user is not enrolled in a given experiment, the results for the
+        other user are incorporated. For experiments this user is already
+        enrolled in the results of the other user are discarded.
+
+        This takes a relatively large amount of time for each experiment the other
+        user is enrolled in."""
+        for experiment, alternative in other_user._get_all_enrollments():
+            if not self._get_enrollment(experiment):
+                self.set_enrollment(experiment, alternative)
+                goals = experiment.participant_goal_frequencies(alternative, other_user._participant_identifier())
+                for goal_name, count in goals:
+                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
+            other_user._cancel_enrollment(experiment)
+
+    def _get_enrollment(self, experiment):
         """Get the name of the alternative this user is enrolled in for the specified experiment
         
         `experiment` is an instance of Experiment. If the user is not currently enrolled returns None."""
@@ -55,16 +95,6 @@ class WebUser(object):
         This allows you to change a user between alternatives. The user and goal counts for the new
         alternative will be increment, but those for the old one will not be decremented."""
         raise NotImplementedError
-
-    def goal(self, goal_name, count=1):
-        """Record that this user has performed a particular goal
-
-        This will update the goal stats for all experiments the user is enrolled in."""
-        raise NotImplementedError
-
-    def confirm_human(self):
-        """Mark that this is a real human being (not a bot) and thus results should be counted"""
-        pass
 
     def is_enrolled(self, experiment_name, alternative, request):
         """Test if the user is enrolled in the supplied alternative for the given experiment.
@@ -78,7 +108,7 @@ class WebUser(object):
         if experiment and experiment.is_displaying_alternatives():
             experiment.ensure_alternative_exists(alternative)
 
-            assigned_alternative = self.get_enrollment(experiment)
+            assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:
                 chosen_alternative = assigned_alternative
             elif experiment.is_accepting_new_users(request):
@@ -86,23 +116,6 @@ class WebUser(object):
                 self.set_enrollment(experiment, chosen_alternative)
 
         return alternative == chosen_alternative
-
-    def incorporate(self, other_user):
-        """Incorporate all enrollments and goals performed by the other user
-
-        If this user is not enrolled in a given experiment, the results for the
-        other user are incorporated. For experiments this user is already
-        enrolled in the results of the other user are discarded.
-
-        This takes a relatively large amount of time for each experiment the other
-        user is enrolled in."""
-        for experiment, alternative in other_user._get_all_enrollments():
-            if not self.get_enrollment(experiment):
-                self.set_enrollment(experiment, alternative)
-                goals = experiment.participant_goal_frequencies(alternative, other_user._participant_identifier())
-                for goal_name, count in goals:
-                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
-            other_user._cancel_enrollment(experiment)
 
     def _participant_identifier(self):
         "Unique identifier for this user in the counter store"
@@ -118,7 +131,7 @@ class WebUser(object):
 
 
 class DummyUser(WebUser):
-    def get_enrollment(self, experiment):
+    def _get_enrollment(self, experiment):
         return None
     def set_enrollment(self, experiment, alternative):
         pass
@@ -146,7 +159,7 @@ class AuthenticatedUser(WebUser):
         self.user = user
         super(AuthenticatedUser,self).__init__()
 
-    def get_enrollment(self, experiment):
+    def _get_enrollment(self, experiment):
         try:
             return Enrollment.objects.get(user=self.user, experiment=experiment).alternative
         except Enrollment.DoesNotExist:
@@ -193,7 +206,7 @@ class SessionUser(WebUser):
         self.session = session
         super(SessionUser,self).__init__()
 
-    def get_enrollment(self, experiment):
+    def _get_enrollment(self, experiment):
         enrollments = self.session.get('experiments_enrollments', None)
         if enrollments and experiment.name in enrollments:
             alternative, goals = enrollments[experiment.name]
@@ -256,7 +269,7 @@ class SessionUser(WebUser):
                     yield experiment, alternative
 
     def _cancel_enrollment(self, experiment):
-        alternative = self.get_enrollment(experiment)
+        alternative = self._get_enrollment(experiment)
         if alternative:
             experiment.remove_participant(alternative, self._participant_identifier())
             enrollments = self.session.get('experiments_enrollments', None)

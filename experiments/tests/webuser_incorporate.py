@@ -18,7 +18,7 @@ class WebUserIncorporateTestCase(object):
             experiment = Experiment.objects.create(name='backgroundcolor', state=ENABLED_STATE)
             self.incorporated.set_enrollment(experiment, 'blue')
             self.incorporating.incorporate(self.incorporated)
-            self.assertEqual(self.incorporating.get_enrollment(experiment), 'blue')
+            self.assertEqual(self.incorporating.get_alternative('backgroundcolor'), 'blue')
         finally:
             experiment.delete()
 
