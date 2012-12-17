@@ -49,7 +49,8 @@ class WebUser(object):
 
         experiment = experiment_manager.get(experiment_name, None)
         if experiment and experiment.is_displaying_alternatives():
-            for alternative in alternatives:
+            alternatives_including_control = alternatives + [CONTROL_GROUP]
+            for alternative in alternatives_including_control:
                 experiment.ensure_alternative_exists(alternative)
 
             assigned_alternative = self._get_enrollment(experiment)
