@@ -43,7 +43,7 @@ class WebUserTests:
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
 
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0)
-        experiment_user.record_goal(TEST_GOAL)
+        experiment_user.goal(TEST_GOAL)
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_can_record_goal_multiple_times(self):
@@ -51,9 +51,9 @@ class WebUserTests:
         self.confirm_human(experiment_user)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
 
-        experiment_user.record_goal(TEST_GOAL)
-        experiment_user.record_goal(TEST_GOAL)
-        experiment_user.record_goal(TEST_GOAL)
+        experiment_user.goal(TEST_GOAL)
+        experiment_user.goal(TEST_GOAL)
+        experiment_user.goal(TEST_GOAL)
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_counts_increment_immediately_once_confirmed_human(self):
@@ -75,7 +75,7 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
     def test_confirm_human_increments_counts(self):
         experiment_user = participant(self.request)
         experiment_user.set_enrollment(self.experiment, TEST_ALTERNATIVE)
-        experiment_user.record_goal(TEST_GOAL)
+        experiment_user.goal(TEST_GOAL)
 
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 0, "Counted participant before confirmed human")
         self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")

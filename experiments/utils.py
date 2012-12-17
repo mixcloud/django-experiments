@@ -21,7 +21,7 @@ def record_goal(request, goal_name):
 
 def _record_goal(goal_name, request=None, session=None, user=None):
     experiment_user = participant(request, session, user)
-    experiment_user.record_goal(goal_name)
+    experiment_user.goal(goal_name)
 
 
 def participant(request=None, session=None, user=None):
@@ -56,7 +56,7 @@ class WebUser(object):
         alternative will be increment, but those for the old one will not be decremented."""
         raise NotImplementedError
 
-    def record_goal(self, goal_name, count=1):
+    def goal(self, goal_name, count=1):
         """Record that this user has performed a particular goal
 
         This will update the goal stats for all experiments the user is enrolled in."""
@@ -122,7 +122,7 @@ class DummyUser(WebUser):
         return None
     def set_enrollment(self, experiment, alternative):
         pass
-    def record_goal(self, goal_name, count=1):
+    def goal(self, goal_name, count=1):
         pass
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == CONTROL_GROUP
@@ -164,7 +164,7 @@ class AuthenticatedUser(WebUser):
             enrollment.save()
         experiment.increment_participant_count(alternative, self._participant_identifier())
 
-    def record_goal(self, goal_name, count=1):
+    def goal(self, goal_name, count=1):
         for experiment, alternative in self._get_all_enrollments():
             if experiment.is_displaying_alternatives():
                 experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
@@ -207,7 +207,7 @@ class SessionUser(WebUser):
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
 
-    def record_goal(self, goal_name, count=1):
+    def goal(self, goal_name, count=1):
         if self._is_verified_human():
             for experiment, alternative in self._get_all_enrollments():
                 if experiment.is_displaying_alternatives():
@@ -230,7 +230,7 @@ class SessionUser(WebUser):
         # Replay goals
         if 'experiments_goals' in self.session:
             for goal_name in self.session['experiments_goals']:
-                self.record_goal(goal_name) # Now we have verified human, these will be set
+                self.goal(goal_name) # Now we have verified human, these will be set
             del self.session['experiments_goals']
 
     def _participant_identifier(self):
