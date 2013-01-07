@@ -6,6 +6,9 @@ from django.contrib.auth.models import User
 from experiments.utils import DummyUser, SessionUser, AuthenticatedUser
 from experiments.models import Experiment, ENABLED_STATE
 
+TEST_ALTERNATIVE = 'blue'
+EXPERIMENT_NAME='backgroundcolor'
+
 class WebUserIncorporateTestCase(object):
     def test_can_incorporate(self):
         self.incorporating.incorporate(self.incorporated)
@@ -15,10 +18,10 @@ class WebUserIncorporateTestCase(object):
             return
 
         try:
-            experiment = Experiment.objects.create(name='backgroundcolor', state=ENABLED_STATE)
-            self.incorporated.set_alternative('backgroundcolor', 'blue')
+            experiment = Experiment.objects.create(name=EXPERIMENT_NAME, state=ENABLED_STATE)
+            self.incorporated.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
             self.incorporating.incorporate(self.incorporated)
-            self.assertEqual(self.incorporating.get_alternative('backgroundcolor'), 'blue')
+            self.assertEqual(self.incorporating.get_alternative(EXPERIMENT_NAME), TEST_ALTERNATIVE)
         finally:
             experiment.delete()
 
