@@ -63,7 +63,7 @@ class WebUser(object):
         return chosen_alternative
 
     def get_alternative(self, experiment_name):
-        """Get the alternative this use is enrolled in. If not enrolled in the experiment returns 'control'"""
+        """Get the alternative this user is enrolled in. If not enrolled in the experiment returns 'control'"""
         experiment = experiment_manager.get(experiment_name, None)
         if experiment and experiment.is_displaying_alternatives():
             alternative = self._get_enrollment(experiment)

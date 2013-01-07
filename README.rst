@@ -196,7 +196,9 @@ different result based on the alternative:
 
 If you wish to find out what experiment alternative a user is part of, but not
 enroll them if they are not yet a member, you can use get_alternative. This
-will return 'control' if the user is not enrolled.
+will return 'control' if the user is not enrolled. 'control' is also returned
+for users who are enrolled in the experiment but have been assigned to the
+control group - there is no way to differentiate between these cases.
 
 ::
 
@@ -206,6 +208,15 @@ will return 'control' if the user is not enrolled.
         header_text = get_polite_text_summary()
     elif alternative == 'control':
         header_text = get_normal_text_summary()
+
+By default the participant function expects a HttpRequest object, but you can
+alternatively pass a user or session as a keyword argument
+
+::
+
+    participant(user=current_user).get_alternative('register_text')
+    participant(session=session).get_alternative('register_text')
+
 
 \*\ *Experiments will be dynamically created by default if they are
 defined in a template but not in the admin. This can be overridden in
