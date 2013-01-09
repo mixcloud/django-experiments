@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from django import template
 from django.core.urlresolvers import reverse
 
-from experiments.utils import create_user
+from experiments.utils import participant
 from uuid import uuid4
 
 register = template.Library()
@@ -25,7 +25,7 @@ class ExperimentNode(template.Node):
         if request and hasattr(request, 'experiment_user'):
             user = request.experiment_user
         else:
-            user = create_user(request)
+            user = participant(request)
 
         # Should we render?
         if user.is_enrolled(self.experiment_name, self.alternative, request):
