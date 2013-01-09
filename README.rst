@@ -181,9 +181,47 @@ Make sure the experiment tag has access to the request object (not an
 issue for regular templates but you might have to manually add it
 inside an inclusion tag) or it will silently fail to work.
 
+You can also enroll users in experiments and find out what alternative they
+are part of from python. To enroll a user in an experiment and show a
+different result based on the alternative:
+
+::
+
+    from experiments.utils import participant
+    alternative = participant(request).enroll('register_text', ['polite'])
+    if alternative == 'polite':
+        text_to_show = get_polite_text()
+    elif alternative == 'control':
+        text_to_show = get_normal_text()
+
+If you wish to find out what experiment alternative a user is part of, but not
+enroll them if they are not yet a member, you can use get_alternative. This
+will return 'control' if the user is not enrolled. 'control' is also returned
+for users who are enrolled in the experiment but have been assigned to the
+control group - there is no way to differentiate between these cases.
+
+::
+
+    from experiments.utils import participant
+    alternative = participant(request).get_alternative('register_text')
+    if alternative == 'polite':
+        header_text = get_polite_text_summary()
+    elif alternative == 'control':
+        header_text = get_normal_text_summary()
+
+By default the participant function expects a HttpRequest object, but you can
+alternatively pass a user or session as a keyword argument
+
+::
+
+    participant(user=current_user).get_alternative('register_text')
+    participant(session=session).get_alternative('register_text')
+
+
 \*\ *Experiments will be dynamically created by default if they are
 defined in a template but not in the admin. This can be overridden in
 settings.*
+
 
 Goals
 ~~~~~
@@ -217,9 +255,9 @@ This will be fired when the user loads the page. This is not the only way of fir
 
     ::
     
-        from experiments.utils import record_goal
+        from experiments.utils import participant
     
-        record_goal(request, 'registration')
+        participant(request).goal('registration')
 
 3. **JavaScript onclick**:
 
