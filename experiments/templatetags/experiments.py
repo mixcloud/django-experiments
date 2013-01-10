@@ -54,6 +54,10 @@ class ExperimentNode(template.Node):
                 request.experiment_user = WebUser(request)
             user = request.experiment_user
 
+        # Set the alternative saved in session by middleware if available.
+        if request.session['experiment'] == self.experiment_name:
+            self.alternative = request.session['alternative']
+
         # Should we render?
         if Experiment.show_alternative(self.experiment_name, user, self.alternative, experiment_manager):
             response = self.node_list.render(context)

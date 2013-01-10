@@ -138,10 +138,6 @@ class WebUser(object):
             # Bot/Spider, so don't enroll
             return
 
-        # Set the alternative saved in session by middleware if available.
-        if experiment == self.session['experiment']:
-            alternative = self.session['alternative']
-
         if not self.is_anonymous():
             # Registered User
             try:
