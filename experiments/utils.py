@@ -95,7 +95,9 @@ class WebUser(object):
         """Record that this user has performed a particular goal
 
         This will update the goal stats for all experiments the user is enrolled in."""
-        raise NotImplementedError
+        for experiment, alternative in self._get_all_enrollments():
+            if experiment.is_displaying_alternatives():
+                self._experiment_goal(experiment, alternative, goal_name, count)
 
     def confirm_human(self):
         """Mark that this is a real human being (not a bot) and thus results should be counted"""
@@ -153,6 +155,10 @@ class WebUser(object):
         "Remove the enrollment and any goals the user has against this experiment"
         raise NotImplementedError
 
+    def _experiment_goal(self, experiment, alternative, goal_name, count):
+        "Record a goal against a particular experiment and alternative"
+        raise NotImplementedError
+
     def _gargoyle_key(self):
         return None
 
@@ -161,8 +167,6 @@ class DummyUser(WebUser):
     def _get_enrollment(self, experiment):
         return None
     def _set_enrollment(self, experiment, alternative):
-        pass
-    def goal(self, goal_name, count=1):
         pass
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == CONTROL_GROUP
@@ -179,6 +183,8 @@ class DummyUser(WebUser):
         pass
     def _get_goal_counts(self, experiment, alternative):
         return {}
+    def _experiment_goal(self, experiment, alternative, goal_name, count):
+        pass
 
 
 class AuthenticatedUser(WebUser):
@@ -211,11 +217,6 @@ class AuthenticatedUser(WebUser):
             enrollment.save()
         experiment.increment_participant_count(alternative, self._participant_identifier())
 
-    def goal(self, goal_name, count=1):
-        for experiment, alternative in self._get_all_enrollments():
-            if experiment.is_displaying_alternatives():
-                experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
-
     def _participant_identifier(self):
         return 'user:%d' % (self.user.pk,)
 
@@ -233,6 +234,9 @@ class AuthenticatedUser(WebUser):
         else:
             experiment.remove_participant(enrollment.alternative, self._participant_identifier())
             enrollment.delete()
+
+    def _experiment_goal(self, experiment, alternative, goal_name, count):
+        experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
 
     def _gargoyle_key(self):
         return self.request or self.user
@@ -258,16 +262,6 @@ class SessionUser(WebUser):
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
 
-    def goal(self, goal_name, count=1):
-        if self._is_verified_human():
-            for experiment, alternative in self._get_all_enrollments():
-                if experiment.is_displaying_alternatives():
-                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
-        else:
-            goals = self.session.get('experiments_goals', [])
-            goals.append(goal_name) # Note, duplicates are allowed
-            self.session['experiments_goals'] = goals
-
     def confirm_human(self):
         if self.session.get('experiments_verified_human', False):
             return
@@ -280,8 +274,9 @@ class SessionUser(WebUser):
 
         # Replay goals
         if 'experiments_goals' in self.session:
-            for goal_name in self.session['experiments_goals']:
-                self.goal(goal_name) # Now we have verified human, these will be set
+            for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
+                experiment = experiment_manager.get(experiment_name, None)
+                experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
             del self.session['experiments_goals']
 
     def _participant_identifier(self):
@@ -313,7 +308,16 @@ class SessionUser(WebUser):
             enrollments = self.session.get('experiments_enrollments', None)
             del enrollments[experiment.name]
 
+    def _experiment_goal(self, experiment, alternative, goal_name, count):
+        if self._is_verified_human():
+            experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
+        else:
+            goals = self.session.get('experiments_goals', [])
+            goals.append( (experiment.name, alternative, goal_name, count) )
+            self.session['experiments_goals'] = goals
+
     def _gargoyle_key(self):
         return self.request
+
 
 __all__ = ['participant', 'record_goal']
