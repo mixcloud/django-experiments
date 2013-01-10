@@ -173,17 +173,23 @@ class DummyUser(WebUser):
 
 class AuthenticatedUser(WebUser):
     def __init__(self, user, request=None):
+        self._enrollment_cache = {}
         self.user = user
         self.request = request
         super(AuthenticatedUser,self).__init__()
 
     def _get_enrollment(self, experiment):
-        try:
-            return Enrollment.objects.get(user=self.user, experiment=experiment).alternative
-        except Enrollment.DoesNotExist:
-            return None
+        if experiment.name not in self._enrollment_cache:
+            try:
+                self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment).alternative
+            except Enrollment.DoesNotExist:
+                self._enrollment_cache[experiment.name] = None
+        return self._enrollment_cache[experiment.name]
 
     def _set_enrollment(self, experiment, alternative):
+        if experiment.name in self._enrollment_cache:
+            del self._enrollment_cache[experiment.name]
+
         try:
             enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative':alternative})
         except IntegrityError, exc:
