@@ -165,7 +165,8 @@ class Enrollment(models.Model):
     """ A participant in a split testing experiment """
     user = models.ForeignKey(User, null=True)
     experiment = models.ForeignKey(Experiment)
-    enrollment_date = models.DateField(db_index=True, auto_now_add=True)
+    enrollment_date = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
 
     class Meta:

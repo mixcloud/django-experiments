@@ -52,3 +52,9 @@ def experiment(parser, token):
                 "{% experiment experiment_name alternative %}")
     
     return ExperimentNode(node_list, experiment_name, alternative)
+
+@register.simple_tag(takes_context=True)
+def visit(context):
+    request = context.get('request', None)
+    participant(request).visit()
+    return ""

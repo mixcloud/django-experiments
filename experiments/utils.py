@@ -5,10 +5,15 @@ from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment, CONTROL_GROUP
 from experiments.manager import experiment_manager
+from experiments.dateutils import now
+
 from collections import namedtuple
 
 import re
 import warnings
+from datetime import timedelta
+
+VISIT_COUNT_GOAL = '_retention_visits'
 
 
 # Known bots user agents to drop from experiments
@@ -50,7 +55,7 @@ def _get_participant(request, session, user):
     else:
         return DummyUser()
 
-EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative'])
+EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative', 'enrollment_date', 'last_seen'])
 
 class WebUser(object):
     """Represents a user (either authenticated or session based) which can take part in experiments"""
@@ -122,6 +127,14 @@ class WebUser(object):
                     enrollment.experiment.increment_goal_count(enrollment.alternative, goal_name, self._participant_identifier(), count)
             other_user._cancel_enrollment(enrollment.experiment)
 
+    def visit(self):
+        """Record that the user has visited the site for the purposes of retention tracking"""
+        for enrollment in self._get_all_enrollments():
+            if enrollment.experiment.is_displaying_alternatives():
+                if not enrollment.last_seen or now() - enrollment.last_seen >= timedelta(1):
+                    self._experiment_goal(enrollment.experiment, enrollment.alternative, VISIT_COUNT_GOAL, 1)
+                    self._set_last_seen(enrollment.experiment, now())
+
     def _get_enrollment(self, experiment):
         """Get the name of the alternative this user is enrolled in for the specified experiment
         
@@ -161,6 +174,10 @@ class WebUser(object):
         "Record a goal against a particular experiment and alternative"
         raise NotImplementedError
 
+    def _set_last_seen(self, experiment, last_seen):
+        "Set the last time the user was seen associated with this experiment"
+        raise NotImplementedError
+
     def _gargoyle_key(self):
         return None
 
@@ -186,6 +203,8 @@ class DummyUser(WebUser):
     def _get_goal_counts(self, experiment, alternative):
         return {}
     def _experiment_goal(self, experiment, alternative, goal_name, count):
+        pass
+    def _set_last_seen(self, experiment, last_seen):
         pass
 
 
@@ -226,7 +245,7 @@ class AuthenticatedUser(WebUser):
         enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
         if enrollments:
             for enrollment in enrollments:
-                yield EnrollmentData(enrollment.experiment, enrollment.alternative)
+                yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
 
     def _cancel_enrollment(self, experiment):
         try:
@@ -240,8 +259,20 @@ class AuthenticatedUser(WebUser):
     def _experiment_goal(self, experiment, alternative, goal_name, count):
         experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
 
+    def _set_last_seen(self, experiment, last_seen):
+        Enrollment.objects.filter(user=self.user, experiment=experiment).update(last_seen=last_seen)
+
     def _gargoyle_key(self):
         return self.request or self.user
+
+def _session_enrollment_latest_version(data):
+    try:
+        alternative, unused, enrollment_date, last_seen = data
+    except ValueError: # Data from previous version
+        alternative, unused = data
+        enrollment_date = None
+        last_seen = None
+    return alternative, unused, enrollment_date, last_seen
 
 
 class SessionUser(WebUser):
@@ -253,13 +284,13 @@ class SessionUser(WebUser):
     def _get_enrollment(self, experiment):
         enrollments = self.session.get('experiments_enrollments', None)
         if enrollments and experiment.name in enrollments:
-            alternative, goals = enrollments[experiment.name]
+            alternative, _, _, _ = _session_enrollment_latest_version(enrollments[experiment.name])
             return alternative
         return None
 
     def _set_enrollment(self, experiment, alternative):
         enrollments = self.session.get('experiments_enrollments', {})
-        enrollments[experiment.name] = (alternative, [])
+        enrollments[experiment.name] = (alternative, None, now(), None)
         self.session['experiments_enrollments'] = enrollments
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
@@ -298,10 +329,10 @@ class SessionUser(WebUser):
         enrollments = self.session.get('experiments_enrollments', None)
         if enrollments:
             for experiment_name, data in enrollments.items():
-                alternative, _ = data
+                alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
                 experiment = experiment_manager.get(experiment_name, None)
                 if experiment:
-                    yield EnrollmentData(experiment, alternative)
+                    yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
 
     def _cancel_enrollment(self, experiment):
         alternative = self._get_enrollment(experiment)
@@ -317,6 +348,12 @@ class SessionUser(WebUser):
             goals = self.session.get('experiments_goals', [])
             goals.append( (experiment.name, alternative, goal_name, count) )
             self.session['experiments_goals'] = goals
+
+    def _set_last_seen(self, experiment, last_seen):
+        enrollments = self.session.get('experiments_enrollments', {})
+        alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollments[experiment.name])
+        enrollments[experiment.name] = (alternative, unused, enrollment_date, last_seen)
+        self.session['experiments_enrollments'] = enrollments
 
     def _gargoyle_key(self):
         return self.request
