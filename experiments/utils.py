@@ -25,6 +25,16 @@ def _record_goal(goal_name, request=None, session=None, user=None):
 
 
 def participant(request=None, session=None, user=None):
+    if request and hasattr(request, '_experiments_user'):
+        return request._experiments_user
+    else:
+        result = _get_participant(request, session, user)
+        if request:
+            request._experiments_user = result
+        return result
+
+
+def _get_participant(request, session, user):
     if request and hasattr(request, 'user') and not user:
         user = request.user
     if request and hasattr(request, 'session') and not session:

@@ -21,11 +21,7 @@ class ExperimentNode(template.Node):
     def render(self, context):
         # Get User object
         request = context.get('request', None)
-
-        if request and hasattr(request, 'experiment_user'):
-            user = request.experiment_user
-        else:
-            user = request.experiment_user = participant(request)
+        user = participant(request)
 
         # Should we render?
         if user.is_enrolled(self.experiment_name, self.alternative, request):
