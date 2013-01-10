@@ -25,7 +25,7 @@ class ExperimentNode(template.Node):
         if request and hasattr(request, 'experiment_user'):
             user = request.experiment_user
         else:
-            user = participant(request)
+            user = request.experiment_user = participant(request)
 
         # Should we render?
         if user.is_enrolled(self.experiment_name, self.alternative, request):
