@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.significance import chi_square_p_value, mann_whitney
+from experiments.dateutils import now
 
 import nexus
 import json
@@ -209,8 +210,7 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.state = state
 
         if state == 0:
-            import datetime
-            experiment.end_date = datetime.datetime.now()
+            experiment.end_date = now()
         else:
             experiment.end_date = None
 
