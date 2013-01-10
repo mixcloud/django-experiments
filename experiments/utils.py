@@ -5,6 +5,7 @@ from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment, CONTROL_GROUP
 from experiments.manager import experiment_manager
+from collections import namedtuple
 
 import re
 import warnings
@@ -49,6 +50,7 @@ def _get_participant(request, session, user):
     else:
         return DummyUser()
 
+EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative'])
 
 class WebUser(object):
     """Represents a user (either authenticated or session based) which can take part in experiments"""
@@ -95,9 +97,9 @@ class WebUser(object):
         """Record that this user has performed a particular goal
 
         This will update the goal stats for all experiments the user is enrolled in."""
-        for experiment, alternative in self._get_all_enrollments():
-            if experiment.is_displaying_alternatives():
-                self._experiment_goal(experiment, alternative, goal_name, count)
+        for enrollment in self._get_all_enrollments():
+            if enrollment.experiment.is_displaying_alternatives():
+                self._experiment_goal(enrollment.experiment, enrollment.alternative, goal_name, count)
 
     def confirm_human(self):
         """Mark that this is a real human being (not a bot) and thus results should be counted"""
@@ -112,13 +114,13 @@ class WebUser(object):
 
         This takes a relatively large amount of time for each experiment the other
         user is enrolled in."""
-        for experiment, alternative in other_user._get_all_enrollments():
-            if not self._get_enrollment(experiment):
-                self._set_enrollment(experiment, alternative)
-                goals = experiment.participant_goal_frequencies(alternative, other_user._participant_identifier())
+        for enrollment in other_user._get_all_enrollments():
+            if not self._get_enrollment(enrollment.experiment):
+                self._set_enrollment(enrollment.experiment, enrollment.alternative)
+                goals = enrollment.experiment.participant_goal_frequencies(enrollment.alternative, other_user._participant_identifier())
                 for goal_name, count in goals:
-                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
-            other_user._cancel_enrollment(experiment)
+                    enrollment.experiment.increment_goal_count(enrollment.alternative, goal_name, self._participant_identifier(), count)
+            other_user._cancel_enrollment(enrollment.experiment)
 
     def _get_enrollment(self, experiment):
         """Get the name of the alternative this user is enrolled in for the specified experiment
@@ -171,8 +173,8 @@ class DummyUser(WebUser):
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == CONTROL_GROUP
     def incorporate(self, other_user):
-        for experiment, alternative in other_user._get_all_enrollments():
-            other_user._cancel_enrollment(experiment)
+        for enrollment in other_user._get_all_enrollments():
+            other_user._cancel_enrollment(enrollment.experiment)
     def _participant_identifier(self):
         return ""
     def _get_all_enrollments(self):
@@ -224,7 +226,7 @@ class AuthenticatedUser(WebUser):
         enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
         if enrollments:
             for enrollment in enrollments:
-                yield enrollment.experiment, enrollment.alternative
+                yield EnrollmentData(enrollment.experiment, enrollment.alternative)
 
     def _cancel_enrollment(self, experiment):
         try:
@@ -269,8 +271,8 @@ class SessionUser(WebUser):
         self.session['experiments_verified_human'] = True
 
         # Replay enrollments
-        for experiment, alternative in self._get_all_enrollments():
-            experiment.increment_participant_count(alternative, self._participant_identifier())
+        for enrollment in self._get_all_enrollments():
+            enrollment.experiment.increment_participant_count(enrollment.alternative, self._participant_identifier())
 
         # Replay goals
         if 'experiments_goals' in self.session:
@@ -299,7 +301,7 @@ class SessionUser(WebUser):
                 alternative, _ = data
                 experiment = experiment_manager.get(experiment_name, None)
                 if experiment:
-                    yield experiment, alternative
+                    yield EnrollmentData(experiment, alternative)
 
     def _cancel_enrollment(self, experiment):
         alternative = self._get_enrollment(experiment)
