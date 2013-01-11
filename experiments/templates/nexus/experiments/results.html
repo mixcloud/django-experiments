@@ -17,6 +17,12 @@
         };
     </script>
 
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1.0', {'packages':['corechart']});
+    </script>
+
     <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
 
 {% endblock %}
@@ -151,6 +157,40 @@
                         {% endif %}
                     {% endfor %}
                 </tr>
+                {% if data.mwu %}
+                    <tr>
+                        <td colspan="100" >
+                            <div id="{{goal}}_chart"></div>
+                            <script type="text/javascript">
+                                google.setOnLoadCallback(function() {
+                                    var data = google.visualization.arrayToDataTable( {{ data.mwu_histogram|safe }} );
+                                    var chart = new google.visualization.LineChart(document.getElementById('{{goal}}_chart'));
+                                    var options = {
+                                        height: 750,
+                                        hAxis : {
+                                            title: 'Number of actions performed',
+                                            logScale: true
+                                        },
+                                        vAxis : {
+                                            title: 'User count',
+                                            logScale: true
+                                        },
+                                        legend : {
+                                            position: 'top',
+                                            alignment: 'center'
+                                        },
+                                        chartArea: {
+                                            width: "75%",
+                                            height: "75%"
+                                        }
+                                    }
+                                    chart.draw(data, options);
+                                });
+                            </script>
+
+                        </td>
+                    </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
