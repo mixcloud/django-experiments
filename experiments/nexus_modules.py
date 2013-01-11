@@ -84,9 +84,17 @@ def conversion_distributions_to_graph_table(conversion_distributions):
     graph_head = [['x'] + [name for name, dist in ordered_distributions]]
 
     points_in_any_distribution = sorted(set(k for name, dist in ordered_distributions for k in dist.keys()))
-    highest_interesting_point = max(point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW)
     points_with_gaps = points_with_surrounding_gaps(points_in_any_distribution)
-    graph_body = [[point] + [dist.get(point, 1) for name, dist in ordered_distributions] for point in points_with_gaps if point <= highest_interesting_point]
+    graph_body = [[point] + [dist.get(point, 1) for name, dist in ordered_distributions] for point in points_with_gaps]
+
+    accumulator = [0] * len(ordered_distributions)
+    for point in range(len(graph_body)-1, -1, -1):
+        accumulator  = [graph_body[point][j+1] + accumulator[j] for j in range(len(ordered_distributions))]
+        graph_body[point][1:] = accumulator
+
+    highest_interesting_point = max(point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW)
+    graph_body = [g for g in graph_body if g[0] <= highest_interesting_point and g[0] != 0]
+
     graph_table = graph_head + graph_body
     return json.dumps(graph_table)
 
