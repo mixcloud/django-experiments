@@ -13,6 +13,9 @@ from experiments.dateutils import now
 import nexus
 import json
 
+
+MIN_ACTIONS_TO_SHOW=3
+
 def rate(a, b):
     if not b or a == None:
         return None
@@ -81,8 +84,9 @@ def conversion_distributions_to_graph_table(conversion_distributions):
     graph_head = [['x'] + [name for name, dist in ordered_distributions]]
 
     points_in_any_distribution = sorted(set(k for name, dist in ordered_distributions for k in dist.keys()))
+    highest_interesting_point = max(point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW)
     points_with_gaps = points_with_surrounding_gaps(points_in_any_distribution)
-    graph_body = [[point] + [dist.get(point, 0) for name, dist in ordered_distributions] for point in points_with_gaps]
+    graph_body = [[point] + [dist.get(point, 1) for name, dist in ordered_distributions] for point in points_with_gaps if point <= highest_interesting_point]
     graph_table = graph_head + graph_body
     return json.dumps(graph_table)
 
@@ -180,12 +184,14 @@ class ExperimentsModule(nexus.NexusModule):
         results = {}
 
         for goal in getattr(settings, 'EXPERIMENTS_GOALS', []):
+            show_mwu = goal in mwu_goals
+
             alternatives_conversions = {}
             control_conversions = experiment.goal_count(CONTROL_GROUP, goal)
             control_conversion_rate = rate(control_conversions, control_participants)
 
-            mwu_histogram = {}
-            if goal in mwu_goals:
+            if show_mwu:
+                mwu_histogram = {}
                 control_conversion_distribution = fixup_distribution(experiment.goal_distribution(CONTROL_GROUP, goal), control_participants)
                 control_average_goal_actions = average_actions(control_conversion_distribution, control_participants)
                 mwu_histogram['control'] = control_conversion_distribution
@@ -197,7 +203,7 @@ class ExperimentsModule(nexus.NexusModule):
                     alternative_participants = experiment.participant_count(alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
                     alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
-                    if goal in mwu_goals:
+                    if show_mwu:
                         alternative_conversion_distribution = fixup_distribution(experiment.goal_distribution(alternative_name, goal), alternative_participants)
                         alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
                         alternative_distribution_confidence = mann_whitney_confidence(
@@ -228,7 +234,7 @@ class ExperimentsModule(nexus.NexusModule):
                 "alternatives": sorted(alternatives_conversions.items()),
                 "relevant": goal in relevant_goals or relevant_goals == set([u'']),
                 "mwu" : goal in mwu_goals,
-                "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram)
+                "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram) if show_mwu else None
             }
 
         return self.render_to_response("nexus/experiments/results.html", {
