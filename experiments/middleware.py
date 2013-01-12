@@ -16,8 +16,8 @@ class ExperimentsMiddleware(object):
         Allows setting of experiment and alternative via URL Params.
         """
         experiment = request.GET.get('exp', '')
-        alternative = request.GET.get('alt', '')
-        if experiment is not '' and alternative is not '':
+        alternative = request.GET.get('alt', 'control')
+        if experiment is not '':
             request.session['experiment'] = experiment
             request.session['alternative'] = alternative
         return None

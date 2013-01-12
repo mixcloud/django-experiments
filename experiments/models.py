@@ -43,7 +43,8 @@ class Experiment(models.Model):
         return self.name
 
     @classmethod
-    def show_alternative(self, experiment_name, experiment_user, alternative, experiment_manager):
+    def show_alternative(self, experiment_name, experiment_user, alternative,
+            session_alternative, experiment_manager):
         """ does the real work """
         try:
             experiment = experiment_manager[experiment_name] # use cache where possible
@@ -60,6 +61,12 @@ class Experiment(models.Model):
         if experiment.state != ENABLED_STATE and experiment.state != GARGOYLE_STATE:
             raise Exception("Invalid experiment state %s!" % experiment.state)
 
+        # Add new session alternative to experiment model
+        if session_alternative not in experiment.alternatives:
+            experiment.alternatives[session_alternative] = {}
+            experiment.alternatives[session_alternative]['enabled'] = True
+            experiment.save()
+
         # Add new alternatives to experiment model
         if alternative not in experiment.alternatives:
             experiment.alternatives[alternative] = {}
@@ -69,9 +76,12 @@ class Experiment(models.Model):
         # Lookup User alternative
         assigned_alternative = experiment_user.get_enrollment(experiment)
 
-        # No alternative so assign one
+        # No alternative so assign one, use session alternative if exists.
         if assigned_alternative is None:
-            assigned_alternative = random.choice(experiment.alternatives.keys())
+            if session_alternative:
+                assigned_alternative = session_alternative
+            else:
+                assigned_alternative = random.choice(experiment.alternatives.keys())
             experiment_user.set_enrollment(experiment, assigned_alternative)
 
         return alternative == assigned_alternative
