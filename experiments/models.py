@@ -62,7 +62,8 @@ class Experiment(models.Model):
             raise Exception("Invalid experiment state %s!" % experiment.state)
 
         # Add new session alternative to experiment model
-        if session_alternative not in experiment.alternatives:
+        if (session_alternative is not None
+                and session_alternative not in experiment.alternatives):
             experiment.alternatives[session_alternative] = {}
             experiment.alternatives[session_alternative]['enabled'] = True
             experiment.save()
