@@ -61,13 +61,6 @@ class Experiment(models.Model):
         if experiment.state != ENABLED_STATE and experiment.state != GARGOYLE_STATE:
             raise Exception("Invalid experiment state %s!" % experiment.state)
 
-        # Add new session alternative to experiment model
-        if (session_alternative is not None
-                and session_alternative not in experiment.alternatives):
-            experiment.alternatives[session_alternative] = {}
-            experiment.alternatives[session_alternative]['enabled'] = True
-            experiment.save()
-
         # Add new alternatives to experiment model
         if alternative not in experiment.alternatives:
             experiment.alternatives[alternative] = {}
@@ -77,9 +70,9 @@ class Experiment(models.Model):
         # Lookup User alternative
         assigned_alternative = experiment_user.get_enrollment(experiment)
 
-        # No alternative so assign one, use session alternative if exists.
+        # No alternative so assign one, use session alternative if it exists
         if assigned_alternative is None:
-            if session_alternative:
+            if session_alternative in experiment.alternatives:
                 assigned_alternative = session_alternative
             else:
                 assigned_alternative = random.choice(experiment.alternatives.keys())
