@@ -251,7 +251,7 @@ Facebox css
 
 #facebox div.select-list-container {
     max-height: 20ex;
-    overflow: scroll;
+    overflow-y: scroll;
     border: 1px solid #ccc;
     width: 230px;
     padding: 2px; 3px;
