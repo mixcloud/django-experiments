@@ -15,6 +15,8 @@
             updateState:      "{% url experiments:state %}",
 
         };
+
+        EXPERIMENT_CHART_DATA = {};
     </script>
 
 
@@ -92,10 +94,14 @@
 
         <tbody>
             {% for goal, data in results.items %}
-                <tr id="{{goal}}-row"class="row-{% cycle 'odd' 'even' %} {% if not data.relevant %}hiddengoal{% endif %}">
+                <tr id="{{goal}}-row" class="row-{% cycle 'odd' 'even' %} {% if not data.relevant %}hiddengoal{% endif %}">
 
                     <td class="goal odd">
-                        {{ goal }}
+                        {% if data.mwu %}
+                            <a href="#" class="toggle_chart" data-element-id="{{ goal }}_chart">{{ goal }}</a>
+                        {% else %}
+                            {{ goal }}
+                        {% endif %}
                     </td>
 
                     <td class="conversion1 even">
@@ -158,34 +164,11 @@
                     {% endfor %}
                 </tr>
                 {% if data.mwu %}
-                    <tr>
-                        <td colspan="100" >
-                            <div id="{{goal}}_chart"></div>
+                    <tr class="row-{% cycle 'odd' 'even' %}" id="{{goal}}_mwu_row">
+                        <td class="chart" colspan="{{ column_count }}" >
+                            <div id="{{goal}}_chart" data-chart-key="{{goal}}" data-rendered="0"></div>
                             <script type="text/javascript">
-                                google.setOnLoadCallback(function() {
-                                    var data = google.visualization.arrayToDataTable( {{ data.mwu_histogram|safe }} );
-                                    var chart = new google.visualization.LineChart(document.getElementById('{{goal}}_chart'));
-                                    var options = {
-                                        height: 750,
-                                        hAxis : {
-                                            title: 'Performed action at least this many times',
-                                            logScale: true
-                                        },
-                                        vAxis : {
-                                            title: 'User count',
-                                            //logScale: true
-                                        },
-                                        legend : {
-                                            position: 'top',
-                                            alignment: 'center'
-                                        },
-                                        chartArea: {
-                                            width: "75%",
-                                            height: "75%"
-                                        }
-                                    }
-                                    chart.draw(data, options);
-                                });
+                                EXPERIMENT_CHART_DATA['{{goal|escapejs}}'] = {{ data.mwu_histogram|safe }};
                             </script>
 
                         </td>

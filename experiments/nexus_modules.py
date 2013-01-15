@@ -250,6 +250,7 @@ class ExperimentsModule(nexus.NexusModule):
             'alternatives': alternatives,
             'control_participants': control_participants,
             'results': results,
+            'column_count': len(alternatives_conversions) * 3 + 2, # Horrible coupling with template design
         }, request)
 
     @json_result

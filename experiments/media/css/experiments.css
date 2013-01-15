@@ -322,6 +322,11 @@ Results page header
     overflow:hidden;
 }
 
+#container table.goals td.chart {
+    width: 100%;
+    display: none;
+}
+
 #container table.goals tbody td{
     color:#344259;
 }
@@ -339,10 +344,10 @@ Results page header
     border-left:none;
 }
 
+
 #container table.goals tbody td.conversion2{
     border-left:solid 1px #DDD;
 }
-
 
 #container table.goals tbody td.even{
     background:#EEE;

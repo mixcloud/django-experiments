@@ -202,4 +202,38 @@ $(document).ready(function () {
         }
     });
 
+    $(document).delegate('.toggle_chart', 'click', function(event) {
+        event.preventDefault();
+
+        var $graph = $('#' + $(this).data('element-id'));
+        $graph.parent().toggle();
+        if(!$graph.data('rendered')) {
+            var chart_data = google.visualization.arrayToDataTable( EXPERIMENT_CHART_DATA[$graph.data('chart-key')] );
+            var chart = new google.visualization.LineChart($graph.get(0));
+            var options = {
+                height: 750,
+                hAxis : {
+                    title: 'Performed action at least this many times',
+                    logScale: true
+                },
+                vAxis : {
+                    title: 'User count',
+                    //logScale: true
+                },
+                legend : {
+                    position: 'top',
+                    alignment: 'center'
+                },
+                chartArea: {
+                    width: "75%",
+                    height: "75%"
+                }
+            }
+            chart.draw(chart_data, options);
+
+            $graph.data('rendered', 1);
+        }
+    });
+
+
 });
