@@ -36,20 +36,20 @@ def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     else:
         return None
 
-def average_actions(distribution, count):
-    if not count:
-        return 0
-    total_actions = sum(actions*frequency for (actions, frequency) in distribution.items())
-    return total_actions / float(count)
+def average_actions(distribution):
+    total_users = 0
+    total_actions = 0
+    for actions, frequency in distribution.items():
+        total_users += frequency
+        total_actions += actions*frequency
+    return total_actions / float(total_users)
 
 def fixup_distribution(distribution, count):
     zeros = count - sum(distribution.values())
     distribution[0] = zeros + distribution.get(0, 0)
     return distribution
 
-def mann_whitney_confidence(a_distribution, a_count, b_distribution, b_count):
-    fixup_distribution(a_distribution, a_count)
-    fixup_distribution(b_distribution, b_count)
+def mann_whitney_confidence(a_distribution, b_distribution):
     p_value = mann_whitney(a_distribution, b_distribution)[1]
     if p_value is not None:
         return (1 - p_value * 2) * 100 # Two tailed probability
@@ -201,7 +201,7 @@ class ExperimentsModule(nexus.NexusModule):
             if show_mwu:
                 mwu_histogram = {}
                 control_conversion_distribution = fixup_distribution(experiment.goal_distribution(CONTROL_GROUP, goal), control_participants)
-                control_average_goal_actions = average_actions(control_conversion_distribution, control_participants)
+                control_average_goal_actions = average_actions(control_conversion_distribution)
                 mwu_histogram['control'] = control_conversion_distribution
             else:
                 control_average_goal_actions = None
@@ -213,10 +213,8 @@ class ExperimentsModule(nexus.NexusModule):
                     alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
                     if show_mwu:
                         alternative_conversion_distribution = fixup_distribution(experiment.goal_distribution(alternative_name, goal), alternative_participants)
-                        alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
-                        alternative_distribution_confidence = mann_whitney_confidence(
-                            alternative_conversion_distribution, alternative_participants,
-                            control_conversion_distribution, control_participants)
+                        alternative_average_goal_actions = average_actions(alternative_conversion_distribution)
+                        alternative_distribution_confidence = mann_whitney_confidence(alternative_conversion_distribution, control_conversion_distribution)
                         mwu_histogram[alternative_name] = alternative_conversion_distribution
                     else:
                         alternative_average_goal_actions = None
