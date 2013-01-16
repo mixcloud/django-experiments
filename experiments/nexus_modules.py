@@ -95,7 +95,11 @@ def conversion_distributions_to_graph_table(conversion_distributions):
         accumulator  = [graph_body[point][j+1] + accumulator[j] for j in range(len(ordered_distributions))]
         graph_body[point][1:] = accumulator
 
-    highest_interesting_point = max(point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW)
+    interesting_points = [point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW]
+    if len(interesting_points):
+        highest_interesting_point = max(interesting_points)
+    else:
+        highest_interesting_point = 0
     graph_body = [g for g in graph_body if g[0] <= highest_interesting_point and g[0] != 0]
 
     graph_table = graph_head + graph_body
