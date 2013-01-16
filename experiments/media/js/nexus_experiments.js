@@ -235,5 +235,32 @@ $(document).ready(function () {
         }
     });
 
+    $(document).delegate('.js-join-alternative', 'click', function(event) {
+        event.preventDefault();
+
+        var $indicator = $(this).parent();
+        var experiment = $indicator.data('experiment');
+        var alternative = $indicator.data('alternative');
+
+        api(EXPERIMENT.setAlternative,
+            {
+                'experiment': experiment,
+                'alternative': alternative
+            },
+            function(response) {
+                var alternative = response.alternative;
+                // Update the display of enrolled variant
+                $('.enrollment-indicator').each(function(){
+                    var $indicator = $(this);
+                    if ($indicator.data('alternative') === alternative) {
+                        $indicator.html('Enrolled');
+                    } else {
+                        $indicator.html('<a href="#" class="js-join-alternative">Join</a>');
+                    }
+                });
+
+            });
+    });
+
 
 });
