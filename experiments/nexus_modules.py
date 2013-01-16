@@ -42,7 +42,10 @@ def average_actions(distribution):
     for actions, frequency in distribution.items():
         total_users += frequency
         total_actions += actions*frequency
-    return total_actions / float(total_users)
+    if total_users:
+        return total_actions / float(total_users)
+    else:
+        return 0
 
 def fixup_distribution(distribution, count):
     zeros = count - sum(distribution.values())
