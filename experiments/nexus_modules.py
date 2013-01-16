@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.significance import chi_square_p_value, mann_whitney
 from experiments.dateutils import now
+from experiments.utils import participant
 
 import nexus
 import json
@@ -154,6 +155,7 @@ class ExperimentsModule(nexus.NexusModule):
             url(r'^update/$', self.as_view(self.update), name='update'),
             url(r'^delete/$', self.as_view(self.delete), name='delete'),
             url(r'^state/$', self.as_view(self.state), name='state'),
+            url(r'^set_alternative/$', self.as_view(self.set_alternative), name='set_alternative'),
             url(r'^results/(?P<name>[a-zA-Z0-9-_]+)/$', self.as_view(self.results), name='results'),
         )
         return urlpatterns
@@ -256,6 +258,7 @@ class ExperimentsModule(nexus.NexusModule):
             'control_participants': control_participants,
             'results': results,
             'column_count': len(alternatives_conversions) * 3 + 2, # Horrible coupling with template design
+            'user_alternative': participant(request).get_alternative(experiment.name),
         }, request)
 
     @json_result
@@ -349,5 +352,15 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.enrollment_set.all().delete()
         experiment.delete()
         return {'successful': True}
+
+    @json_result
+    def set_alternative(self, request):
+        experiment_name = request.POST.get("experiment")
+        alternative_name = request.POST.get("alternative")
+        participant(request).set_alternative(experiment_name, alternative_name)
+        return {
+            'success': True,
+            'alternative': participant(request).get_alternative(experiment_name)
+        }
 
 nexus.site.register(ExperimentsModule, 'experiments')

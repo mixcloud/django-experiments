@@ -336,6 +336,15 @@ Results page header
     color:#2457A9;
 }
 
+#container table.goals .enrollment-indicator {
+    font-size: 75%;
+    color: black;
+    font-weight: normal;
+}
+
+#container table.goals .enrollment-indicator a {
+}
+
 #container table.goals thead td{
     border-left:solid 1px #EEE;
 }
