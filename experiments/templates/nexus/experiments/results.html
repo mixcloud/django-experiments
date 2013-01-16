@@ -13,6 +13,7 @@
             updateExperiment: "{% url experiments:update %}",
             deleteExperiment: "{% url experiments:delete %}",
             updateState:      "{% url experiments:state %}",
+            setAlternative:   "{% url experiments:set_alternative %}",
 
         };
 
@@ -83,10 +84,28 @@
         <thead>
             <tr>
                 <td class="goal odd"></td>
-                <td class="conversion1 even">control <small>({{ control_participants|intcomma }})</small></td>
+                <td class="conversion1 even">
+                    control <small>({{ control_participants|intcomma }})</small>
+                    <div class="enrollment-indicator" data-experiment="{{ experiment.name }}" data-alternative="control">
+                        {% if user_alternative == 'control' %}
+                            Enrolled
+                        {% else %}
+                            <a href="#" class="js-join-alternative">Join</a>
+                        {% endif %}
+                    </div>
+                </td>
                 {% for alternative, participants in alternatives %}
                      {% if alternative != 'control' %}
-                         <td colspan="3" class="conversion2 {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">{{ alternative }} <small>({{ participants|intcomma }})</small></td>
+                         <td colspan="3" class="conversion2 {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
+                            {{ alternative }} <small>({{ participants|intcomma }})</small>
+                            <div class="enrollment-indicator" data-experiment="{{ experiment.name }}" data-alternative="{{ alternative }}">
+                                {% if user_alternative == alternative %}
+                                    Enrolled
+                                {% else %}
+                                    <a href="#" class="js-join-alternative">Join</a>
+                                {% endif %}
+                            </div>
+                         </td>
                      {% endif %}
                 {% endfor %}
             </tr>
