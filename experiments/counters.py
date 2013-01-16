@@ -84,13 +84,13 @@ def reset(key):
         # Handle Redis failures gracefully
         return False
 
-def reset_pattern(key):
+def reset_pattern(pattern_key):
     #similar to above, but can pass pattern as arg instead
     try:
-        cache_key = COUNTER_CACHE_KEY % key
+        cache_key = COUNTER_CACHE_KEY % pattern_key
         for key in r.keys(cache_key):
             r.delete(key)
-        freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
+        freq_cache_key = COUNTER_FREQ_CACHE_KEY % pattern_key
         for key in r.keys(freq_cache_key):
             r.delete(key)
         return True

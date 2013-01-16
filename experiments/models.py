@@ -9,11 +9,12 @@ from jsonfield import JSONField
 from gargoyle.manager import gargoyle
 from gargoyle.models import Switch
 
-import datetime
+
 import random
 import json
 
 from experiments import counters
+from experiments.dateutils import now
 
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
@@ -42,7 +43,7 @@ class Experiment(models.Model):
 
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
 
-    start_date = models.DateTimeField(default=datetime.datetime.now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
     def is_displaying_alternatives(self):
@@ -164,7 +165,8 @@ class Enrollment(models.Model):
     """ A participant in a split testing experiment """
     user = models.ForeignKey(User, null=True)
     experiment = models.ForeignKey(Experiment)
-    enrollment_date = models.DateField(db_index=True, auto_now_add=True)
+    enrollment_date = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
 
     class Meta:

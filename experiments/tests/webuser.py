@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
 from experiments.models import Experiment, ENABLED_STATE, CONTROL_GROUP
-from experiments.utils import participant
+from experiments.utils import participant, VISIT_COUNT_GOAL
 
 request_factory = RequestFactory()
 TEST_ALTERNATIVE = 'blue'
@@ -63,6 +63,25 @@ class WebUserTests:
 
         experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 1, "Did not count participant after confirm human")
+
+    def test_visit_increases_goal(self):
+        experiment_user = participant(self.request)
+        self.confirm_human(experiment_user)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+
+        experiment_user.visit()
+
+        self.assertEqual(self.experiment.goal_distribution(TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1})
+
+    def test_visit_twice_increases_once(self):
+        experiment_user = participant(self.request)
+        self.confirm_human(experiment_user)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+
+        experiment_user.visit()
+        experiment_user.visit()
+
+        self.assertEqual(self.experiment.goal_distribution(TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1})
 
 
 class WebUserAnonymousTestCase(WebUserTests, TestCase):

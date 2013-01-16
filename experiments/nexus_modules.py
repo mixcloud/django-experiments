@@ -8,9 +8,13 @@ from django.core.exceptions import ValidationError
 
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.significance import chi_square_p_value, mann_whitney
+from experiments.dateutils import now
 
 import nexus
 import json
+
+
+MIN_ACTIONS_TO_SHOW=3
 
 def rate(a, b):
     if not b or a == None:
@@ -32,24 +36,74 @@ def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     else:
         return None
 
-def average_actions(distribution, count):
-    if not count:
+def average_actions(distribution):
+    total_users = 0
+    total_actions = 0
+    for actions, frequency in distribution.items():
+        total_users += frequency
+        total_actions += actions*frequency
+    if total_users:
+        return total_actions / float(total_users)
+    else:
         return 0
-    total_actions = sum(actions*frequency for (actions, frequency) in distribution.items())
-    return total_actions / float(count)
 
 def fixup_distribution(distribution, count):
     zeros = count - sum(distribution.values())
-    distribution[0] = zeros
+    distribution[0] = zeros + distribution.get(0, 0)
+    return distribution
 
-def mann_whitney_confidence(a_distribution, a_count, b_distribution, b_count):
-    fixup_distribution(a_distribution, a_count)
-    fixup_distribution(b_distribution, b_count)
+def mann_whitney_confidence(a_distribution, b_distribution):
     p_value = mann_whitney(a_distribution, b_distribution)[1]
     if p_value is not None:
         return (1 - p_value * 2) * 100 # Two tailed probability
     else:
         return None
+
+def points_with_surrounding_gaps(points):
+    """
+    This function makes sure that any gaps in the sequence provided have stopper points at their beginning
+    and end so a graph will be drawn with correct 0 ranges. This is more efficient than filling in all points
+    up to the maximum value. For example:
+
+    input: [1,2,3,10,11,13]
+    output [1,2,3,4,9,10,11,12,13]
+    """
+    points_with_gaps = []
+    last_point = -1
+    for point in points:
+        if last_point + 1 == point:
+            pass
+        elif last_point + 2 == point:
+            points_with_gaps.append(last_point + 1)
+        else:
+            points_with_gaps.append(last_point + 1)
+            points_with_gaps.append(point - 1)
+        points_with_gaps.append(point)
+        last_point = point
+    return points_with_gaps
+
+def conversion_distributions_to_graph_table(conversion_distributions):
+    ordered_distributions = list(conversion_distributions.items())
+    graph_head = [['x'] + [name for name, dist in ordered_distributions]]
+
+    points_in_any_distribution = sorted(set(k for name, dist in ordered_distributions for k in dist.keys()))
+    points_with_gaps = points_with_surrounding_gaps(points_in_any_distribution)
+    graph_body = [[point] + [dist.get(point, 1) for name, dist in ordered_distributions] for point in points_with_gaps]
+
+    accumulator = [0] * len(ordered_distributions)
+    for point in range(len(graph_body)-1, -1, -1):
+        accumulator  = [graph_body[point][j+1] + accumulator[j] for j in range(len(ordered_distributions))]
+        graph_body[point][1:] = accumulator
+
+    interesting_points = [point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW]
+    if len(interesting_points):
+        highest_interesting_point = max(interesting_points)
+    else:
+        highest_interesting_point = 0
+    graph_body = [g for g in graph_body if g[0] <= highest_interesting_point and g[0] != 0]
+
+    graph_table = graph_head + graph_body
+    return json.dumps(graph_table)
 
 class ExperimentException(Exception):
     pass
@@ -145,23 +199,30 @@ class ExperimentsModule(nexus.NexusModule):
         results = {}
 
         for goal in getattr(settings, 'EXPERIMENTS_GOALS', []):
+            show_mwu = goal in mwu_goals
+
             alternatives_conversions = {}
             control_conversions = experiment.goal_count(CONTROL_GROUP, goal)
             control_conversion_rate = rate(control_conversions, control_participants)
-            control_conversion_distribution = experiment.goal_distribution(CONTROL_GROUP, goal)
-            control_average_goal_actions = average_actions(control_conversion_distribution, control_participants)
+
+            if show_mwu:
+                mwu_histogram = {}
+                control_conversion_distribution = fixup_distribution(experiment.goal_distribution(CONTROL_GROUP, goal), control_participants)
+                control_average_goal_actions = average_actions(control_conversion_distribution)
+                mwu_histogram['control'] = control_conversion_distribution
+            else:
+                control_average_goal_actions = None
             for alternative_name in experiment.alternatives.keys():
                 if not alternative_name == CONTROL_GROUP:
                     alternative_conversions = experiment.goal_count(alternative_name, goal)
                     alternative_participants = experiment.participant_count(alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
                     alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
-                    if goal in mwu_goals:
-                        alternative_conversion_distribution = experiment.goal_distribution(alternative_name, goal)
-                        alternative_average_goal_actions = average_actions(alternative_conversion_distribution, alternative_participants)
-                        alternative_distribution_confidence = mann_whitney_confidence(
-                            alternative_conversion_distribution, alternative_participants,
-                            control_conversion_distribution, control_participants)
+                    if show_mwu:
+                        alternative_conversion_distribution = fixup_distribution(experiment.goal_distribution(alternative_name, goal), alternative_participants)
+                        alternative_average_goal_actions = average_actions(alternative_conversion_distribution)
+                        alternative_distribution_confidence = mann_whitney_confidence(alternative_conversion_distribution, control_conversion_distribution)
+                        mwu_histogram[alternative_name] = alternative_conversion_distribution
                     else:
                         alternative_average_goal_actions = None
                         alternative_distribution_confidence = None
@@ -185,7 +246,8 @@ class ExperimentsModule(nexus.NexusModule):
                 "control": control,
                 "alternatives": sorted(alternatives_conversions.items()),
                 "relevant": goal in relevant_goals or relevant_goals == set([u'']),
-                "mwu" : goal in mwu_goals
+                "mwu" : goal in mwu_goals,
+                "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram) if show_mwu else None
             }
 
         return self.render_to_response("nexus/experiments/results.html", {
@@ -193,6 +255,7 @@ class ExperimentsModule(nexus.NexusModule):
             'alternatives': alternatives,
             'control_participants': control_participants,
             'results': results,
+            'column_count': len(alternatives_conversions) * 3 + 2, # Horrible coupling with template design
         }, request)
 
     @json_result
@@ -209,8 +272,7 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.state = state
 
         if state == 0:
-            import datetime
-            experiment.end_date = datetime.datetime.now()
+            experiment.end_date = now()
         else:
             experiment.end_date = None
 

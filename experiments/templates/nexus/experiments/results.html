@@ -15,6 +15,14 @@
             updateState:      "{% url experiments:state %}",
 
         };
+
+        EXPERIMENT_CHART_DATA = {};
+    </script>
+
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1.0', {'packages':['corechart']});
     </script>
 
     <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
@@ -86,10 +94,14 @@
 
         <tbody>
             {% for goal, data in results.items %}
-                <tr id="{{goal}}-row"class="row-{% cycle 'odd' 'even' %} {% if not data.relevant %}hiddengoal{% endif %}">
+                <tr id="{{goal}}-row" class="row-{% cycle 'odd' 'even' %} {% if not data.relevant %}hiddengoal{% endif %}">
 
                     <td class="goal odd">
-                        {{ goal }}
+                        {% if data.mwu %}
+                            <a href="#" class="toggle_chart" data-element-id="{{ goal }}_chart">{{ goal }}</a>
+                        {% else %}
+                            {{ goal }}
+                        {% endif %}
                     </td>
 
                     <td class="conversion1 even">
@@ -151,6 +163,17 @@
                         {% endif %}
                     {% endfor %}
                 </tr>
+                {% if data.mwu %}
+                    <tr class="row-{% cycle 'odd' 'even' %}" id="{{goal}}_mwu_row">
+                        <td class="chart" colspan="{{ column_count }}" >
+                            <div id="{{goal}}_chart" data-chart-key="{{goal}}" data-rendered="0"></div>
+                            <script type="text/javascript">
+                                EXPERIMENT_CHART_DATA['{{goal|escapejs}}'] = {{ data.mwu_histogram|safe }};
+                            </script>
+
+                        </td>
+                    </tr>
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
