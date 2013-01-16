@@ -1,6 +1,7 @@
 from django.conf.urls.defaults import patterns, url
 
 from functools import wraps
+from itertools import chain
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -9,13 +10,14 @@ from django.core.exceptions import ValidationError
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
 from experiments.significance import chi_square_p_value, mann_whitney
 from experiments.dateutils import now
-from experiments.utils import participant
+from experiments.utils import participant, BUILT_IN_GOALS
 
 import nexus
 import json
 
 
 MIN_ACTIONS_TO_SHOW=3
+ALL_GOALS = tuple(chain(getattr(settings, 'EXPERIMENTS_GOALS', []), BUILT_IN_GOALS))
 
 def rate(a, b):
     if not b or a == None:
@@ -174,7 +176,7 @@ class ExperimentsModule(nexus.NexusModule):
 
         return self.render_to_response("nexus/experiments/index.html", {
             "experiments": [e.to_dict() for e in experiments],
-            "all_goals": json.dumps(getattr(settings, 'EXPERIMENTS_GOALS', [])),
+            "all_goals": json.dumps(ALL_GOALS),
             "sorted_by": sort_by,
         }, request)
 
@@ -200,7 +202,7 @@ class ExperimentsModule(nexus.NexusModule):
 
         results = {}
 
-        for goal in getattr(settings, 'EXPERIMENTS_GOALS', []):
+        for goal in ALL_GOALS:
             show_mwu = goal in mwu_goals
 
             alternatives_conversions = {}

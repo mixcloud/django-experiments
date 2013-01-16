@@ -15,6 +15,10 @@ from datetime import timedelta
 
 VISIT_COUNT_GOAL = '_retention_visits'
 
+BUILT_IN_GOALS = [
+    VISIT_COUNT_GOAL,
+]
+
 
 # Known bots user agents to drop from experiments
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)
