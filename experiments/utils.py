@@ -307,11 +307,15 @@ class SessionUser(WebUser):
 
         # Replay goals
         if 'experiments_goals' in self.session:
-            for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
-                experiment = experiment_manager.get(experiment_name, None)
-                if experiment:
-                    experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
-            del self.session['experiments_goals']
+            try:
+                for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
+                    experiment = experiment_manager.get(experiment_name, None)
+                    if experiment:
+                        experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
+            except ValueError:
+                pass # Values from older version
+            finally:
+                del self.session['experiments_goals']
 
     def _participant_identifier(self):
         if 'experiments_session_key' not in self.session:
