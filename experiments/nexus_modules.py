@@ -1,23 +1,21 @@
 from django.conf.urls.defaults import patterns, url
 
 from functools import wraps
-from itertools import chain
 
 from django.conf import settings
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 
-from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE, CONTROL_GROUP
+from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE
 from experiments.significance import chi_square_p_value, mann_whitney
 from experiments.dateutils import now
-from experiments.utils import participant, BUILT_IN_GOALS
+from experiments.utils import participant
+from experiments import conf
 
 import nexus
 import json
 
-
 MIN_ACTIONS_TO_SHOW=3
-ALL_GOALS = tuple(chain(getattr(settings, 'EXPERIMENTS_GOALS', []), BUILT_IN_GOALS))
 
 def rate(a, b):
     if not b or a == None:
@@ -176,7 +174,7 @@ class ExperimentsModule(nexus.NexusModule):
 
         return self.render_to_response("nexus/experiments/index.html", {
             "experiments": [e.to_dict() for e in experiments],
-            "all_goals": json.dumps(ALL_GOALS),
+            "all_goals": json.dumps(conf.ALL_GOALS),
             "sorted_by": sort_by,
         }, request)
 
@@ -198,26 +196,26 @@ class ExperimentsModule(nexus.NexusModule):
             alternatives[alternative_name] = experiment.participant_count(alternative_name)
         alternatives = sorted(alternatives.items())
 
-        control_participants = experiment.participant_count(CONTROL_GROUP)
+        control_participants = experiment.participant_count(conf.CONTROL_GROUP)
 
         results = {}
 
-        for goal in ALL_GOALS:
+        for goal in conf.ALL_GOALS:
             show_mwu = goal in mwu_goals
 
             alternatives_conversions = {}
-            control_conversions = experiment.goal_count(CONTROL_GROUP, goal)
+            control_conversions = experiment.goal_count(conf.CONTROL_GROUP, goal)
             control_conversion_rate = rate(control_conversions, control_participants)
 
             if show_mwu:
                 mwu_histogram = {}
-                control_conversion_distribution = fixup_distribution(experiment.goal_distribution(CONTROL_GROUP, goal), control_participants)
+                control_conversion_distribution = fixup_distribution(experiment.goal_distribution(conf.CONTROL_GROUP, goal), control_participants)
                 control_average_goal_actions = average_actions(control_conversion_distribution)
                 mwu_histogram['control'] = control_conversion_distribution
             else:
                 control_average_goal_actions = None
             for alternative_name in experiment.alternatives.keys():
-                if not alternative_name == CONTROL_GROUP:
+                if not alternative_name == conf.CONTROL_GROUP:
                     alternative_conversions = experiment.goal_count(alternative_name, goal)
                     alternative_participants = experiment.participant_count(alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)

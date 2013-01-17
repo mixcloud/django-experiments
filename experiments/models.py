@@ -13,13 +13,12 @@ from gargoyle.models import Switch
 import random
 import json
 
-from experiments import counters
+from experiments import counters, conf
 from experiments.dateutils import now
 
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
 
-CONTROL_GROUP = 'control'
 
 CONTROL_STATE = 0
 ENABLED_STATE = 1
@@ -96,8 +95,7 @@ class Experiment(models.Model):
         counters.clear(counter_key, participant_identifier)
 
         # Remove goal records
-        goal_names = getattr(settings, 'EXPERIMENTS_GOALS', [])
-        for goal_name in goal_names:
+        for goal_name in conf.ALL_GOALS:
             counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
             counters.clear(counter_key, participant_identifier)
 
@@ -108,8 +106,7 @@ class Experiment(models.Model):
         return counters.get(GOAL_KEY % (self.name, alternative, goal))
 
     def participant_goal_frequencies(self, alternative, participant_identifier):
-        goal_names = getattr(settings, 'EXPERIMENTS_GOALS', [])
-        for goal in goal_names:
+        for goal in conf.ALL_GOALS:
             yield goal, counters.get_frequency(GOAL_KEY % (self.name, alternative, goal), participant_identifier)
 
     def goal_distribution(self, alternative, goal):
@@ -137,11 +134,11 @@ class Experiment(models.Model):
 
     def save(self, *args, **kwargs):
         # Create new switch
-        if self.switch_key and getattr(settings, 'EXPERIMENTS_SWITCH_AUTO_CREATE', True):
+        if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
                 Switch.objects.get(key=self.switch_key)
             except Switch.DoesNotExist:
-                Switch.objects.create(key=self.switch_key, label=getattr(settings, 'EXPERIMENTS_SWITCH_LABEL', "Experiment: %s") % self.name, description=self.description)
+                Switch.objects.create(key=self.switch_key, label=conf.SWITCH_LABEL % self.name, description=self.description)
 
         if not self.switch_key and self.state == 2:
             self.state = 0
@@ -150,7 +147,7 @@ class Experiment(models.Model):
 
     def delete(self, *args, **kwargs):
         # Delete existing switch
-        if getattr(settings, 'EXPERIMENTS_SWITCH_AUTO_DELETE', True):
+        if conf.SWITCH_AUTO_DELETE:
             try:
                 Switch.objects.get(key=Experiment.objects.get(name=self.name).switch_key).delete()
             except Switch.DoesNotExist:

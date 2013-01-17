@@ -5,8 +5,9 @@ from django.test.client import RequestFactory
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
-from experiments.models import Experiment, ENABLED_STATE, CONTROL_GROUP
-from experiments.utils import participant, VISIT_COUNT_GOAL
+from experiments.models import Experiment, ENABLED_STATE
+from experiments.conf import CONTROL_GROUP, VISIT_COUNT_GOAL
+from experiments.utils import participant
 
 request_factory = RequestFactory()
 TEST_ALTERNATIVE = 'blue'

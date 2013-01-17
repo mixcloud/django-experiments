@@ -1,11 +1,11 @@
-from django.conf import settings
 from django.db import IntegrityError
 from django.contrib.auth.models import User
 from django.contrib.sessions.backends.base import SessionBase
 
-from experiments.models import Enrollment, CONTROL_GROUP
+from experiments.models import Enrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now
+from experiments import conf
 
 from collections import namedtuple
 
@@ -13,15 +13,7 @@ import re
 import warnings
 from datetime import timedelta
 
-VISIT_COUNT_GOAL = '_retention_visits'
-
-BUILT_IN_GOALS = [
-    VISIT_COUNT_GOAL,
-]
-
-
 # Known bots user agents to drop from experiments
-BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)
 
 
 def record_goal(request, goal_name):
@@ -50,7 +42,7 @@ def _get_participant(request, session, user):
     if request and hasattr(request, 'session') and not session:
         session = request.session
 
-    if request and BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
+    if request and conf.BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
         return DummyUser()
     elif user and user.is_authenticated():
         return AuthenticatedUser(user, request)
@@ -66,11 +58,11 @@ class WebUser(object):
 
     def enroll(self, experiment_name, alternatives):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
-        chosen_alternative = CONTROL_GROUP
+        chosen_alternative = conf.CONTROL_GROUP
 
         experiment = experiment_manager.get(experiment_name, None)
         if experiment and experiment.is_displaying_alternatives():
-            alternatives_including_control = alternatives + [CONTROL_GROUP]
+            alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
             for alternative in alternatives_including_control:
                 experiment.ensure_alternative_exists(alternative)
 
@@ -136,7 +128,7 @@ class WebUser(object):
         for enrollment in self._get_all_enrollments():
             if enrollment.experiment.is_displaying_alternatives():
                 if not enrollment.last_seen or now() - enrollment.last_seen >= timedelta(1):
-                    self._experiment_goal(enrollment.experiment, enrollment.alternative, VISIT_COUNT_GOAL, 1)
+                    self._experiment_goal(enrollment.experiment, enrollment.alternative, conf.VISIT_COUNT_GOAL, 1)
                     self._set_last_seen(enrollment.experiment, now())
 
     def _get_enrollment(self, experiment):
@@ -192,7 +184,7 @@ class DummyUser(WebUser):
     def _set_enrollment(self, experiment, alternative):
         pass
     def is_enrolled(self, experiment_name, alternative, request):
-        return alternative == CONTROL_GROUP
+        return alternative == conf.CONTROL_GROUP
     def incorporate(self, other_user):
         for enrollment in other_user._get_all_enrollments():
             other_user._cancel_enrollment(enrollment.experiment)
@@ -329,7 +321,7 @@ class SessionUser(WebUser):
         return 'session:%s' % (self.session['experiments_session_key'],)
 
     def _is_verified_human(self):
-        if getattr(settings, 'EXPERIMENTS_VERIFY_HUMAN', True):
+        if conf.VERIFY_HUMAN:
             return self.session.get('experiments_verified_human', False)
         else:
             return True
