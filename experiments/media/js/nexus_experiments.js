@@ -217,7 +217,7 @@ $(document).ready(function () {
                     logScale: true
                 },
                 vAxis : {
-                    title: 'User count',
+                    title: 'Fraction of users',
                     //logScale: true
                 },
                 legend : {
