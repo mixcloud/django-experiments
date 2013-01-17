@@ -11,6 +11,7 @@ from collections import namedtuple
 
 import re
 import warnings
+import collections
 from datetime import timedelta
 
 # Known bots user agents to drop from experiments
@@ -62,9 +63,15 @@ class WebUser(object):
 
         experiment = experiment_manager.get(experiment_name, None)
         if experiment and experiment.is_displaying_alternatives():
-            alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
-            for alternative in alternatives_including_control:
-                experiment.ensure_alternative_exists(alternative)
+            if isinstance(alternatives, collections.Mapping):
+                if conf.CONTROL_GROUP not in alternatives:
+                    experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
+                for alternative, weight in alternatives.items():
+                    experiment.ensure_alternative_exists(alternative, weight)
+            else:
+                alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
+                for alternative in alternatives_including_control:
+                    experiment.ensure_alternative_exists(alternative)
 
             assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:

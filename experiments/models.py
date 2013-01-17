@@ -70,14 +70,20 @@ class Experiment(models.Model):
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
 
-    def ensure_alternative_exists(self, alternative):
+    def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
             self.alternatives[alternative] = {}
             self.alternatives[alternative]['enabled'] = True
             self.save()
+        if weight is not None and 'weight' not in self.alternatives[alternative]:
+            self.alternatives[alternative]['weight'] = float(weight)
+            self.save()
 
     def random_alternative(self):
-        return random.choice(self.alternatives.keys())
+        if all('weight' in alt for alt in self.alternatives.values()):
+            return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
+        else:
+            return random.choice(self.alternatives.keys())
 
     def increment_participant_count(self, alternative_name, participant_identifier):
         # Increment experiment_name:alternative:participant counter
@@ -181,3 +187,12 @@ class Enrollment(models.Model):
             'goals': self.goals,
         }
         return data
+
+def weighted_choice(choices):
+   total = sum(w for c,w in choices)
+   r = random.uniform(0, total)
+   upto = 0
+   for c, w in choices:
+      upto += w
+      if upto >= r:
+         return c
