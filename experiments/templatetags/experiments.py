@@ -4,6 +4,7 @@ from django import template
 from django.core.urlresolvers import reverse
 
 from experiments.utils import participant
+from experiments.manager import experiment_manager
 from uuid import uuid4
 
 register = template.Library()
@@ -44,13 +45,21 @@ def experiment(parser, token):
     during rendering.
     """
     try:
-        tag_name, experiment_name, alternative = token.split_contents()
+        try:
+            tag_name, experiment_name, alternative = token.split_contents()
+            weight = None
+        except ValueError:
+            tag_name, experiment_name, alternative, weight = token.split_contents()
         node_list = parser.parse(('endexperiment', ))
         parser.delete_first_token()
     except ValueError:
         raise template.TemplateSyntaxError("Syntax should be like :"
-                "{% experiment experiment_name alternative %}")
-    
+                "{% experiment experiment_name alternative [weight] %}")
+
+    experiment = experiment_manager.get(experiment_name, None)
+    if experiment:
+        experiment.ensure_alternative_exists(alternative, weight)
+
     return ExperimentNode(node_list, experiment_name, alternative)
 
 @register.simple_tag(takes_context=True)
