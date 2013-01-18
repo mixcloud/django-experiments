@@ -35,7 +35,7 @@ def clear(key, participant_identifier):
         # Remove the direct entry
         cache_key = COUNTER_CACHE_KEY % key
         pipe = r.pipeline()
-        freq, _ = pipe.hget(key, participant_identifier).hdel(cache_key, participant_identifier).execute()
+        freq, _ = pipe.hget(cache_key, participant_identifier).hdel(cache_key, participant_identifier).execute()
 
         # Remove from the histogram
         freq_cache_key = COUNTER_FREQ_CACHE_KEY % key

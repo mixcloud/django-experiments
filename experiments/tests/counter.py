@@ -47,3 +47,13 @@ class CounterTestCase(TestCase):
         counters.reset(TEST_KEY)
         self.assertEqual(counters.get(TEST_KEY), 0)
 
+    def test_clear_value(self):
+        counters.increment(TEST_KEY, 'fred')
+        counters.increment(TEST_KEY, 'fred')
+        counters.increment(TEST_KEY, 'fred')
+        counters.increment(TEST_KEY, 'barney')
+        counters.increment(TEST_KEY, 'barney')
+        counters.clear(TEST_KEY, 'fred')
+
+        self.assertEqual(counters.get(TEST_KEY), 1)
+        self.assertEqual(counters.get_frequencies(TEST_KEY), {2: 1})
