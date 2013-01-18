@@ -124,7 +124,7 @@ class WebUser(object):
         user is enrolled in."""
         for enrollment in other_user._get_all_enrollments():
             if not self._get_enrollment(enrollment.experiment):
-                self._set_enrollment(enrollment.experiment, enrollment.alternative)
+                self._set_enrollment(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
                 goals = enrollment.experiment.participant_goal_frequencies(enrollment.alternative, other_user._participant_identifier())
                 for goal_name, count in goals:
                     enrollment.experiment.increment_goal_count(enrollment.alternative, goal_name, self._participant_identifier(), count)
@@ -144,7 +144,7 @@ class WebUser(object):
         `experiment` is an instance of Experiment. If the user is not currently enrolled returns None."""
         raise NotImplementedError
 
-    def _set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         """Explicitly set the alternative the user is enrolled in for the specified experiment.
 
         This allows you to change a user between alternatives. The user and goal counts for the new
@@ -188,7 +188,7 @@ class WebUser(object):
 class DummyUser(WebUser):
     def _get_enrollment(self, experiment):
         return None
-    def _set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         pass
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == conf.CONTROL_GROUP
@@ -226,7 +226,7 @@ class AuthenticatedUser(WebUser):
                 self._enrollment_cache[experiment.name] = None
         return self._enrollment_cache[experiment.name]
 
-    def _set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         if experiment.name in self._enrollment_cache:
             del self._enrollment_cache[experiment.name]
 
@@ -236,9 +236,20 @@ class AuthenticatedUser(WebUser):
             # Already registered (db race condition under high load)
             return
         # Update alternative if it doesn't match
+        enrollment_changed = False
         if enrollment.alternative != alternative:
             enrollment.alternative = alternative
+            enrollment_changed = True
+        if enrollment_date:
+            enrollment.enrollment_date = enrollment_date
+            enrollment_changed = True
+        if last_seen:
+            enrollment.last_seen = last_seen
+            enrollment_changed = True
+
+        if enrollment_changed:
             enrollment.save()
+
         experiment.increment_participant_count(alternative, self._participant_identifier())
 
     def _participant_identifier(self):
@@ -291,9 +302,9 @@ class SessionUser(WebUser):
             return alternative
         return None
 
-    def _set_enrollment(self, experiment, alternative):
+    def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         enrollments = self.session.get('experiments_enrollments', {})
-        enrollments[experiment.name] = (alternative, None, now(), None)
+        enrollments[experiment.name] = (alternative, None, enrollment_date or now(), last_seen)
         self.session['experiments_enrollments'] = enrollments
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
