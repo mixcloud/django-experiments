@@ -85,7 +85,7 @@ def points_with_surrounding_gaps(points):
 
 def conversion_distributions_to_graph_table(conversion_distributions):
     ordered_distributions = list(conversion_distributions.items())
-    total_entries = dict( (name,float(sum(dist.values()))) for name, dist in ordered_distributions)
+    total_entries = dict( (name,float(sum(dist.values()) or 1)) for name, dist in ordered_distributions)
     graph_head = [['x'] + [name for name, dist in ordered_distributions]]
 
     points_in_any_distribution = sorted(set(k for name, dist in ordered_distributions for k in dist.keys()))
