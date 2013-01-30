@@ -14,23 +14,56 @@ def experiment_goal(goal_name):
     return { 'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}) }
 
 class ExperimentNode(template.Node):
-    def __init__(self, node_list, experiment_name, alternative):
+    def __init__(self, node_list, experiment_name, alternative, user_variable):
         self.node_list = node_list
         self.experiment_name = experiment_name
         self.alternative = alternative
+        self.user_variable = user_variable
+
+    def do_render(self, context):
+        pass
 
     def render(self, context):
         # Get User object
-        request = context.get('request', None)
-        user = participant(request)
+        if self.user_variable:
+            auth_user = self.user_variable.resolve(context)
+            user = participant(user=auth_user)
+            gargoyle_key = auth_user
+        else:
+            request = context.get('request', None)
+            user = participant(request)
+            gargoyle_key = request
 
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative, request):
+        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key):
             response = self.node_list.render(context)
         else:
             response = ""
 
         return response
+
+def _parse_token_contents(token_contents):
+    (_, experiment_name, alternative), remaining_tokens = token_contents[:3], token_contents[3:]
+    weight = None
+    user_variable = None
+
+    for offset, token in enumerate(remaining_tokens):
+        if '=' in token:
+            name, expression = token.split('=', 1)
+            if name == 'weight':
+                weight = expression
+            elif name == 'user':
+                user_variable = template.Variable(expression)
+            else:
+                raise ValueError()
+        elif offset == 0:
+            # Backwards compatibility, weight as positional argument
+            weight = token
+        else:
+            raise ValueError()
+
+    return experiment_name, alternative, weight, user_variable
+
 
 @register.tag('experiment')
 def experiment(parser, token):
@@ -45,22 +78,20 @@ def experiment(parser, token):
     during rendering.
     """
     try:
-        try:
-            tag_name, experiment_name, alternative = token.split_contents()
-            weight = None
-        except ValueError:
-            tag_name, experiment_name, alternative, weight = token.split_contents()
+        token_contents = token.split_contents()
+        experiment_name, alternative, weight, user_variable = _parse_token_contents(token_contents)
+
         node_list = parser.parse(('endexperiment', ))
         parser.delete_first_token()
     except ValueError:
         raise template.TemplateSyntaxError("Syntax should be like :"
-                "{% experiment experiment_name alternative [weight] %}")
+                "{% experiment experiment_name alternative [weight=val] [user=val] %}")
 
     experiment = experiment_manager.get(experiment_name, None)
     if experiment:
         experiment.ensure_alternative_exists(alternative, weight)
 
-    return ExperimentNode(node_list, experiment_name, alternative)
+    return ExperimentNode(node_list, experiment_name, alternative, user_variable)
 
 @register.simple_tag(takes_context=True)
 def visit(context):
