@@ -131,7 +131,7 @@ class WebUser(object):
             # Not registered, use Sessions
             enrollments = self.session.get('experiments_enrollments', None)
             if enrollments and experiment.name in enrollments:
-                alternative, goals = enrollments.get(experiment.name, None)
+                alternative, goals = enrollments.get(experiment.name, (None, None))
                 return alternative
             return None
 
