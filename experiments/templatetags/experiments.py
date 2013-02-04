@@ -20,9 +20,6 @@ class ExperimentNode(template.Node):
         self.alternative = alternative
         self.user_variable = user_variable
 
-    def do_render(self, context):
-        pass
-
     def render(self, context):
         # Get User object
         if self.user_variable:
