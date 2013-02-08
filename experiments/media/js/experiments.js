@@ -17,7 +17,7 @@ experiments = function() {
             $.post("/experiments/goal/" + goal_name).success(function() {
                 // Trigger the experiments 'goal' event so others
                 // can do something in reaction to goal attainment.
-                $(experiments).trigger('goal', [goal_name]);
+                $(experiments).trigger('goal-attained', [goal_name]);
             });
         }
     };
@@ -30,7 +30,7 @@ $(function(){
 
             // Trigger the experiments 'goal' event so others
             // can do something in reaction to goal attainment.
-            $(experiments).trigger('goal', [$(this).data('experiments-goal')]);
+            $(experiments).trigger('goal-attained', [$(this).data('experiments-goal')]);
         });
     });
 });
@@ -40,6 +40,6 @@ $(function() {
 
         // Trigger the experiments 'goal' event so others
         // can do something in reaction to goal attainment.
-        $(experiments).trigger('goal', [$(this).data("experiments-goal-name")]);
+        $(experiments).trigger('goal-attained', [$(this).data("experiments-goal-name")]);
     });
 });
