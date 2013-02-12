@@ -7,7 +7,7 @@
     <script src="{% url nexus:media 'experiments' 'js/jquery.cookie.js' %}"></script>
     <script src="{% url nexus:media 'experiments' 'js/experiments.js' %}"></script>
     <script type="text/javascript">
-            $(experiments).bind("goal", function(event, goal) {
+            $(experiments).bind("goal-attained", function(event, goal) {
                 console.log("Goal, " + goal + ", attained!");
             });
     </script>

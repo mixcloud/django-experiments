@@ -1,5 +1,7 @@
 import random
 
+from django.middleware.csrf import get_token
+
 from experiments.models import Experiment
 from experiments.utils import record_goal, WebUser
 
@@ -20,4 +22,11 @@ class ExperimentsMiddleware(object):
         if experiment is not '':
             request.session['experiment'] = experiment
             request.session['alternative'] = alternative
+        return None
+
+class CSRFMiddleware(object):
+    def process_request(self, request):
+        # Forces process_response to set the CSRF cookie for POSTing
+        # experiment goals to server.
+        get_token(request)
         return None

@@ -4,7 +4,7 @@
 // experiments.goal("foo");
 //
 // Subscribe to an event that triggers when the user attains a goal.
-// $(experiments).bind("goal", function(event, goalName) {
+// $(experiments).bind("goal-attained", function(event, goalName) {
 //     // do something (like send the goal attainment information to 
 //     // a third party service such as google analytics)
 // });
@@ -28,8 +28,8 @@ $(function(){
         $(this).bind('click', function() {
             $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
 
-            // Trigger the experiments 'goal' event so others
-            // can do something in reaction to goal attainment.
+            // Trigger the experiments 'goal-attained' event so others
+            // can do something in reaction to a cookie goal attainment.
             $(experiments).trigger('goal-attained', [$(this).data('experiments-goal')]);
         });
     });
@@ -38,8 +38,8 @@ $(function(){
 $(function() {
     $(".experiments-goal").each(function() {
 
-        // Trigger the experiments 'goal' event so others
-        // can do something in reaction to goal attainment.
+        // Trigger the experiments 'goal-attained' event so others
+        // can do something in reaction to template-tag goal attainment.
         $(experiments).trigger('goal-attained', [$(this).data("experiments-goal-name")]);
     });
 });
