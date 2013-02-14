@@ -1,34 +1,35 @@
 {% extends "nexus/module.html" %}
 
 {% load experiment_helpers %}
+{% load url from future %}
 
 {% block head %}
     {{ block.super }}
 
-    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+    <link rel="stylesheet" href="{% url 'nexus:media' 'experiments' 'css/experiments.css' %}">
 
     <style>
         #container table.experiments td.actions button.edit span {
-            background: transparent url("{% url nexus:media 'experiments' 'img/edit.png' %}") no-repeat left 35%;
+            background: transparent url("{% url 'nexus:media' 'experiments' 'img/edit.png' %}") no-repeat left 35%;
         }
 
         #container table.experiments td.actions button.delete span {
-            background: transparent url("{% url nexus:media 'experiments' 'img/delete.png' %}") no-repeat left 35%;
+            background: transparent url("{% url 'nexus:media' 'experiments' 'img/delete.png' %}") no-repeat left 35%;
         }
     </style>
 
     <script>
         var EXPERIMENT = {
-            addExperiment:    "{% url experiments:add %}",
-            updateExperiment: "{% url experiments:update %}",
-            deleteExperiment: "{% url experiments:delete %}",
-            updateState:      "{% url experiments:state %}",
+            addExperiment:    "{% url 'experiments:add' %}",
+            updateExperiment: "{% url 'experiments:update' %}",
+            deleteExperiment: "{% url 'experiments:delete' %}",
+            updateState:      "{% url 'experiments:state' %}",
         };
         nexus_experiments_all_goals = {{ all_goals|safe }};
     </script>
 
-    <script src="{% url nexus:media 'experiments' 'js/string_score.min.js' %}"></script>
-    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
+    <script src="{% url 'nexus:media' 'experiments' 'js/string_score.min.js' %}"></script>
+    <script src="{% url 'nexus:media' 'experiments' 'js/nexus_experiments.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -64,7 +65,7 @@
         <tr data-experiment-name="{{ experiment.name }}" data-experiment-switch="{{ experiment.switch_key }}" data-experiment-desc="{{ experiment.description }}" data-experiment-chi2-goals="{{ experiment.relevant_chi2_goals }}" data-experiment-mwu-goals="{{ experiment.relevant_mwu_goals }}" class="collapsed">
             <td class="name">
                 <h4>{{ experiment.name }}
-                <a href="{% url experiments:results experiment.name %}">(View Results)</a>
+                <a href="{% url 'experiments:results' experiment.name %}">(View Results)</a>
                     <small>
                         <span id = "{{ experiment.name }}_start_date"
                             {% if experiment.start_date %}
@@ -89,7 +90,7 @@
                     {% endif %}
 
                     {% if experiment.switch_key %}
-                        <p>Connected to Gargoyle switch <a href="{% url gargoyle:index %}#id_{{ experiment.switch_key }}">{{ experiment.switch_key }}</a>.</p>
+                        <p>Connected to Gargoyle switch <a href="{% url 'gargoyle:index' %}#id_{{ experiment.switch_key }}">{{ experiment.switch_key }}</a>.</p>
                     {% endif %}
                 </div>
 
@@ -209,7 +210,7 @@
                         {{ /if }}
 
                         {{ if switch_key }}
-                            <p>Connected to Gargoyle switch <a href="{% endraw %}{% url gargoyle:index %}{% raw %}#id_${switch_key}">${switch_key}</a>.</p>
+                            <p>Connected to Gargoyle switch <a href="{% endraw %}{% url 'gargoyle:index' %}{% raw %}#id_${switch_key}">${switch_key}</a>.</p>
                         {{ /if }}
                     </div>
                 </td>

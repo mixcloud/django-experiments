@@ -1,19 +1,20 @@
 {% extends "nexus/module.html" %}
 {% load humanize %}
 {% load experiment_helpers %}
+{% load url from future %}
 
 {% block head %}
     {{ block.super }}
 
-    <link rel="stylesheet" href="{% url nexus:media 'experiments' 'css/experiments.css' %}">
+    <link rel="stylesheet" href="{% url 'nexus:media' 'experiments' 'css/experiments.css' %}">
 
     <script>
         var EXPERIMENT = {
-            addExperiment:    "{% url experiments:add %}",
-            updateExperiment: "{% url experiments:update %}",
-            deleteExperiment: "{% url experiments:delete %}",
-            updateState:      "{% url experiments:state %}",
-            setAlternative:   "{% url experiments:set_alternative %}",
+            addExperiment:    "{% url 'experiments:add' %}",
+            updateExperiment: "{% url 'experiments:update' %}",
+            deleteExperiment: "{% url 'experiments:delete' %}",
+            updateState:      "{% url 'experiments:state' %}",
+            setAlternative:   "{% url 'experiments:set_alternative' %}",
 
         };
 
@@ -26,7 +27,7 @@
       google.load('visualization', '1.0', {'packages':['corechart']});
     </script>
 
-    <script src="{% url nexus:media 'experiments' 'js/nexus_experiments.js' %}"></script>
+    <script src="{% url 'nexus:media' 'experiments' 'js/nexus_experiments.js' %}"></script>
 
 {% endblock %}
 
@@ -54,7 +55,7 @@
 
     {% if experiment.switch_key %}
         <div data-experiment-name="{{experiment.name}}" class="results header" style>
-            Connected to Gargoyle switch <a href="{% url gargoyle:index %}#id_{{experiment.switch_key}}">{{experiment.switch_key}}</a>.
+            Connected to Gargoyle switch <a href="{% url 'gargoyle:index' %}#id_{{experiment.switch_key}}">{{experiment.switch_key}}</a>.
         </div>
     {% endif %}
 
