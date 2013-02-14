@@ -1,11 +1,12 @@
 {% load experiments %}
+{% load url from future %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Experiment Test Page</title>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js" type="text/javascript"></script>
-    <script src="{% url nexus:media 'experiments' 'js/jquery.cookie.js' %}"></script>
-    <script src="{% url nexus:media 'experiments' 'js/experiments.js' %}"></script>
+    <script src="{% url 'nexus:media' 'experiments' 'js/jquery.cookie.js' %}"></script>
+    <script src="{% url 'nexus:media' 'experiments' 'js/experiments.js' %}"></script>
 
     <script>
         jQuery(document).ajaxSend(function(event, xhr, settings) {
@@ -51,11 +52,11 @@
     {%  csrf_token %}
 
     {% experiment helloworld control %}
-        <a href="{% url goal %}">Click Me (Control)</a>
+        <a href="{% url 'goal' %}">Click Me (Control)</a>
     {% endexperiment %}
 
     {% experiment helloworld test %}
-        <a href="{% url goal %}">Don't Click Me (test)</a>
+        <a href="{% url 'goal' %}">Don't Click Me (test)</a>
     {% endexperiment %}
 
     <span onclick="experiments.goal('js_goal')">JS GOAL</span>

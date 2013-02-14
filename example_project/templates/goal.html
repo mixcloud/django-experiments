@@ -1,4 +1,5 @@
 {% load experiments %}
+{% load url from future %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,6 +7,6 @@
 </head>
 <body>
     {% experiment_goal "page_goal" %}
-    <a href="{% url test_page %}">Back</a>
+    <a href="{% url 'test_page' %}">Back</a>
 </body>
 </html>
