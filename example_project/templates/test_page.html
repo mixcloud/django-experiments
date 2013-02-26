@@ -8,6 +8,18 @@
     <script src="{% url 'nexus:media' 'experiments' 'js/jquery.cookie.js' %}"></script>
     <script src="{% url 'nexus:media' 'experiments' 'js/experiments.js' %}"></script>
 
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(experiments.enrollments).each(function(i, enrollment) {
+                $("#enrollments_list").append(
+                    $("<dt/>").text(enrollment.experiment)
+                ).append(
+                    $("<dd/>").text(enrollment.alternative)
+                );
+            });
+        });
+    </script>
+
     <script>
         jQuery(document).ajaxSend(function(event, xhr, settings) {
             function getCookie(name) {
@@ -61,6 +73,9 @@
 
     <span onclick="experiments.goal('js_goal')">JS GOAL</span>
     <span data-experiments-goal="cookie_goal">COOKIE GOAL</span>
+
+    <dl id="enrollments_list"></dl>
+    {% enrollments %}
 
     {% include "experiments/confirm_human.html" %}
 </body>

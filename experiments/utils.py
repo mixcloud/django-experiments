@@ -61,7 +61,7 @@ class WebUser(object):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
         chosen_alternative = conf.CONTROL_GROUP
 
-        experiment = experiment_manager.get(experiment_name, None)
+        experiment = experiment_manager[experiment_name]
         if experiment and experiment.is_displaying_alternatives():
             if isinstance(alternatives, collections.Mapping):
                 if conf.CONTROL_GROUP not in alternatives:

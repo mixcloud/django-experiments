@@ -1,7 +1,9 @@
 from __future__ import absolute_import
+from json import dumps as to_json
 
 from django import template
 from django.core.urlresolvers import reverse
+from django.utils.safestring import mark_safe
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
@@ -95,3 +97,19 @@ def visit(context):
     request = context.get('request', None)
     participant(request).visit()
     return ""
+
+@register.inclusion_tag('experiments/enrollments.html', takes_context=True)
+def enrollments(context):
+    """
+    Adds an array named 'enrollments' to the experiments javascript
+    variable.  This array of name, alternative object literals describes
+    each running experiment and the alternative selected for the user.
+    Other template tags may select experiments and alternatives so use this
+    tag after all of the other experiments template tags in your template.
+    """
+    request = context.get('request', None)
+    user = participant(request)
+    enrollments = [{'experiment': enrollment.experiment.name,
+                    'alternative': enrollment.alternative}
+                    for enrollment in user._get_all_enrollments()]
+    return {'experiment_enrollments': mark_safe(to_json(enrollments))}
