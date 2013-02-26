@@ -10,6 +10,9 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
+            $(experiments).bind("goal-attained", function(event, goal) {
+                console.log("Goal, " + goal + ", attained!");
+            });
             $(experiments.enrollments).each(function(i, enrollment) {
                 $("#enrollments_list").append(
                     $("<dt/>").text(enrollment.experiment)

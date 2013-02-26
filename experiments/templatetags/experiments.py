@@ -13,7 +13,8 @@ register = template.Library()
 
 @register.inclusion_tag('experiments/goal.html')
 def experiment_goal(goal_name):
-    return { 'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}) }
+    return {'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}),
+            'goal_name': goal_name}
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative, user_variable):
