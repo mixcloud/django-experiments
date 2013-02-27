@@ -57,11 +57,16 @@ EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative', 'enr
 class WebUser(object):
     """Represents a user (either authenticated or session based) which can take part in experiments"""
 
-    def enroll(self, experiment_name, alternatives):
+    def enroll(self, experiment_name, alternatives, selected_alternative=None):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
         chosen_alternative = conf.CONTROL_GROUP
 
-        experiment = experiment_manager[experiment_name]
+        # Grab experiment from cache
+        try:
+            experiment = experiment_manager[experiment_name]
+        except KeyError:  # thrown if EXPERIMENTS_AUTO_CREATE == False
+            return conf.CONTROL_GROUP
+
         if experiment and experiment.is_displaying_alternatives():
             if isinstance(alternatives, collections.Mapping):
                 if conf.CONTROL_GROUP not in alternatives:
@@ -77,7 +82,10 @@ class WebUser(object):
             if assigned_alternative:
                 chosen_alternative = assigned_alternative
             elif experiment.is_accepting_new_users(self._gargoyle_key()):
-                chosen_alternative = experiment.random_alternative()
+                if selected_alternative:
+                    chosen_alternative = selected_alternative
+                else:
+                    chosen_alternative = experiment.random_alternative()
                 self._set_enrollment(experiment, chosen_alternative)
 
         return chosen_alternative
@@ -151,14 +159,14 @@ class WebUser(object):
         alternative will be increment, but those for the old one will not be decremented."""
         raise NotImplementedError
 
-    def is_enrolled(self, experiment_name, alternative, request):
+    def is_enrolled(self, experiment_name, alternative, request, selected_alternative=None):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
         """Test if the user is enrolled in the supplied alternative for the given experiment.
 
         The supplied alternative will be added to the list of possible alternatives for the
         experiment if it is not already there. If the user is not yet enrolled in the supplied
         experiment they will be enrolled, and an alternative chosen at random."""
-        chosen_alternative = self.enroll(experiment_name, [alternative])
+        chosen_alternative = self.enroll(experiment_name, [alternative], selected_alternative)
         return alternative == chosen_alternative
 
     def _participant_identifier(self):
@@ -190,7 +198,7 @@ class DummyUser(WebUser):
         return None
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         pass
-    def is_enrolled(self, experiment_name, alternative, request):
+    def is_enrolled(self, experiment_name, alternative, request, selected_alternative=None):
         return alternative == conf.CONTROL_GROUP
     def incorporate(self, other_user):
         for enrollment in other_user._get_all_enrollments():

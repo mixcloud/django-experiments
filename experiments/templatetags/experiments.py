@@ -34,8 +34,15 @@ class ExperimentNode(template.Node):
             user = participant(request)
             gargoyle_key = request
 
+        # Extract session alternative, if any pertain to this experiment.
+        selected_alternative = None
+        if 'experiment' in request.session:
+            if request.session['experiment'] == self.experiment_name:
+                selected_alternative = request.session['alternative']
+                del request.session['experiment']
+
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key):
+        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key, selected_alternative):
             response = self.node_list.render(context)
         else:
             response = ""
@@ -103,10 +110,16 @@ def visit(context):
 def enrollments(context):
     """
     Adds an array named 'enrollments' to the experiments javascript
-    variable.  This array of name, alternative object literals describes
-    each running experiment and the alternative selected for the user.
+    variable.  This array of 
+
+    [{'experiment': experiment_name, 'alternative': alternative_name}, ...]
+
+    describes each running experiment and the alternative selected for the user.
     Other template tags may select experiments and alternatives so use this
     tag after all of the other experiments template tags in your template.
+
+    Note: The enrollments array can only be accessed after
+    $(document).ready.
     """
     request = context.get('request', None)
     user = participant(request)

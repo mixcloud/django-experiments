@@ -1,4 +1,7 @@
+// EXAMPLE:
+//
 // Subscribe to an event that triggers when the user attains a goal.
+//
 // $(experiments).bind("goal-attained", function(event, goalName) {
 //     // do something (like send the goal attainment information to 
 //     // a third party service such as google analytics)
@@ -13,7 +16,8 @@ experiments = function() {
             $.post("/experiments/goal/" + goal_name);
 
             // Trigger the experiments 'goal' event so others
-            // can do something in reaction to goal attainment.
+            // can do something in reaction to goal attainment
+            // called from javascript-initiated goal.
             $(experiments).trigger('goal-attained', [goal_name]);
         }
     };
@@ -26,7 +30,8 @@ if (document.addEventListener) {
             $.cookie("experiments_goal", $(event.target).data('experiments-goal'), { path: '/' });
 
             // Trigger the experiments 'goal' event so others
-            // can do something in reaction to goal attainment.
+            // can do something in reaction to goal attainment
+            // from a cookie-initiated goal.
             $(experiments).trigger('goal-attained', [goal_name]);
         }
     }, true);
@@ -36,7 +41,8 @@ if (document.addEventListener) {
         $.cookie("experiments_goal", $(this).data('experiments-goal'), { path: '/' });
 
             // Trigger the experiments 'goal' event so others
-            // can do something in reaction to goal attainment.
+            // can do something in reaction to goal attainment
+            // from a click-initiated goal.
             $(experiments).trigger('goal-attained', [goal_name]);
     });
 }
@@ -46,6 +52,9 @@ $(function() {
 
         // Trigger the experiments 'goal-attained' event so others
         // can do something in reaction to template-tag goal attainment.
+        // The class '.experiments-goal' and the data attribute
+        // 'experiments-goal-name' are included in the img file returned
+        // by the server upon successful goal attainment.
         $(experiments).trigger('goal-attained', [$(this).data("experiments-goal-name")]);
     });
 });
