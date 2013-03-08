@@ -4,7 +4,7 @@ from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
-from experiments.dateutils import now
+from experiments.dateutils import now, fix_awareness
 from experiments import conf
 
 from collections import namedtuple
@@ -282,6 +282,8 @@ class AuthenticatedUser(WebUser):
 def _session_enrollment_latest_version(data):
     try:
         alternative, unused, enrollment_date, last_seen = data
+        if last_seen:
+            last_seen = fix_awareness(last_seen)
     except ValueError: # Data from previous version
         alternative, unused = data
         enrollment_date = None
