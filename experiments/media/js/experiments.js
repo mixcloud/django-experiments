@@ -13,7 +13,7 @@ experiments = function() {
             $.get("/experiments/confirm_human/");
         },
         goal: function(goal_name) {
-            $.post("/experiments/goal/" + goal_name);
+            $.post("/experiments/goal/" + goal_name + "/");
 
             // Trigger the experiments 'goal' event so others
             // can do something in reaction to goal attainment
