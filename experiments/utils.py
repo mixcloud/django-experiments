@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment
@@ -14,8 +14,7 @@ import warnings
 import collections
 from datetime import timedelta
 
-# Known bots user agents to drop from experiments
-
+User = get_user_model()
 
 def record_goal(request, goal_name):
     _record_goal(goal_name, request)
