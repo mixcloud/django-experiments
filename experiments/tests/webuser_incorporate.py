@@ -1,12 +1,16 @@
 from django.test import TestCase
 from django.utils.unittest import TestSuite
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
-from django.contrib.auth import get_user_model
 
 from experiments.utils import DummyUser, SessionUser, AuthenticatedUser
 from experiments.models import Experiment, ENABLED_STATE
 
-User = get_user_model()
+try:
+    from django.contrib.auth import get_user_model
+except ImportError: # django < 1.5
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
 
 TEST_ALTERNATIVE = 'blue'
 EXPERIMENT_NAME='backgroundcolor'
