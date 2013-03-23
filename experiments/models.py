@@ -1,6 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
+from django.conf import settings
 
 from jsonfield import JSONField
 
