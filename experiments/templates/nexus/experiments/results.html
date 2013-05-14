@@ -143,10 +143,12 @@
                             <td title="Improvement" class="improvement {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
                                 {% with results.improvement as improvement %}
                                     {% if improvement != None %}
-                                        {% if improvement < 0 %}
+                                        {% if confidence >= 95 and improvement < 0 %}
                                             <span class="negative_improvement">
-                                        {% else %}
+                                        {% elif confidence >= 95 and improvement > 0 %}
                                             <span class="positive_improvement">
+                                        {% else %}
+                                            <span>
                                         {% endif %}
                                         {{ improvement|floatformat:2 }} %</span>
                                     {% else %}
@@ -160,10 +162,7 @@
                                         {% if confidence >= 95 %}
                                             <span class="high_confidence">
                                         {% endif %}
-                                        {% if confidence < 95 and confidence >= 90 %}
-                                            <span class="medium_confidence">
-                                        {% endif %}
-                                        {% if confidence < 90 %}
+                                        {% if confidence < 95 %}
                                             <span class="low_confidence">
                                         {% endif %}
                                         {% if confidence >= 99.995 %}
