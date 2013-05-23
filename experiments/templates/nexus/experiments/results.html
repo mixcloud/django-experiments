@@ -141,7 +141,7 @@
                                 )</small>
                             </td>
                             <td title="Improvement" class="improvement {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
-                                {% with results.improvement as improvement %}
+                                {% with improvement=results.improvement confidence=results.confidence %}
                                     {% if improvement != None %}
                                         {% if confidence >= 95 and improvement < 0 %}
                                             <span class="negative_improvement">
