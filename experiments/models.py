@@ -15,13 +15,6 @@ import json
 from experiments import counters, conf
 from experiments.dateutils import now
 
-try:
-    from django.contrib.auth import get_user_model
-except ImportError: # django < 1.5
-    from django.contrib.auth.models import User
-else:
-    User = get_user_model()
-
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
 
@@ -172,7 +165,7 @@ class Experiment(models.Model):
 
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
-    user = models.ForeignKey(User, null=True)
+    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), null=True)
     experiment = models.ForeignKey(Experiment)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
