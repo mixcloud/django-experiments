@@ -2,6 +2,7 @@
 import datetime
 from south.db import db
 from south.v2 import SchemaMigration
+from django.conf import settings
 
 class Migration(SchemaMigration):
 
@@ -23,7 +24,7 @@ class Migration(SchemaMigration):
         # Adding model 'Enrollment'
         db.create_table('experiments_enrollment', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True)),
+            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm[getattr(settings, 'AUTH_USER_MODEL', 'auth.User')], null=True)),
             ('experiment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['experiments.Experiment'])),
             ('enrollment_date', self.gf('django.db.models.fields.DateField')(auto_now_add=True, db_index=True, blank=True)),
             ('alternative', self.gf('django.db.models.fields.CharField')(max_length=50)),
