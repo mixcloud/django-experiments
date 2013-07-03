@@ -2,14 +2,22 @@ from __future__ import absolute_import
 
 from django.test import TestCase
 from django.test.client import RequestFactory
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
 from experiments.models import Experiment, ENABLED_STATE
 from experiments.conf import CONTROL_GROUP, VISIT_COUNT_GOAL
 from experiments.utils import participant
 
+try:
+    from django.contrib.auth import get_user_model
+except ImportError: # django < 1.5
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
+
 request_factory = RequestFactory()
+
 TEST_ALTERNATIVE = 'blue'
 TEST_GOAL = 'buy'
 EXPERIMENT_NAME='backgroundcolor'
