@@ -1,4 +1,7 @@
-from django.conf.urls.defaults import *
+try:
+    from django.conf.urls import patterns, url
+except ImportError:  # django < 1.4
+    from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns('experiments.views',
     url(r'^goal/(?P<goal_name>[^/]+)/(?P<cache_buster>[^/]+)?$', 'record_experiment_goal', name="experiment_goal"),
