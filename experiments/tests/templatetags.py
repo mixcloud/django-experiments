@@ -24,12 +24,12 @@ class ExperimentTemplateTagTestCase(TestCase):
     def test_handles_user(self):
         token_contents = ('experiment', 'backgroundcolor', 'blue', 'user=commenter')
         experiment_name, alternative, weight, user_resolvable = _parse_token_contents(token_contents)
-        self.assertEqual(user_resolvable, 'commenter')
+        self.assertEqual(user_resolvable.var, 'commenter')
 
     def test_handles_user_and_weight(self):
         token_contents = ('experiment', 'backgroundcolor', 'blue', 'user=commenter', 'weight=10')
         experiment_name, alternative, weight, user_resolvable = _parse_token_contents(token_contents)
-        self.assertEqual(user_resolvable, 'commenter')
+        self.assertEqual(user_resolvable.var, 'commenter')
         self.assertEqual(weight, '10')
 
     def test_raises_on_insufficient_arguments(self):
