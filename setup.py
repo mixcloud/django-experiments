@@ -2,6 +2,13 @@ from distutils.core import setup
 from setuptools import find_packages
 import re
 
+# http://bugs.python.org/issue15881
+try:
+    import multiprocessing
+except ImportError:
+    pass
+
+
 def parse_requirements(file_name):
     requirements = []
     for line in open(file_name, 'r').read().split('\n'):
@@ -37,4 +44,6 @@ setup(name='django-experiments',
       install_requires = parse_requirements('requirements.txt'),
       dependency_links = parse_dependency_links('requirements.txt'),
       long_description=open('README.rst').read(),
+      test_suite="tests.runtests",
+      tests_require=["scipy"],
 )
