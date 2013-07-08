@@ -45,5 +45,4 @@ setup(name='django-experiments',
       dependency_links = parse_dependency_links('requirements.txt'),
       long_description=open('README.rst').read(),
       test_suite="tests.runtests",
-      tests_require=["scipy"],
 )
