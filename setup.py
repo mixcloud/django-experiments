@@ -44,5 +44,5 @@ setup(name='django-experiments',
       install_requires = parse_requirements('requirements.txt'),
       dependency_links = parse_dependency_links('requirements.txt'),
       long_description=open('README.rst').read(),
-      test_suite="tests.runtests",
+      test_suite="testrunner.runtests",
 )
