@@ -5,8 +5,8 @@ from django.conf import settings
 
 from jsonfield import JSONField
 
-from gargoyle.manager import gargoyle
-from gargoyle.models import Switch
+import waffle
+from waffle import Flag
 
 import random
 import json
@@ -19,13 +19,13 @@ GOAL_KEY = '%s:%s:%s:goal'
 
 CONTROL_STATE = 0
 ENABLED_STATE = 1
-GARGOYLE_STATE = 2
+WAFFLE_STATE = 2
 TRACK_STATE = 3
 
 STATES = (
     (CONTROL_STATE, 'Control'),
     (ENABLED_STATE, 'Enabled'),
-    (GARGOYLE_STATE, 'Gargoyle'),
+    (WAFFLE_STATE, 'Waffle'),
     (TRACK_STATE, 'Track'),
 )
 
@@ -48,7 +48,7 @@ class Experiment(models.Model):
             return False
         elif self.state == ENABLED_STATE:
             return True
-        elif self.state == GARGOYLE_STATE:
+        elif self.state == WAFFLE_STATE:
             return True
         elif self.state == TRACK_STATE:
             return True
@@ -60,8 +60,8 @@ class Experiment(models.Model):
             return False
         elif self.state == ENABLED_STATE:
             return True
-        elif self.state == GARGOYLE_STATE:
-            return gargoyle.is_active(self.switch_key, request)
+        elif self.state == WAFFLE_STATE:
+            return waffle.flag_is_active(request, self.switch_key)
         elif self.state == TRACK_STATE:
             return False
         else:
@@ -136,12 +136,14 @@ class Experiment(models.Model):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
     def save(self, *args, **kwargs):
-        # Create new switch
+        # Create new flag
         if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
-                Switch.objects.get(key=self.switch_key)
-            except Switch.DoesNotExist:
-                Switch.objects.create(key=self.switch_key, label=conf.SWITCH_LABEL % self.name, description=self.description)
+                Flag.objects.get(name=self.switch_key)
+            except Flag.DoesNotExist:
+                Flag.objects.create(
+                    name=self.switch_key,
+                    note=self.description)
 
         if not self.switch_key and self.state == 2:
             self.state = 0
@@ -149,11 +151,13 @@ class Experiment(models.Model):
         super(Experiment, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Delete existing switch
+        # Delete existing flag
         if conf.SWITCH_AUTO_DELETE:
             try:
-                Switch.objects.get(key=Experiment.objects.get(name=self.name).switch_key).delete()
-            except Switch.DoesNotExist:
+                Flag.objects.get(
+                    key=Experiment.objects.get(
+                        name=self.name).switch_key).delete()
+            except Flag.DoesNotExist:
                 pass
 
         counters.reset_pattern(self.name + "*")
