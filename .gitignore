@@ -1,8 +1,10 @@
 .idea/*
 *.pyc
+*.swp
 *~
 *conflicted copy*
 *.sublime*
 *experiments.db
 .DS_Store
 django_experiments.egg-info
+.ropeproject
