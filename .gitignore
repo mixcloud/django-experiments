@@ -1,7 +1,9 @@
 .idea/*
 *.pyc
+*.swp
 *~
 *conflicted copy*
 *.sublime*
 *experiments.db
 .DS_Store
+.ropeproject
