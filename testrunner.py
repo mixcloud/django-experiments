@@ -15,6 +15,12 @@ def runtests():
                 'ENGINE': 'django.db.backends.sqlite3',
             }
         },
+        CACHES={
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'django-experiments-test',
+            }
+        },
         INSTALLED_APPS=('django.contrib.auth',
                         'django.contrib.contenttypes',
                         'django.contrib.sessions',
