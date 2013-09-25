@@ -37,8 +37,8 @@ setup(
     name='django-experiments',
     version='0.0.1',
     description='Python Django AB Testing Framework',
-    author='Roberto Barreda',
-    author_email='roberto.barreda@gmail.com',
+    author='Chris Villa, Roberto Barreda',
+    author_email='chris@mixcloud.com, roberto.barreda@gmail.com',
     url='https://github.com/robertobarreda/django-experiments',
     packages=find_packages(exclude=["example_project"]),
     include_package_data=True,
@@ -46,5 +46,5 @@ setup(
     install_requires=parse_requirements('requirements.txt'),
     dependency_links=parse_dependency_links('requirements.txt'),
     long_description=open('README.rst').read(),
-    test_suite="tests.runtests",
+    test_suite="testrunner.runtests",
 )
