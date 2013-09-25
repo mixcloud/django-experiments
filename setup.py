@@ -35,7 +35,7 @@ def parse_dependency_links(file_name):
 
 setup(
     name='django-experiments',
-    version='0.0.1',
+    version='0.4.0',
     description='Python Django AB Testing Framework',
     author='Chris Villa, Roberto Barreda',
     author_email='chris@mixcloud.com, roberto.barreda@gmail.com',
