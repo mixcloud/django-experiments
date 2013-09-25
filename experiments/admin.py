@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from django import forms
 from experiments.models import Experiment, Enrollment
 
 
@@ -9,4 +8,5 @@ class ExperimentAdmin(admin.ModelAdmin):
     list_filter = ('name', 'start_date', 'state')
     search_fields = ('name', )
 
+admin.site.register(Enrollment)
 admin.site.register(Experiment, ExperimentAdmin)
