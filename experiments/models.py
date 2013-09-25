@@ -6,7 +6,7 @@ from django.conf import settings
 from jsonfield import JSONField
 
 import waffle
-from waffle import Flag
+from waffle.models import Flag
 
 import random
 import json
