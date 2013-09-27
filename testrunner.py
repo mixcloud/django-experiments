@@ -12,6 +12,7 @@ def runtests():
         DEBUG=True,
         DATABASES={
             'default': {
+                'NAME': 'test.db',
                 'ENGINE': 'django.db.backends.sqlite3',
             }
         },
