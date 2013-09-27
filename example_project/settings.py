@@ -30,7 +30,6 @@ STATIC_URL = '/static/'
 
 # Other settings
 # Django settings for example_project project.
-NEXUS_MEDIA_PREFIX = '/nexus/media/'
 
 DEBUG = True
 TEMPLATE_DEBUG = True
@@ -146,7 +145,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'nexus',
     'waffle',
     'experiments',
     # Uncomment the next line to enable the admin:
