@@ -67,7 +67,6 @@ pip is still the recommended way to install dependencies:
 Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
-- `Nexus <https://github.com/dcramer/nexus/>`_
 - `Django Waffle <https://github.com/jsocol/django-waffle>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
@@ -78,7 +77,7 @@ Usage
 -----
 
 The example project is a good place to get started and have a play.
-Results are stored in redis and displayed in the nexus admin. The key
+Results are stored in redis and displayed in the django admin. The key
 components of this framework are: the experiments, alternatives and
 goals.
 
@@ -129,10 +128,10 @@ you have correctly configured your STATIC_URL setting.
 Experiments and Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The experiment is manually created in your nexus admin.\*
+The experiment is manually created in your django admin.\*
 
 An experiment allows you to test the effect of various design
-alternatives on user interaction. Nexus Experiments is designed to work
+alternatives on user interaction. Django Experiments is designed to work
 from within django templates, to make it easier for designers. We begin
 by loading our module:
 
@@ -293,7 +292,7 @@ your results!
 Managing Experiments
 --------------------
 
-Experiments can be managed in the nexus dashboard (/nexus/experiments by
+Experiments can be managed in the django admin dashboard (/admin/experiments by
 default).
 
 The States
