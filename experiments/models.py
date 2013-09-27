@@ -152,7 +152,7 @@ class Experiment(models.Model):
 
     def delete(self, *args, **kwargs):
         # Delete existing flag
-        if conf.SWITCH_AUTO_DELETE:
+        if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
                 Flag.objects.get(
                     key=Experiment.objects.get(
