@@ -1,5 +1,4 @@
 from django.db import IntegrityError
-from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
@@ -9,7 +8,6 @@ from experiments import conf
 
 from collections import namedtuple
 
-import re
 import warnings
 import collections
 import numbers
@@ -140,7 +138,7 @@ class WebUser(object):
 
     def _get_enrollment(self, experiment):
         """Get the name of the alternative this user is enrolled in for the specified experiment
-        
+
         `experiment` is an instance of Experiment. If the user is not currently enrolled returns None."""
         raise NotImplementedError
 
