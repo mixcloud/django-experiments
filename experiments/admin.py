@@ -189,15 +189,6 @@ class ExperimentAdmin(admin.ModelAdmin):
         )
         return urls + urlpatterns
 
-    def render_on_dashboard(self, request):
-        qs = Experiment.enabled_experiments()
-        enabled_experiments_count = qs.count()
-        enabled_experiments = list(qs.order_by("start_date")[:5])
-        return self.render_to_string('experiments/dashboard.html', {
-            'enabled_experiments': enabled_experiments,
-            'enabled_experiments_count': enabled_experiments_count,
-        }, request)
-
     def results(self, request, name):
         experiment = Experiment.objects.get(name=name)
 
