@@ -327,11 +327,6 @@ class ExperimentAdmin(admin.ModelAdmin):
 
         experiment.state = state
 
-        if state == 0:
-            experiment.end_date = now()
-        else:
-            experiment.end_date = None
-
         experiment.save()
 
         response = {
