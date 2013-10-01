@@ -18,15 +18,20 @@ from experiments.dateutils import now
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
 
-CONTROL_STATE = 0
-ENABLED_STATE = 1
-WAFFLE_STATE = 2
-TRACK_STATE = 3
+CONTROL_STATE = 0  # The experiment is essentially disabled.
+                   # All users will see the control alternative, and no data
+                   # will be collected.
+ENABLED_STATE = 1  # The experiment is enabled globally, for all users.
+SWITCH_STATE = 2   # If a switch_key is specified, the experiment will rely on
+                   # the switch/flag to determine if the user is included in
+                   # the experiment.
+TRACK_STATE = 3    # The experiment is enabled globally,
+                   # but no new users are accepted.
 
 STATES = (
     (CONTROL_STATE, 'Control'),
     (ENABLED_STATE, 'Enabled'),
-    (WAFFLE_STATE, 'Waffle'),
+    (SWITCH_STATE, 'Switch'),
     (TRACK_STATE, 'Track'),
 )
 
@@ -124,31 +129,29 @@ class Experiment(models.Model):
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
             return False
-        elif self.state == ENABLED_STATE:
+        if self.state == ENABLED_STATE:
             return True
-        elif self.state == WAFFLE_STATE:
+        if self.state == SWITCH_STATE:
             return True
-        elif self.state == TRACK_STATE:
+        if self.state == TRACK_STATE:
             return True
-        else:
-            raise Exception("Invalid experiment state %s!" % self.state)
+        raise Exception("Invalid experiment state %s!" % self.state)
 
     def is_accepting_new_users(self, request):
         if self.state == CONTROL_STATE:
             return False
-        elif self.state == ENABLED_STATE:
+        if self.state == ENABLED_STATE:
             return True
-        elif self.state == WAFFLE_STATE:
+        if self.state == SWITCH_STATE:
             return waffle.flag_is_active(request, self.switch_key)
-        elif self.state == TRACK_STATE:
+        if self.state == TRACK_STATE:
             return False
-        else:
-            raise Exception("Invalid experiment state %s!" % self.state)
+        raise Exception("Invalid experiment state %s!" % self.state)
 
     @staticmethod
     def enabled_experiments():
         return Experiment.objects.filter(
-            state__in=[ENABLED_STATE, WAFFLE_STATE])
+            state__in=[ENABLED_STATE, SWITCH_STATE])
 
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
