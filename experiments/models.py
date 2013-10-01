@@ -92,8 +92,12 @@ class MultiSelectField(models.Field):
 
 
 class Experiment(models.Model):
-    name = models.CharField(primary_key=True, max_length=128)
-    description = models.TextField(default="", blank=True, null=True)
+    name = models.CharField(
+        primary_key=True, max_length=128,
+        help_text='The experiment name.')
+    description = models.TextField(
+        default="", blank=True, null=True,
+        help_text='A brief description of this experiment.')
     alternatives = JSONField(default="{}", blank=True)
     relevant_chi2_goals = MultiSelectField(
         default="", null=True, blank=True,
@@ -111,7 +115,8 @@ class Experiment(models.Model):
             'target="_blank">Used when optimising for number of times '
             'users perform an action. (Advanced)</a>'))
     switch_key = models.CharField(
-        default="", max_length=50, null=True, blank=True)
+        default="", max_length=50, null=True, blank=True,
+        help_text='Connected gargoyle switch. (Optional)')
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
     start_date = models.DateTimeField(
         default=now, blank=True, null=True, db_index=True)
