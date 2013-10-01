@@ -175,6 +175,11 @@ class ExperimentAdmin(admin.ModelAdmin):
     fields = ("name", "switch_key", "description",
               "relevant_chi2_goals", "relevant_mwu_goals",)
 
+    def get_readonly_fields(self, request, obj=None):
+        if obj is None:
+            return ()
+        return ('name',)
+
     def get_urls(self):
         urls = super(ExperimentAdmin, self).get_urls()
         urlpatterns = patterns('',
