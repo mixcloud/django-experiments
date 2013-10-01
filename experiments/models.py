@@ -2,6 +2,8 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
+from django.utils import simplejson as json
+from django.utils.safestring import mark_safe
 
 from jsonfield import JSONField
 
@@ -9,14 +11,12 @@ import waffle
 from waffle import Flag
 
 import random
-import json
 
 from experiments import counters, conf
 from experiments.dateutils import now
 
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
-
 
 CONTROL_STATE = 0
 ENABLED_STATE = 1
@@ -29,6 +29,7 @@ STATES = (
     (WAFFLE_STATE, 'Waffle'),
     (TRACK_STATE, 'Track'),
 )
+
 
 class Experiment(models.Model):
     name = models.CharField(primary_key=True, max_length=128)
@@ -47,8 +48,8 @@ class Experiment(models.Model):
     switch_key = models.CharField(
         default="", max_length=50, null=True, blank=True)
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
-
-    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(
+        default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
     def is_displaying_alternatives(self):
@@ -80,22 +81,26 @@ class Experiment(models.Model):
             self.alternatives[alternative] = {}
             self.alternatives[alternative]['enabled'] = True
             self.save()
-        if weight is not None and 'weight' not in self.alternatives[alternative]:
+        if (weight is not None
+                and 'weight' not in self.alternatives[alternative]):
             self.alternatives[alternative]['weight'] = float(weight)
             self.save()
 
     def random_alternative(self):
         if all('weight' in alt for alt in self.alternatives.values()):
-            return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
-        else:
-            return random.choice(self.alternatives.keys())
+            return weighted_choice(
+                [(name, details['weight'])
+                 for name, details in self.alternatives.items()])
+        return random.choice(self.alternatives.keys())
 
-    def increment_participant_count(self, alternative_name, participant_identifier):
+    def increment_participant_count(self, alternative_name,
+                                    participant_identifier):
         # Increment experiment_name:alternative:participant counter
         counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
         counters.increment(counter_key, participant_identifier)
 
-    def increment_goal_count(self, alternative_name, goal_name, participant_identifier, count=1):
+    def increment_goal_count(self, alternative_name, goal_name,
+                             participant_identifier, count=1):
         # Increment experiment_name:alternative:participant counter
         counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
         counters.increment(counter_key, participant_identifier, count)
@@ -116,12 +121,16 @@ class Experiment(models.Model):
     def goal_count(self, alternative, goal):
         return counters.get(GOAL_KEY % (self.name, alternative, goal))
 
-    def participant_goal_frequencies(self, alternative, participant_identifier):
+    def participant_goal_frequencies(self, alternative,
+                                     participant_identifier):
         for goal in conf.ALL_GOALS:
-            yield goal, counters.get_frequency(GOAL_KEY % (self.name, alternative, goal), participant_identifier)
+            yield goal, counters.get_frequency(
+                GOAL_KEY % (self.name, alternative, goal),
+                participant_identifier)
 
     def goal_distribution(self, alternative, goal):
-        return counters.get_frequencies(GOAL_KEY % (self.name, alternative, goal))
+        return counters.get_frequencies(
+            GOAL_KEY % (self.name, alternative, goal))
 
     def __unicode__(self):
         return self.name
@@ -129,7 +138,8 @@ class Experiment(models.Model):
     def to_dict(self):
         data = {
             'name': self.name,
-            'edit_url': reverse('experiments:results', kwargs={'name': self.name}),
+            'edit_url': reverse('experiments:results',
+                                kwargs={'name': self.name}),
             'start_date': self.start_date,
             'end_date': self.end_date,
             'state': self.state,
@@ -159,6 +169,8 @@ class Experiment(models.Model):
         super(Experiment, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        # Delete existing enrollments
+        self.enrollment_set.all().delete()
         # Delete existing flag
         if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
@@ -175,7 +187,8 @@ class Experiment(models.Model):
 
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
-    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), null=True)
+    user = models.ForeignKey(
+        getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), null=True)
     experiment = models.ForeignKey(Experiment)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
@@ -197,11 +210,12 @@ class Enrollment(models.Model):
         }
         return data
 
+
 def weighted_choice(choices):
-   total = sum(w for c,w in choices)
-   r = random.uniform(0, total)
-   upto = 0
-   for c, w in choices:
-      upto += w
-      if upto >= r:
-         return c
+    total = sum(w for c, w in choices)
+    r = random.uniform(0, total)
+    upto = 0
+    for c, w in choices:
+        upto += w
+        if upto >= r:
+            return c
