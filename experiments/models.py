@@ -1,3 +1,5 @@
+import random
+
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
@@ -9,8 +11,6 @@ from jsonfield import JSONField
 
 import waffle
 from waffle import Flag
-
-import random
 
 from experiments import counters, conf, forms
 from experiments.dateutils import now
