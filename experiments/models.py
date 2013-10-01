@@ -12,7 +12,7 @@ from waffle import Flag
 
 import random
 
-from experiments import counters, conf
+from experiments import counters, conf, forms
 from experiments.dateutils import now
 
 PARTICIPANT_KEY = '%s:%s:participant'
@@ -31,18 +31,80 @@ STATES = (
 )
 
 
+class MultiSelectField(models.Field):
+    __metaclass__ = models.SubfieldBase
+
+    def __init__(self, *args, **kwargs):
+        self.max_choices = kwargs.pop('max_choices', 0)
+        super(MultiSelectField, self).__init__(*args, **kwargs)
+
+    def get_internal_type(self):
+        return "CharField"
+
+    def get_choices_default(self):
+        return self.get_choices(include_blank=False)
+
+    def _get_FIELD_display(self, field):
+        value = getattr(self, field.attname)
+        choicedict = dict(field.choices)
+
+    def formfield(self, **kwargs):
+        # don't call super, as that overrides default widget if it has choices
+        defaults = {
+            'required': not self.blank,
+            'label': self.verbose_name,
+            'help_text': self.help_text,
+            'choices': self.choices,
+            'max_choices': self.max_choices,
+        }
+        if self.has_default():
+            defaults['initial'] = self.get_default()
+        defaults.update(kwargs)
+        return forms.MultiSelectFormField(**defaults)
+
+    def validate(self, value, model_instance):
+        '''Overwrite standard to allow validation a list of values '''
+        if isinstance(value, (list, tuple, set, frozenset)):
+            for v in value:
+                super(MultiSelectField, self).validate(v, model_instance)
+        else:
+            super(MultiSelectField, self).validate(value, model_instance)
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        if isinstance(value, basestring):
+            return value
+        if isinstance(value, (list, tuple, set, frozenset)):
+            return ",".join(value)
+
+    def to_python(self, value):
+        if isinstance(value, (list, tuple, set, frozenset)):
+            return value
+        return value.split(",")
+
+    def contribute_to_class(self, cls, name):
+        super(MultiSelectField, self).contribute_to_class(cls, name)
+        if self.choices:
+            func = lambda self, fieldname=name, choicedict=dict(
+                self.choices): ",".join(
+                    [choicedict.get(value, value)
+                     for value in getattr(self, fieldname)])
+            setattr(cls, 'get_%s_display' % self.name, func)
+
+
 class Experiment(models.Model):
     name = models.CharField(primary_key=True, max_length=128)
     description = models.TextField(default="", blank=True, null=True)
     alternatives = JSONField(default="{}", blank=True)
-    relevant_chi2_goals = models.TextField(
+    relevant_chi2_goals = MultiSelectField(
         default="", null=True, blank=True,
+        choices=((goal, goal) for goal in conf.ALL_GOALS),
         verbose_name='Chi-squared test',
         help_text=mark_safe(
             '<a href="http://en.wikipedia.org/wiki/Chi-squared_test" '
             'target="_blank">Used when optimising for conversion rate.</a>'))
-    relevant_mwu_goals = models.TextField(
+    relevant_mwu_goals = MultiSelectField(
         default="", null=True, blank=True,
+        choices=((goal, goal) for goal in conf.ALL_GOALS),
         verbose_name='Mann-Whitney U',
         help_text=mark_safe(
             '<a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" '
@@ -174,6 +236,7 @@ class Experiment(models.Model):
     def delete(self, *args, **kwargs):
         # Delete existing enrollments
         self.enrollment_set.all().delete()
+
         # Delete existing flag
         if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
