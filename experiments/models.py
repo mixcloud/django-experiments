@@ -141,6 +141,11 @@ class Experiment(models.Model):
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
 
+    @staticmethod
+    def enabled_experiments():
+        return Experiment.objects.filter(
+            state__in=[ENABLED_STATE, WAFFLE_STATE])
+
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
             self.alternatives[alternative] = {}

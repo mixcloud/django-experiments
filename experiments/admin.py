@@ -11,8 +11,7 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.utils import simplejson as json
 
-from experiments.models import (
-    Experiment, Enrollment, ENABLED_STATE, WAFFLE_STATE)
+from experiments.models import Experiment, Enrollment
 from experiments.significance import chi_square_p_value, mann_whitney
 from experiments.utils import participant
 from experiments import conf
@@ -191,11 +190,9 @@ class ExperimentAdmin(admin.ModelAdmin):
         return urls + urlpatterns
 
     def render_on_dashboard(self, request):
-        enabled_experiments_qs = Experiment.objects.filter(
-            state__in=[ENABLED_STATE, WAFFLE_STATE])
-        enabled_experiments_count = enabled_experiments_qs.count()
-        enabled_experiments = list(
-            enabled_experiments_qs.order_by("start_date")[:5])
+        qs = Experiment.enabled_experiments()
+        enabled_experiments_count = qs.count()
+        enabled_experiments = list(qs.order_by("start_date")[:5])
         return self.render_to_string('experiments/dashboard.html', {
             'enabled_experiments': enabled_experiments,
             'enabled_experiments_count': enabled_experiments_count,
