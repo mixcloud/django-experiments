@@ -168,21 +168,16 @@ def json_result(func):
 
 class ExperimentAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'state')
-    list_filter = ('name', 'start_date', 'state')
+    list_filter = ('name', 'start_date', 'end_date', 'state')
+    # date_hierarchy = 'start_date'
+    ordering = ('-start_date', )
     search_fields = ('name', )
-
-    def get_title(self):
-        return 'Experiments'
+    fields = ("name", "switch_key", "description",
+              "relevant_chi2_goals", "relevant_mwu_goals",)
 
     def get_urls(self):
         urls = super(ExperimentAdmin, self).get_urls()
         urlpatterns = patterns('',
-            url(r'^$', self.admin_site.admin_view(self.index), name='index'),
-            url(r'^add/$', self.admin_site.admin_view(self.add), name='add'),
-            url(r'^update/$', self.admin_site.admin_view(self.update),
-                name='update'),
-            url(r'^delete/$', self.admin_site.admin_view(self.delete),
-                name='delete'),
             url(r'^state/$', self.admin_site.admin_view(self.state),
                 name='state'),
             url(r'^set_alternative/$',
@@ -202,16 +197,6 @@ class ExperimentAdmin(admin.ModelAdmin):
         return self.render_to_string('experiments/dashboard.html', {
             'enabled_experiments': enabled_experiments,
             'enabled_experiments_count': enabled_experiments_count,
-        }, request)
-
-    def index(self, request):
-        sort_by = request.GET.get('by', '-start_date')
-        experiments = Experiment.objects.all().order_by(sort_by)
-
-        return self.render_to_response("experiments/index.html", {
-            "experiments": [e.to_dict() for e in experiments],
-            "all_goals": json.dumps(conf.ALL_GOALS),
-            "sorted_by": sort_by,
         }, request)
 
     def results(self, request, name):
@@ -350,72 +335,6 @@ class ExperimentAdmin(admin.ModelAdmin):
         }
 
         return response
-
-    @json_result
-    def add(self, request):
-        if not request.user.has_perm('experiments.add_experiment'):
-            raise ExperimentException("You do not have permission to do that!")
-
-        name = request.POST.get("name")
-
-        if not name:
-            raise ExperimentException("Name cannot be empty")
-
-        if len(name) > 128:
-            raise ExperimentException(
-                "Name must be less than or equal to 128 characters in length")
-
-        experiment, created = Experiment.objects.get_or_create(
-            name=name,
-            defaults=dict(
-                switch_key=request.POST.get("switch_key"),
-                description=request.POST.get("desc"),
-                relevant_chi2_goals=request.POST.get("chi2_goals"),
-                relevant_mwu_goals=request.POST.get("mwu_goals"),
-            ),
-        )
-
-        if not created:
-            raise ExperimentException(
-                "Experiment with name %s already exists" % name)
-
-        response = {
-            'success': True,
-            'experiment': experiment.to_dict_serialized(),
-        }
-
-        return response
-
-    @json_result
-    def update(self, request):
-        if not request.user.has_perm('experiments.change_experiment'):
-            raise ExperimentException("You do not have permission to do that!")
-
-        experiment = Experiment.objects.get(name=request.POST.get("curname"))
-
-        experiment.switch_key = request.POST.get("switch_key")
-        experiment.description = request.POST.get("desc")
-        experiment.relevant_chi2_goals = request.POST.get("chi2_goals")
-        experiment.relevant_mwu_goals = request.POST.get("mwu_goals")
-        experiment.save()
-
-        response = {
-            'success': True,
-            'experiment': experiment.to_dict_serialized()
-        }
-
-        return response
-
-    # @permission_required(u'experiments.delete_experiment')
-    @json_result
-    def delete(self, request):
-        if not request.user.has_perm('experiments.delete_experiment'):
-            raise ExperimentException("You don't have permission to do that!")
-        experiment = Experiment.objects.get(name=request.POST.get("name"))
-
-        experiment.enrollment_set.all().delete()
-        experiment.delete()
-        return {'successful': True}
 
     @json_result
     def set_alternative(self, request):
