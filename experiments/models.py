@@ -36,15 +36,18 @@ class Experiment(models.Model):
     description = models.TextField(default="", blank=True, null=True)
     alternatives = JSONField(default={}, blank=True)
     relevant_chi2_goals = models.TextField(
-        default="", null=True, blank=True, help_text=mark_safe(
+        default="", null=True, blank=True,
+        verbose_name='Chi-squared test',
+        help_text=mark_safe(
             '<a href="http://en.wikipedia.org/wiki/Chi-squared_test" '
-            'target="_blank" title="Used when optimising for conversion '
-            'rate">&Chi;&sup2;</a>'))
+            'target="_blank">Used when optimising for conversion rate.</a>'))
     relevant_mwu_goals = models.TextField(
-        default="", null=True, blank=True, help_text=mark_safe(
+        default="", null=True, blank=True,
+        verbose_name='Mann-Whitney U',
+        help_text=mark_safe(
             '<a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" '
-            'target="_blank" title="Used when optimising for number of times '
-            'users perform an action. (Advanced.)">U</a>'))
+            'target="_blank">Used when optimising for number of times '
+            'users perform an action. (Advanced)</a>'))
     switch_key = models.CharField(default="", max_length=50, null=True, blank=True)
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
     start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
