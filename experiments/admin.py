@@ -11,7 +11,6 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.utils import simplejson as json
 
-from experiments.dateutils import now
 from experiments.models import (
     Experiment, Enrollment, ENABLED_STATE, WAFFLE_STATE)
 from experiments.significance import chi_square_p_value, mann_whitney
@@ -183,8 +182,6 @@ class ExperimentAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super(ExperimentAdmin, self).get_urls()
         urlpatterns = patterns('',
-            url(r'^state/$', self.admin_site.admin_view(self.state),
-                name='state'),
             url(r'^set_alternative/$',
                 self.admin_site.admin_view(self.set_alternative),
                 name='set_alternative'),
@@ -313,28 +310,6 @@ class ExperimentAdmin(admin.ModelAdmin):
             'user_alternative': participant(
                 request).get_alternative(experiment.name),
         }, request)
-
-    @json_result
-    def state(self, request):
-        if not request.user.has_perm('experiments.change_experiment'):
-            raise ExperimentException("You do not have permission to do that!")
-
-        experiment = Experiment.objects.get(name=request.POST.get("name"))
-        try:
-            state = int(request.POST.get("state"))
-        except ValueError:
-            raise ExperimentException("State must be integer")
-
-        experiment.state = state
-
-        experiment.save()
-
-        response = {
-            "success": True,
-            "experiment": experiment.to_dict_serialized(),
-        }
-
-        return response
 
     @json_result
     def set_alternative(self, request):
