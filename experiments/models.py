@@ -229,6 +229,11 @@ class Experiment(models.Model):
         if not self.switch_key and self.state == 2:
             self.state = 0
 
+        if self.state == 0:
+            self.end_date = now()
+        else:
+            self.end_date = None
+
         super(Experiment, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
