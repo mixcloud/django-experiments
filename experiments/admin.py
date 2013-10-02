@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.shortcuts import render_to_response
 from django.utils import simplejson as json
 
 from experiments.models import Experiment, Enrollment
@@ -184,22 +185,16 @@ class ExperimentAdmin(admin.ModelAdmin):
             url(r'^set_alternative/$',
                 self.admin_site.admin_view(self.set_alternative),
                 name='set_alternative'),
-            url(r'^results/(?P<name>[a-zA-Z0-9-_]+)/$',
+            url(r'^(?P<name>[a-zA-Z0-9-_]+?)/results/$',
                 self.admin_site.admin_view(self.results), name='results'),
         )
-        return urls + urlpatterns
+        return urlpatterns + urls
 
     def results(self, request, name):
         experiment = Experiment.objects.get(name=name)
 
-        def parse_goals(goals):
-            try:
-                return goals.replace(" ", "").split(",")
-            except AttributeError:
-                return [u'']
-
-        chi2_goals = parse_goals(experiment.relevant_chi2_goals)
-        mwu_goals = parse_goals(experiment.relevant_mwu_goals)
+        chi2_goals = experiment.relevant_chi2_goals
+        mwu_goals = experiment.relevant_mwu_goals
         relevant_goals = set(chi2_goals + mwu_goals)
 
         alternatives = {}
@@ -281,23 +276,24 @@ class ExperimentAdmin(admin.ModelAdmin):
             results[goal] = {
                 "control": control,
                 "alternatives": sorted(alternatives_conversions.items()),
-                "relevant":
-                    goal in relevant_goals or relevant_goals == set([u'']),
+                "relevant": (goal in relevant_goals
+                             or relevant_goals == set([u''])),
                 "mwu": goal in mwu_goals,
                 "mwu_histogram": conversion_distributions_to_graph_table(
                     mwu_histogram) if show_mwu else None
             }
 
-        return self.render_to_response("experiments/results.html", {
-            'experiment': experiment.to_dict(),
-            'alternatives': alternatives,
-            'control_participants': control_participants,
-            'results': results,
-            # Horrible coupling with template design
-            'column_count': len(alternatives_conversions) * 3 + 2,
-            'user_alternative': participant(
-                request).get_alternative(experiment.name),
-        }, request)
+        return render_to_response(
+            "admin/experiments/experiment/results.html", {
+                'experiment': experiment.to_dict(),
+                'alternatives': alternatives,
+                'control_participants': control_participants,
+                'results': results,
+                # Horrible coupling with template design
+                'column_count': len(alternatives_conversions) * 3 + 2,
+                'user_alternative': participant(
+                    request).get_alternative(experiment.name),
+            }, request)
 
     @json_result
     def set_alternative(self, request):
