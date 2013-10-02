@@ -121,7 +121,7 @@ class Experiment(models.Model):
             'users perform an action. (Advanced)</a>'))
     switch_key = models.CharField(
         default="", max_length=50, null=True, blank=True,
-        help_text='Connected gargoyle switch. (Optional)')
+        help_text='Connected to a feature switch. (Optional)')
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
     start_date = models.DateTimeField(
         default=now, blank=True, null=True, db_index=True)
