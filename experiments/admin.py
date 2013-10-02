@@ -171,7 +171,7 @@ class ExperimentAdmin(admin.ModelAdmin):
     ordering = ('-start_date', )
     search_fields = ('name', )
     fields = ("name", "switch_key", "description",
-              "relevant_chi2_goals", "relevant_mwu_goals",)
+              "relevant_chi2_goals", "relevant_mwu_goals", "state")
 
     def get_readonly_fields(self, request, obj=None):
         if obj is None:
