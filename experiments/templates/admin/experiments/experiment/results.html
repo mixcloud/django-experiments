@@ -1,29 +1,32 @@
 {% extends "admin/base_site.html" %}
+{% load i18n admin_modify adminmedia %}
 {% load humanize %}
 {% load experiment_helpers %}
 {% load url from future %}
-
-{% block head %}
-    {{ block.super }}
-
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/experiments.css">
-
-    <script>
-        var EXPERIMENT = {
-        };
-
-        EXPERIMENT_CHART_DATA = {};
-    </script>
-
-
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript">
-      google.load('visualization', '1.0', {'packages':['corechart']});
-    </script>
-
-    <script src="{{ STATIC_URL }}js/nexus_experiments.js"></script>
-
+{% block extrahead %}{{ block.super }}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/experiments.css">
+<script src="{{ jsi18nurl|default:" type="text/javascript"><!--mce:0--></script>
+<script>
+    var EXPERIMENT = {};
+    var EXPERIMENT_CHART_DATA = {};
+</script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  google.load('visualization', '1.0', {'packages':['corechart']});
+</script>
+<script src="{{ STATIC_URL }}js/nexus_experiments.js"></script>
 {% endblock %}
+{% block extrastyle %}{{ block.super }}
+{% endblock %}
+{% block bodyclass %}{{ opts.app_label }}-{{ opts.object_name.lower }} change-form{% endblock %}
+{% block breadcrumbs %}{% if not is_popup %}
+<div class="breadcrumbs">
+     <a href="../../../../">{% trans "Home" %}</a> ›
+     <a href="../../../">{{ opts.app_label|capfirst|escape }}</a> ›
+     <a href="../../">{{ opts.verbose_name_plural|capfirst }}</a> ›
+     <a href="../">{{ opts.verbose_name|capfirst }} #{{ entry.pk }}</a> ›
+     {% trans 'Review Entry' %}</div>
+{% endif %}{% endblock %}
 
 {% block content %}
     <div class="results header top">
