@@ -256,9 +256,7 @@ class Experiment(models.Model):
         # Delete existing flag
         if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
-                Flag.objects.get(
-                    key=Experiment.objects.get(
-                        name=self.name).switch_key).delete()
+                Flag.objects.filter(name=self.switch_key).delete()
             except Flag.DoesNotExist:
                 pass
 
