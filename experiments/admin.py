@@ -10,6 +10,7 @@ from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.utils import simplejson as json
 
 from experiments.models import Experiment, Enrollment
@@ -293,7 +294,7 @@ class ExperimentAdmin(admin.ModelAdmin):
                 'column_count': len(alternatives_conversions) * 3 + 2,
                 'user_alternative': participant(
                     request).get_alternative(experiment.name),
-            }, request)
+            }, RequestContext(request))
 
     @json_result
     def set_alternative(self, request):
