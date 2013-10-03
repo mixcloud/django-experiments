@@ -50,9 +50,9 @@
         </div>
     </div>
 
-    {% if experiment.switch_key %}
+    {% if experiment.switch %}
         <div data-experiment-name="{{experiment.name}}" class="results header" style>
-            Connected to Gargoyle switch <a href="{% url 'index' %}#id_{{experiment.switch_key}}">{{experiment.switch_key}}</a>.
+            Connected to switch <a href="{% url 'admin:waffle_flag_change' experiment.switch.pk %}">{{experiment.switch_key}}</a>.
         </div>
     {% endif %}
 
