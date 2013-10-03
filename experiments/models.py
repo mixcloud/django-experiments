@@ -126,6 +126,11 @@ class Experiment(models.Model):
     start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
+    @staticmethod
+    def enabled_experiments():
+        return Experiment.objects.filter(
+            state__in=[ENABLED_STATE, SWITCH_STATE])
+
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
             return False
@@ -148,10 +153,14 @@ class Experiment(models.Model):
             return False
         raise Exception("Invalid experiment state %s!" % self.state)
 
-    @staticmethod
-    def enabled_experiments():
-        return Experiment.objects.filter(
-            state__in=[ENABLED_STATE, SWITCH_STATE])
+    @property
+    def switch(self):
+        if self.switch_key and conf.SWITCH_AUTO_CREATE:
+            try:
+                return Flag.objects.get(name=self.switch_key)
+            except Flag.DoesNotExist:
+                pass
+        return None
 
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
