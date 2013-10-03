@@ -1,36 +1,23 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_modify %}
+{% load i18n %}
+{% load admin_urls %}
 {% load humanize %}
 {% load experiment_helpers %}
-{% load url from future %}
-{% block extrahead %}{{ block.super }}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/experiments.css">
-<script src="{{ jsi18nurl|default:" type="text/javascript"><!--mce:0--></script>
-<script>
-    var EXPERIMENT = {};
-    var EXPERIMENT_CHART_DATA = {};
-</script>
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript">
-  google.load('visualization', '1.0', {'packages':['corechart']});
-</script>
-<script src="{{ STATIC_URL }}js/nexus_experiments.js"></script>
-{% endblock %}
-{% block extrastyle %}{{ block.super }}
-{% endblock %}
-{% block bodyclass %}{{ opts.app_label }}-{{ opts.object_name.lower }} change-form{% endblock %}
-{% block breadcrumbs %}{% if not is_popup %}
+
+{% block breadcrumbs %}
 <div class="breadcrumbs">
-     <a href="../../../../">{% trans "Home" %}</a> ›
-     <a href="../../../">{{ opts.app_label|capfirst|escape }}</a> ›
-     <a href="../../">{{ opts.verbose_name_plural|capfirst }}</a> ›
-     <a href="../">{{ opts.verbose_name|capfirst }} #{{ entry.pk }}</a> ›
-     {% trans 'Review Entry' %}</div>
-{% endif %}{% endblock %}
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=app_label %}">{{ app_label|capfirst|escape }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ module_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">{{ object|truncatewords:"18" }}</a>
+&rsaquo; {% trans 'Results' %}
+</div>
+{% endblock %}
 
 {% block content %}
     <div class="results header top">
-        <h2 class="experiment">{{ experiment.name }}</h2>
+        <h2 class="experiment">Experiment: {{ experiment.name }}</h2>
+        {% comment %}
         <div data-experiment-name="{{experiment.name}}" class="results state">
             <button class="xtrasmall button {% if experiment.state == 3 %}toggled{% endif %}" data-state="3">
                 Track
@@ -48,6 +35,7 @@
                 Control
             </button>
         </div>
+        {% endcomment %}
     </div>
 
     {% if experiment.switch %}

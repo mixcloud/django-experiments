@@ -286,6 +286,9 @@ class ExperimentAdmin(admin.ModelAdmin):
 
         return render_to_response(
             "admin/experiments/experiment/results.html", {
+                'object': experiment,
+                'opts': experiment._meta,
+                'app_label': experiment._meta.app_label,
                 'experiment': experiment.to_dict(),
                 'alternatives': alternatives,
                 'control_participants': control_participants,
