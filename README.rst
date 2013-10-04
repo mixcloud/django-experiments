@@ -68,6 +68,7 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Django Waffle <https://github.com/jsocol/django-waffle>`_
+- `Django Modeldict <https://github.com/disqus/django-modeldict>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 
