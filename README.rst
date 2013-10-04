@@ -62,7 +62,7 @@ Django-Experiments is best installed via pip:
 
 ::
 
-    pip install django-experiments
+    pip install git+https://github.com/robertobarreda/django-experiments.git@waffle#egg=django-experiments
 
 This should download django-experiments and any dependencies. If downloading from the repo, 
 pip is still the recommended way to install dependencies:
