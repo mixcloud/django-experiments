@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    
+
     var api = function (url, params, succ) {
         $('#status').show();
         $.ajax({
@@ -24,104 +24,6 @@ $(document).ready(function () {
     };
 
     // Events
-    $(".experiments tr").live("click", function (ev) {
-        if (ev.target.tagName == 'A' || ev.target.tagName == 'INPUT' || ev.target.tagName == 'LABEL') {
-            return;
-        }
-
-        activated = $(this).get(0)
-
-        $(".experiments tr").each(function (_, el) {
-            if (el == activated) {
-                $(el).removeClass("collapsed");
-            } else {
-                $(el).addClass("collapsed");
-            }
-        });
-    });
-
-
-    $(".experiments .delete").live("click", function () {
-        var row = $(this).parents("tr:first");
-        var table = row.parents("table:first");
-
-        var confirmdelete = confirm("Delete experiment \"" + row.attr("data-experiment-name") + '\"? This can be dangerous if a lot of people are enrolled!')
-
-        if (confirmdelete) {
-            api(EXPERIMENT.deleteExperiment, { name: row.attr("data-experiment-name") }, function (response) {
-                row.remove();
-                if (!table.find("tr").length) {
-                    $("div.noExperiments").show();
-                }
-            });
-        }
-    });
-
-
-    //Change state of experiment
-    $("#container div.state button").live("click", function () {
-        var el = $(this)
-        var row = $(this).parent()
-        var state = el.attr("data-state");
-
-        api(EXPERIMENT.updateState,
-            {
-                name: row.attr("data-experiment-name"),
-                state: state
-            },
-            function (response) {
-                experiment = JSON.parse(response.experiment);
-                if (experiment.state == state) {
-                    row.find(".toggled").removeClass("toggled");
-                    el.addClass("toggled");
-
-                    //Hide or show end_date if disabled toggled
-                    end_date = row.parent().parent().find("#" + experiment.name + "_end_date")
-
-                    if (experiment.state == 0) {
-                        end_date.html("To: " + experiment.end_date);
-                        end_date.show();
-                    } else {
-                        end_date.hide();
-                    }
-
-                    //Hide or show conditions if selective toggled
-                    conditions = row.parent().parent().find(".conditions")
-
-                    if (experiment.state == 1) {
-                        conditions.show();
-                    } else {
-                        conditions.hide();
-                    }
-                }
-            });
-    });
-
-    $(".addExperiment").click(function (ev) {
-        ev.preventDefault();
-        $.facebox($("#experimentForm").tmpl({
-            add:                 true,
-            relevant_chi2_goals: [],
-            relevant_mwu_goals:  [],
-            all_goals:           nexus_experiments_all_goals
-        }));
-    });
-
-    $(".experiments .edit").live("click", function () {
-        var row = $(this).parents("tr:first");
-        $.facebox($("#experimentForm").tmpl({
-            add:                 false,
-            curname:             row.attr("data-experiment-name"),
-            name:                row.attr("data-experiment-name"),
-            switch_key:          row.attr("data-experiment-switch"),
-            desc:                row.attr("data-experiment-desc"),
-            relevant_goals:      row.attr("data-experiment-goals"),
-            relevant_chi2_goals: row.attr("data-experiment-chi2-goals").split(","),
-            relevant_mwu_goals:  row.attr("data-experiment-mwu-goals").split(","),
-            all_goals:           nexus_experiments_all_goals
-        }));
-    });
-
     $("#facebox .closeFacebox").live("click", function (ev) {
         ev.preventDefault();
         $.facebox.close();
@@ -168,27 +70,6 @@ $(document).ready(function () {
                 }
 
             });
-    });
-
-    $('.search input').keyup(function () {
-        var query = $(this).val();
-
-        $('.experiments tr').removeClass('hidden');
-
-        if (!query) {
-            return;
-        }
-        $('.experiments tr').each(function (_, el) {
-            var score = 0;
-           
-            score += $(el).attr('data-experiment-name').score(query);
-            score += $(el).attr('data-experiment-desc').score(query);
-            
-            if (score === 0) {
-                $(el).addClass('hidden');
-            }
-        });
-        
     });
 
     $('#ToggleGoals').live("click", function () {
