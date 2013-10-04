@@ -315,7 +315,7 @@ the control alternative, and no data will be collected.
 
 **Enabled** - The experiment is enabled globally, for all users.
 
-**Switch** - If a switch key is specified, the experiment will rely
+**Switch** - If a switch\_key is specified, the experiment will rely
 on the waffle flag to determine if the user is included in the
 experiment. More on this below.
 
