@@ -15,12 +15,6 @@
 <script src="{{ STATIC_URL }}js/admin_experiments.js"></script>
 <script>
     var EXPERIMENT = {
-      {% comment %}
-        addExperiment: "{% url 'experiments:add' %}",
-        updateExperiment: "{% url 'experiments:update' %}",
-        deleteExperiment: "{% url 'experiments:delete' %}",
-        updateState: "{% url 'experiments:state' %}",
-      {% endcomment %}
         setAlternative: "{% url 'admin:set_alternative' %}",
     };
 
