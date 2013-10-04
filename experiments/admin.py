@@ -3,15 +3,18 @@ try:
 except ImportError:  # django < 1.4
     from django.conf.urls.defaults import patterns, url
 
-from functools import wraps
+from functools import wraps, update_wrapper
 
 from django.conf import settings
 from django.contrib import admin
-from django.core.exceptions import ValidationError
+from django.contrib.admin.util import unquote
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import get_object_or_404, render
 from django.utils import simplejson as json
+from django.utils.encoding import force_text
+from django.utils.text import capfirst
+from django.utils.translation import ugettext as _
 
 from experiments.models import Experiment, Enrollment
 from experiments.significance import chi_square_p_value, mann_whitney
@@ -182,17 +185,31 @@ class ExperimentAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         urls = super(ExperimentAdmin, self).get_urls()
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+            return update_wrapper(wrapper, view)
+
+        info = self.model._meta.app_label, self.model._meta.module_name
+
         urlpatterns = patterns('',
-            url(r'^set_alternative/$',
-                self.admin_site.admin_view(self.set_alternative),
-                name='set_alternative'),
-            url(r'^(?P<name>[a-zA-Z0-9-_]+?)/results/$',
-                self.admin_site.admin_view(self.results), name='results'),
+            # url(r'^set_alternative/$',
+                # wrap(self.set_alternative),
+                # name='set_alternative'),
+            url(r'^(.+)/results/$',
+                wrap(self.results_view),
+                name='%s_%s_results' % info),
         )
+
         return urlpatterns + urls
 
-    def results(self, request, name):
-        experiment = Experiment.objects.get(name=name)
+    def results_view(self, request, object_id, extra_context=None):
+        experiment = get_object_or_404(
+            self.queryset(request), pk=unquote(object_id))
+
+        if not self.has_change_permission(request, experiment):
+            raise PermissionDenied
 
         chi2_goals = experiment.relevant_chi2_goals
         mwu_goals = experiment.relevant_mwu_goals
@@ -284,20 +301,30 @@ class ExperimentAdmin(admin.ModelAdmin):
                     mwu_histogram) if show_mwu else None
             }
 
-        return render_to_response(
-            "admin/experiments/experiment/results.html", {
-                'object': experiment,
-                'opts': experiment._meta,
-                'app_label': experiment._meta.app_label,
-                'experiment': experiment.to_dict(),
-                'alternatives': alternatives,
-                'control_participants': control_participants,
-                'results': results,
-                # Horrible coupling with template design
-                'column_count': len(alternatives_conversions) * 3 + 2,
-                'user_alternative': participant(
-                    request).get_alternative(experiment.name),
-            }, RequestContext(request))
+        # Then get the history for this object.
+        opts = self.model._meta
+        app_label = opts.app_label
+
+        context = {
+            'module_name': capfirst(force_text(opts.verbose_name_plural)),
+            'title': _('Results: %s') % force_text(experiment),
+            'app_label': app_label,
+            'object': experiment,
+            'opts': opts,
+            # Results template
+            'experiment': experiment.to_dict(),
+            'alternatives': alternatives,
+            'control_participants': control_participants,
+            'results': results,
+            # Horrible coupling with template design
+            'column_count': len(alternatives_conversions) * 3 + 2,
+            'user_alternative': participant(
+                request).get_alternative(experiment.name),
+        }
+        context.update(extra_context or {})
+
+        return render(request, "admin/experiments/experiment/results.html",
+                      context, current_app=self.admin_site.name)
 
     @json_result
     def set_alternative(self, request):
