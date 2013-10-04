@@ -68,7 +68,7 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Django Waffle <https://github.com/jsocol/django-waffle>`_
-- `Django Modeldict <https://github.com/disqus/django-modeldict>`_
+- `Django ModelDict <https://github.com/disqus/django-modeldict>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 
@@ -115,10 +115,20 @@ And add our middleware:
 
 ::
 
-    MIDDLEWARE_CLASSES [
+    MIDDLEWARE_CLASSES = [
         ...
         'experiments.middleware.ExperimentsMiddleware',
     ]
+
+Finally, the cache for ModelDict and Waffle:
+
+::
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
 
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
