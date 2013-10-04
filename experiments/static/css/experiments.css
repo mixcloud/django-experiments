@@ -80,33 +80,15 @@ Facebox css
     text-align: center;
 }
 
-/*
-Results page header
-*/
-#container div.results.header{
-    padding-top:10px;
-    padding-bottom:10px;
-    border-bottom:1px solid #DDD;
-}
-
-#container div.results.header.top{
-    min-height:30px;
-}
-
-#container h2.experiment{
-    color:#2457A9;
-    float:left;
-}
-
-#container div.results.state{
-    float:right;
-}
-
-#container div.results.header.bottom{
-    color:#666;
-}
-
 /*Results table*/
+#container table {
+    width: 100%;
+}
+
+#container table.tbody th {
+    width: 16em;
+}
+
 #container table.goals{
     border-spacing:0px;
 }
@@ -116,7 +98,6 @@ Results page header
     width:100px;
     border-bottom:1px solid #DDD;
 }
-
 
 #container table.goals td.goal{
     min-width:200px;
