@@ -115,6 +115,7 @@ And add our middleware:
 
 ::
 
+    #Middleware
     MIDDLEWARE_CLASSES = [
         ...
         'experiments.middleware.ExperimentsMiddleware',
@@ -357,7 +358,7 @@ All Settings
     EXPERIMENTS_REDIS_DB = 0
 
     #Middleware
-    MIDDLEWARE_CLASSES [
+    MIDDLEWARE_CLASSES = [
         ...
         'experiments.middleware.ExperimentsMiddleware',
     ]
@@ -369,3 +370,9 @@ All Settings
         'waffle',
         'experiments',
     ]
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
