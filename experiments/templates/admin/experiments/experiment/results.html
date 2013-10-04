@@ -14,16 +14,15 @@
 <link rel="stylesheet" href="{{ STATIC_URL }}css/experiments.css">
 <script src="{{ STATIC_URL }}js/admin_experiments.js"></script>
 <script>
-    {% comment %}
     var EXPERIMENT = {
+      {% comment %}
         addExperiment: "{% url 'experiments:add' %}",
         updateExperiment: "{% url 'experiments:update' %}",
         deleteExperiment: "{% url 'experiments:delete' %}",
         updateState: "{% url 'experiments:state' %}",
-        setAlternative: "{% url 'experiments:set_alternative' %}",
-
+      {% endcomment %}
+        setAlternative: "{% url 'admin:set_alternative' %}",
     };
-    {% endcomment %}
 
     EXPERIMENT_CHART_DATA = {};
 </script>

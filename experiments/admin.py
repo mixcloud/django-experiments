@@ -195,12 +195,10 @@ class ExperimentAdmin(admin.ModelAdmin):
         info = self.model._meta.app_label, self.model._meta.module_name
 
         urlpatterns = patterns('',
-            # url(r'^set_alternative/$',
-                # wrap(self.set_alternative),
-                # name='set_alternative'),
+            url(r'^set_alternative/$',
+                wrap(self.set_alternative), name='set_alternative'),
             url(r'^(.+)/results/$',
-                wrap(self.results_view),
-                name='%s_%s_results' % info),
+                wrap(self.results_view), name='%s_%s_results' % info),
         )
 
         return urlpatterns + urls
@@ -334,7 +332,15 @@ class ExperimentAdmin(admin.ModelAdmin):
     def set_alternative(self, request):
         experiment_name = request.POST.get("experiment")
         alternative_name = request.POST.get("alternative")
+
+        experiment = get_object_or_404(
+            self.queryset(request), pk=unquote(experiment_name))
+
+        if not self.has_change_permission(request, experiment):
+            raise PermissionDenied
+
         participant(request).set_alternative(experiment_name, alternative_name)
+
         return {
             'success': True,
             'alternative': participant(
