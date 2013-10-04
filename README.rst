@@ -12,6 +12,13 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 Changelog
 ---------
 
+0.4.0
+~~~~~
+
+- Replaced Gargoyle by Django Waffle
+- Removed Nexus dependency
+- Added custom Django admin views to replace Nexus ones
+
 0.3.5
 ~~~~~
 
