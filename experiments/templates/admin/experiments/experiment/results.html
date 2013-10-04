@@ -5,6 +5,31 @@
 {% load humanize %}
 {% load experiment_helpers %}
 
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    google.load('visualization', '1.0', {'packages':['corechart']});
+</script>
+<link rel="stylesheet" href="{{ STATIC_URL }}css/experiments.css">
+<script src="{{ STATIC_URL }}js/admin_experiments.js"></script>
+<script>
+    {% comment %}
+    var EXPERIMENT = {
+        addExperiment: "{% url 'experiments:add' %}",
+        updateExperiment: "{% url 'experiments:update' %}",
+        deleteExperiment: "{% url 'experiments:delete' %}",
+        updateState: "{% url 'experiments:state' %}",
+        setAlternative: "{% url 'experiments:set_alternative' %}",
+
+    };
+    {% endcomment %}
+
+    EXPERIMENT_CHART_DATA = {};
+</script>
+
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumbs">
 <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
@@ -44,9 +69,9 @@
         {% endif %}
     </div>
 
-    <div class="module">
+    <div id="container">
     {% if results %}
-        <table id="change-history">
+    <table id="experiments" class="goals{% if not results %}empty{% endif %}">
           <thead>
             <tr>
               <th scope="col" class="goal odd"></th>
@@ -160,7 +185,7 @@
             {% endfor %}
         </tbody>
     </table>
-    <a id  = "ToggleGoals" href="#">Toggle All Goals</a>
+    <a id="ToggleGoals" href="#">Toggle All Goals</a>
 
 {% else %}
     <p>{% trans "This test has no results." %}</p>
