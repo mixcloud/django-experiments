@@ -1,5 +1,6 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
+{% load url from future %}
 {% load admin_urls %}
 {% load humanize %}
 {% load experiment_helpers %}
@@ -9,15 +10,17 @@
 <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
 &rsaquo; <a href="{% url 'admin:app_list' app_label=app_label %}">{{ app_label|capfirst|escape }}</a>
 &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ module_name }}</a>
-&rsaquo; <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">{{ object|truncatewords:"18" }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}{{ object.pk }}">{{ object|truncatewords:"18" }}</a>
 &rsaquo; {% trans 'Results' %}
 </div>
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
+  <div class="module">
+        {% comment %}
     <div class="results header top">
         <h2 class="experiment">Experiment: {{ experiment.name }}</h2>
-        {% comment %}
         <div data-experiment-name="{{experiment.name}}" class="results state">
             <button class="xtrasmall button {% if experiment.state == 3 %}toggled{% endif %}" data-state="3">
                 Track
@@ -35,8 +38,29 @@
                 Control
             </button>
         </div>
-        {% endcomment %}
     </div>
+        {% endcomment %}
+
+        <table id="change-history">
+          <thead>
+            <tr>
+              <th scope="col">{% trans 'Date/time' %}</th>
+              <th scope="col">{% trans 'User' %}</th>
+              <th scope="col">{% trans 'Action' %}</th>
+            </tr>
+            </thead>
+        <tbody>
+        {% comment %}
+        {% for action in action_list %}
+        <tr>
+            <th scope="row">{{ action.action_time|date:"DATETIME_FORMAT" }}</th>
+            <td>{{ action.user.username }}{% if action.user.get_full_name %} ({{ action.user.get_full_name }}){% endif %}</td>
+            <td>{{ action.change_message }}</td>
+        </tr>
+        {% endfor %}
+        {% endcomment %}
+        </tbody>
+            </table>
 
     {% if experiment.switch %}
         <div data-experiment-name="{{experiment.name}}" class="results header" style>
@@ -183,5 +207,6 @@
     </table>
 
     <a id  = "ToggleGoals" href="#">Toggle All Goals</a>
-
+    </div>
+  </div>
 {% endblock content %}

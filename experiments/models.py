@@ -222,9 +222,11 @@ class Experiment(models.Model):
         return self.name
 
     def to_dict(self):
+        info = self._meta.app_label, self._meta.module_name
         data = {
             'name': self.name,
-            'edit_url': reverse('admin:results', kwargs={'name': self.name}),
+            'edit_url': reverse('admin:%s_%s_results' % info,
+                                args=(self.name,)),
             'start_date': self.start_date,
             'end_date': self.end_date,
             'state': self.state,
