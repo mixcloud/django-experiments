@@ -12,14 +12,13 @@ def runtests():
         DEBUG=True,
         DATABASES={
             'default': {
-                'NAME': 'test.db',
                 'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': 'test.db',
             }
         },
         CACHES={
             'default': {
-                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-                'LOCATION': 'django-experiments-test',
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
             }
         },
         INSTALLED_APPS=('django.contrib.auth',
