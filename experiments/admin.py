@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import simplejson as json
@@ -316,6 +317,9 @@ class ExperimentAdmin(admin.ModelAdmin):
             'alternatives': alternatives,
             'control_participants': control_participants,
             'results': results,
+            'flag_url': reverse('admin:waffle_flag_change',
+                                args=(experiment.switch.pk,))
+                        if experiment.switch else None,
             # Horrible coupling with template design
             'column_count': len(alternatives_conversions) * 3 + 2,
             'user_alternative': participant(

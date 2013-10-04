@@ -17,121 +17,76 @@
 
 {% block content %}
 <div id="content-main">
-  <div class="module">
-        {% comment %}
-    <div class="results header top">
-        <h2 class="experiment">Experiment: {{ experiment.name }}</h2>
-        <div data-experiment-name="{{experiment.name}}" class="results state">
-            <button class="xtrasmall button {% if experiment.state == 3 %}toggled{% endif %}" data-state="3">
-                Track
-            </button>
-
-            <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"{% endif %}>
-                Switch
-            </button>
-
-            <button class="xtrasmall button {% if experiment.state == 1 %}toggled{% endif %}" data-state="1">
-                Enabled
-            </button>
-
-            <button class="xtrasmall button {% if experiment.state == 0 %}toggled{% endif %}" data-state="0">
-                Control
-            </button>
-        </div>
-    </div>
-        {% endcomment %}
-
-        <table id="change-history">
-          <thead>
-            <tr>
-              <th scope="col">{% trans 'Date/time' %}</th>
-              <th scope="col">{% trans 'User' %}</th>
-              <th scope="col">{% trans 'Action' %}</th>
-            </tr>
-            </thead>
-        <tbody>
-        {% comment %}
-        {% for action in action_list %}
-        <tr>
-            <th scope="row">{{ action.action_time|date:"DATETIME_FORMAT" }}</th>
-            <td>{{ action.user.username }}{% if action.user.get_full_name %} ({{ action.user.get_full_name }}){% endif %}</td>
-            <td>{{ action.change_message }}</td>
-        </tr>
-        {% endfor %}
-        {% endcomment %}
-        </tbody>
-            </table>
-
-    {% if experiment.switch %}
-        <div data-experiment-name="{{experiment.name}}" class="results header" style>
-            Connected to switch <a href="{% url 'admin:waffle_flag_change' experiment.switch.pk %}">{{experiment.switch_key}}</a>.
-        </div>
-    {% endif %}
-
     <div class="results header bottom">
         {% if experiment.description %}<p>{{ experiment.description }}</p>{% endif %}
 
         <div class="dates">
-            <div id = "{{ experiment.name }}_start_date"
+            <div id="{{ experiment.name }}_start_date"
                 {% if experiment.start_date %}
                      >Started: {{ experiment.start_date }}
                 {% else %}
-                    style="display:none;">Started: 
+                    style="display:none;">Started:
                 {% endif %}
             </div>
-            <div id = "{{ experiment.name }}_end_date"
+            <div id="{{ experiment.name }}_end_date"
                 {% if experiment.end_date %}
                     >Ended: {{ experiment.end_date }}
                 {% else %}
-                    style="display:none;">Ended: 
+                    style="display:none;">Ended:
                 {% endif %}
             </div>
         </div>
+
+        {% if flag_url %}
+        <div data-experiment-name="{{experiment.name}}" class="results header" style>
+          Connected to switch <a href="{{ flag_url }}">{{experiment.switch_key}}</a>.
+        </div>
+        {% endif %}
     </div>
-        
-    <table class="goals{% if not results %}empty{% endif %}">
 
-        <thead>
+    <div class="module">
+    {% if results %}
+        <table id="change-history">
+          <thead>
             <tr>
-                <td class="goal odd"></td>
-                <td class="conversion1 even">
-                    control <small>({{ control_participants|intcomma }})</small>
-                    <div class="enrollment-indicator" data-experiment="{{ experiment.name }}" data-alternative="control">
-                        {% if user_alternative == 'control' %}
-                            Enrolled
-                        {% else %}
-                            <a href="#" class="js-join-alternative">Join</a>
-                        {% endif %}
-                    </div>
-                </td>
-                {% for alternative, participants in alternatives %}
-                     {% if alternative != 'control' %}
-                         <td colspan="3" class="conversion2 {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
-                            {{ alternative }} <small>({{ participants|intcomma }})</small>
-                            <div class="enrollment-indicator" data-experiment="{{ experiment.name }}" data-alternative="{{ alternative }}">
-                                {% if user_alternative == alternative %}
-                                    Enrolled
-                                {% else %}
-                                    <a href="#" class="js-join-alternative">Join</a>
-                                {% endif %}
-                            </div>
-                         </td>
-                     {% endif %}
-                {% endfor %}
+              <th scope="col" class="goal odd"></th>
+              <th scope="col" class="conversion1 even">
+                  control <small>({{ control_participants|intcomma }})</small>
+                  <div class="enrollment-indicator" data-experiment="{{ experiment.name }}" data-alternative="control">
+                      {% if user_alternative == 'control' %}
+                          Enrolled
+                      {% else %}
+                          <a href="#" class="js-join-alternative">Join</a>
+                      {% endif %}
+                  </div>
+              </th>
+              {% for alternative, participants in alternatives %}
+                    {% if alternative != 'control' %}
+                        <th scope="col" colspan="3" class="conversion2 {% if forloop.counter|divisibleby:2 %}odd{% else %}even{% endif %}">
+                          {{ alternative }} <small>({{ participants|intcomma }})</small>
+                          <div class="enrollment-indicator" data-experiment="{{ experiment.name }}" data-alternative="{{ alternative }}">
+                              {% if user_alternative == alternative %}
+                                  Enrolled
+                              {% else %}
+                                  <a href="#" class="js-join-alternative">Join</a>
+                              {% endif %}
+                          </div>
+                        </th>
+                    {% endif %}
+              {% endfor %}
             </tr>
-        </thead>
-
+            </thead>
         <tbody>
             {% for goal, data in results.items %}
                 <tr id="{{goal}}-row" class="row-{% cycle 'odd' 'even' %} {% if not data.relevant %}hiddengoal{% endif %}">
 
-                    <td class="goal odd">
+                    <th class="goal odd">
                         {% if data.mwu %}
                             <a href="#" class="toggle_chart" data-element-id="{{ goal }}_chart">{{ goal }}</a>
                         {% else %}
                             {{ goal }}
                         {% endif %}
-                    </td>
+                    </th>
 
                     <td class="conversion1 even">
                         {{ data.control.conversions|intcomma }} <small>({{ data.control.conversion_rate|floatformat:2 }}%
@@ -205,8 +160,12 @@
             {% endfor %}
         </tbody>
     </table>
-
     <a id  = "ToggleGoals" href="#">Toggle All Goals</a>
+
+{% else %}
+    <p>{% trans "This test has no results." %}</p>
+{% endif %}
+
     </div>
   </div>
 {% endblock content %}
