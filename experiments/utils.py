@@ -70,7 +70,7 @@ class WebUser(object):
             assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:
                 chosen_alternative = assigned_alternative
-            elif experiment.is_accepting_new_users(self._gargoyle_key()):
+            elif experiment.is_accepting_new_users(self._switch_key()):
                 chosen_alternative = experiment.random_alternative()
                 self._set_enrollment(experiment, chosen_alternative)
 
@@ -175,7 +175,7 @@ class WebUser(object):
         "Set the last time the user was seen associated with this experiment"
         raise NotImplementedError
 
-    def _gargoyle_key(self):
+    def _switch_key(self):
         return None
 
 
@@ -270,7 +270,7 @@ class AuthenticatedUser(WebUser):
     def _set_last_seen(self, experiment, last_seen):
         Enrollment.objects.filter(user=self.user, experiment=experiment).update(last_seen=last_seen)
 
-    def _gargoyle_key(self):
+    def _switch_key(self):
         return self.request or self.user
 
 def _session_enrollment_latest_version(data):
@@ -370,7 +370,7 @@ class SessionUser(WebUser):
         enrollments[experiment.name] = (alternative, unused, enrollment_date, last_seen)
         self.session['experiments_enrollments'] = enrollments
 
-    def _gargoyle_key(self):
+    def _switch_key(self):
         return self.request
 
 
