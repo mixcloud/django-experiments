@@ -27,14 +27,14 @@ class ExperimentNode(template.Node):
         if self.user_variable:
             auth_user = self.user_variable.resolve(context)
             user = participant(user=auth_user)
-            gargoyle_key = auth_user
+            switch_key = auth_user
         else:
             request = context.get('request', None)
             user = participant(request)
-            gargoyle_key = request
+            switch_key = request
 
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key):
+        if user.is_enrolled(self.experiment_name, self.alternative, switch_key):
             response = self.node_list.render(context)
         else:
             response = ""
@@ -69,11 +69,11 @@ def _parse_token_contents(token_contents):
 def experiment(parser, token):
     """
     Split Testing experiment tag has the following syntax :
-    
+
     {% experiment <experiment_name> <alternative>  %}
     experiment content goes here
     {% endexperiment %}
-    
+
     If the alternative name is neither 'test' nor 'control' an exception is raised
     during rendering.
     """
