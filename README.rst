@@ -75,7 +75,6 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Django Waffle <https://github.com/jsocol/django-waffle>`_
-- `Django ModelDict <https://github.com/disqus/django-modeldict>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 
@@ -128,7 +127,7 @@ And add our middleware:
         'experiments.middleware.ExperimentsMiddleware',
     ]
 
-Finally, the cache for ModelDict and Waffle:
+Finally, the cache for the manager and Waffle:
 
 ::
 
