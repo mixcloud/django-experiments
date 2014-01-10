@@ -103,7 +103,7 @@ class Experiment(models.Model):
     description = models.TextField(
         default="", blank=True, null=True,
         help_text='A brief description of this experiment.')
-    alternatives = JSONField(default="{}", blank=True)
+    alternatives = JSONField(default={}, blank=True)
     relevant_chi2_goals = MultiSelectField(
         default="", null=True, blank=True,
         choices=((goal, goal) for goal in conf.ALL_GOALS),
