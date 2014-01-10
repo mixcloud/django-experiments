@@ -29,7 +29,7 @@ EXPERIMENTS_REDIS_DB = 0
 STATIC_URL = '/static/'
 
 # Other settings
-# Django settings for example_project project.
+# Django settings for example project.
 
 DEBUG = True
 TEMPLATE_DEBUG = True
@@ -130,7 +130,7 @@ MIDDLEWARE_CLASSES = (
     'experiments.middleware.ExperimentsMiddleware',
 )
 
-ROOT_URLCONF = 'example_project.urls'
+ROOT_URLCONF = 'example.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".

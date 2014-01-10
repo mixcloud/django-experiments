@@ -40,7 +40,7 @@ setup(
     author='Chris Villa, Roberto Barreda',
     author_email='chris@mixcloud.com, roberto.barreda@gmail.com',
     url='https://github.com/robertobarreda/django-experiments',
-    packages=find_packages(exclude=["example_project"]),
+    packages=find_packages(exclude=["example"]),
     include_package_data=True,
     license="MIT license, see LICENSE file",
     install_requires=parse_requirements('requirements.txt'),
