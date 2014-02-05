@@ -1,7 +1,9 @@
 from __future__ import absolute_import
+from json import dumps as to_json
 
 from django import template
 from django.core.urlresolvers import reverse
+from django.utils.safestring import mark_safe
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
@@ -11,7 +13,8 @@ register = template.Library()
 
 @register.inclusion_tag('experiments/goal.html')
 def experiment_goal(goal_name):
-    return { 'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}) }
+    return {'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}),
+            'goal_name': goal_name}
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative, user_variable):
@@ -31,8 +34,15 @@ class ExperimentNode(template.Node):
             user = participant(request)
             gargoyle_key = request
 
+        # Extract session alternative, if any pertain to this experiment.
+        selected_alternative = None
+        if 'experiment' in request.session:
+            if request.session['experiment'] == self.experiment_name:
+                selected_alternative = request.session['alternative']
+                del request.session['experiment']
+
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key):
+        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key, selected_alternative):
             response = self.node_list.render(context)
         else:
             response = ""
@@ -95,3 +105,25 @@ def visit(context):
     request = context.get('request', None)
     participant(request).visit()
     return ""
+
+@register.inclusion_tag('experiments/enrollments.html', takes_context=True)
+def enrollments(context):
+    """
+    Adds an array named 'enrollments' to the experiments javascript
+    variable.  This array of 
+
+    [{'experiment': experiment_name, 'alternative': alternative_name}, ...]
+
+    describes each running experiment and the alternative selected for the user.
+    Other template tags may select experiments and alternatives so use this
+    tag after all of the other experiments template tags in your template.
+
+    Note: The enrollments array can only be accessed after
+    $(document).ready.
+    """
+    request = context.get('request', None)
+    user = participant(request)
+    enrollments = [{'experiment': enrollment.experiment.name,
+                    'alternative': enrollment.alternative}
+                    for enrollment in user._get_all_enrollments()]
+    return {'experiment_enrollments': mark_safe(to_json(enrollments))}
