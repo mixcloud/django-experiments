@@ -23,7 +23,7 @@ TEST_GOAL = 'buy'
 EXPERIMENT_NAME = 'backgroundcolor'
 
 
-class WebUserTests:
+class WebUserTests(object):
     def setUp(self):
         self.experiment = Experiment(name=EXPERIMENT_NAME, state=ENABLED_STATE)
         self.experiment.save()

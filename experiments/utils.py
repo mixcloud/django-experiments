@@ -4,6 +4,7 @@ from django.contrib.sessions.backends.base import SessionBase
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
+from experiments.signals import user_enrolled
 from experiments import conf
 
 from collections import namedtuple
@@ -189,6 +190,10 @@ class DummyUser(WebUser):
         return None
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
+        user_enrolled.send(
+            self,
+            experiment=experiment.name, alternative=alternative,
+            user=None, session=None)
         pass
 
     def is_enrolled(self, experiment_name, alternative, request):
@@ -261,6 +266,11 @@ class AuthenticatedUser(WebUser):
 
         experiment.increment_participant_count(alternative, self._participant_identifier())
 
+        user_enrolled.send(
+            self,
+            experiment=experiment.name, alternative=alternative,
+            user=self.user, session=None)
+
     def _participant_identifier(self):
         return 'user:%d' % (self.user.pk, )
 
@@ -324,6 +334,10 @@ class SessionUser(WebUser):
         self.session['experiments_enrollments'] = enrollments
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
+        user_enrolled.send(
+            self,
+            experiment=experiment.name, alternative=alternative,
+            user=None, session=self.session)
 
     def confirm_human(self):
         if self.session.get('experiments_verified_human', False):
