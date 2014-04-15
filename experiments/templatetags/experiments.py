@@ -9,9 +9,11 @@ from uuid import uuid4
 
 register = template.Library()
 
+
 @register.inclusion_tag('experiments/goal.html')
 def experiment_goal(goal_name):
-    return { 'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()}) }
+    return {'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()})}
+
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative, user_variable):
@@ -38,6 +40,7 @@ class ExperimentNode(template.Node):
             response = ""
 
         return response
+
 
 def _parse_token_contents(token_contents):
     (_, experiment_name, alternative), remaining_tokens = token_contents[:3], token_contents[3:]
@@ -89,6 +92,7 @@ def experiment(parser, token):
         experiment.ensure_alternative_exists(alternative, weight)
 
     return ExperimentNode(node_list, experiment_name, alternative, user_variable)
+
 
 @register.simple_tag(takes_context=True)
 def visit(context):

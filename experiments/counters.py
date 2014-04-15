@@ -13,6 +13,7 @@ r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=RE
 COUNTER_CACHE_KEY = 'experiments:participants:%s'
 COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
 
+
 def increment(key, participant_identifier, count=1):
     if count == 0:
         return
@@ -30,6 +31,7 @@ def increment(key, participant_identifier, count=1):
         # Handle Redis failures gracefully
         pass
 
+
 def clear(key, participant_identifier):
     try:
         # Remove the direct entry
@@ -44,6 +46,7 @@ def clear(key, participant_identifier):
         # Handle Redis failures gracefully
         pass
 
+
 def get(key):
     try:
         cache_key = COUNTER_CACHE_KEY % key
@@ -51,6 +54,7 @@ def get(key):
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return 0
+
 
 def get_frequency(key, participant_identifier):
     try:
@@ -61,6 +65,7 @@ def get_frequency(key, participant_identifier):
         # Handle Redis failures gracefully
         return 0
 
+
 def get_frequencies(key):
     try:
         freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
@@ -68,10 +73,11 @@ def get_frequencies(key):
         # briefly be a negative result for some frequency count. We discard these
         # as they shouldn't really affect the result, and they are about to become
         # zero anyway.
-        return dict((int(k),int(v)) for (k,v) in r.hgetall(freq_cache_key).items() if int(v) > 0)
+        return dict((int(k), int(v)) for (k, v) in r.hgetall(freq_cache_key).items() if int(v) > 0)
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return tuple()
+
 
 def reset(key):
     try:
@@ -83,6 +89,7 @@ def reset(key):
     except (ConnectionError, ResponseError):
         # Handle Redis failures gracefully
         return False
+
 
 def reset_pattern(pattern_key):
     #similar to above, but can pass pattern as arg instead

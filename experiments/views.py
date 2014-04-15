@@ -17,16 +17,19 @@ TRANSPARENT_1X1_PNG = \
  "\x60\x00\x08\x30\x00\x00\x02\x00\x01\x4f\x6d\x59\xe1\x00\x00\x00"
  "\x00\x49\x45\x4e\x44\xae\x42\x60\x82\x00")
 
+
 @never_cache
 def confirm_human(request):
     experiment_user = participant(request)
     experiment_user.confirm_human()
     return HttpResponse(status=204)
 
+
 @never_cache
 def record_experiment_goal(request, goal_name, cache_buster=None):
     record_goal(goal_name, request)
     return HttpResponse(TRANSPARENT_1X1_PNG, mimetype="image/png")
+
 
 def change_alternative(request, experiment_name, alternative_name):
     experiment = get_object_or_404(Experiment, name=experiment_name)

@@ -11,7 +11,7 @@ from experiments.utils import participant
 
 try:
     from django.contrib.auth import get_user_model
-except ImportError: # django < 1.5
+except ImportError:  # django < 1.5
     from django.contrib.auth.models import User
 else:
     User = get_user_model()
@@ -20,7 +20,8 @@ request_factory = RequestFactory()
 
 TEST_ALTERNATIVE = 'blue'
 TEST_GOAL = 'buy'
-EXPERIMENT_NAME='backgroundcolor'
+EXPERIMENT_NAME = 'backgroundcolor'
+
 
 class WebUserTests:
     def setUp(self):
@@ -38,7 +39,7 @@ class WebUserTests:
     def participants(self, alternative):
         return self.experiment.participant_count(alternative)
 
-    def enrollment_initially_none(self,):
+    def enrollment_initially_none(self, ):
         experiment_user = participant(self.request)
         self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), None)
 
@@ -140,4 +141,3 @@ class BotTestCase(TestCase):
 
     def tearDown(self):
         self.experiment.delete()
-

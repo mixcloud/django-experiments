@@ -6,6 +6,7 @@ from experiments import counters
 
 TEST_KEY = 'CounterTestCase'
 
+
 class CounterTestCase(TestCase):
     def setUp(self):
         counters.reset(TEST_KEY)
@@ -40,7 +41,6 @@ class CounterTestCase(TestCase):
         counters.increment(TEST_KEY, 'roger')
         counters.increment(TEST_KEY, 'roger')
         self.assertEqual(counters.get_frequencies(TEST_KEY), {1: 3, 4: 1})
-
 
     def test_delete_key(self):
         counters.increment(TEST_KEY, 'fred')
