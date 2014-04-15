@@ -5,6 +5,7 @@ from .mannwhitney import MannWhitneyTestCase
 from .counter import CounterTestCase
 from .webuser import WebUserAnonymousTestCase, WebUserAuthenticatedTestCase, BotTestCase
 from .templatetags import ExperimentTemplateTagTestCase
+from .signals import SignalsTestCase
 from . import webuser_incorporate
 
 
