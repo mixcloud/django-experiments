@@ -3,7 +3,7 @@ from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
-from experiments.dateutils import now, fix_awareness
+from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
 from experiments import conf
 
 from collections import namedtuple
@@ -11,6 +11,7 @@ from collections import namedtuple
 import re
 import warnings
 import collections
+import numbers
 from datetime import timedelta
 
 def record_goal(request, goal_name):
@@ -278,6 +279,10 @@ class AuthenticatedUser(WebUser):
 def _session_enrollment_latest_version(data):
     try:
         alternative, unused, enrollment_date, last_seen = data
+        if isinstance(enrollment_date, numbers.Number):
+            enrollment_date = datetime_from_timestamp(enrollment_date)
+        if isinstance(last_seen, numbers.Number):
+            last_seen = datetime_from_timestamp(last_seen)
         if last_seen:
             last_seen = fix_awareness(last_seen)
     except ValueError: # Data from previous version
@@ -302,7 +307,7 @@ class SessionUser(WebUser):
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         enrollments = self.session.get('experiments_enrollments', {})
-        enrollments[experiment.name] = (alternative, None, enrollment_date or now(), last_seen)
+        enrollments[experiment.name] = (alternative, None, timestamp_from_datetime(enrollment_date or now()), timestamp_from_datetime(last_seen))
         self.session['experiments_enrollments'] = enrollments
         if self._is_verified_human():
             experiment.increment_participant_count(alternative, self._participant_identifier())
@@ -369,7 +374,7 @@ class SessionUser(WebUser):
     def _set_last_seen(self, experiment, last_seen):
         enrollments = self.session.get('experiments_enrollments', {})
         alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollments[experiment.name])
-        enrollments[experiment.name] = (alternative, unused, enrollment_date, last_seen)
+        enrollments[experiment.name] = (alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))
         self.session['experiments_enrollments'] = enrollments
 
     def _gargoyle_key(self):
