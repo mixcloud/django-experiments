@@ -7,13 +7,14 @@ from experiments.models import Experiment, ENABLED_STATE
 
 try:
     from django.contrib.auth import get_user_model
-except ImportError: # django < 1.5
+except ImportError:  # django < 1.5
     from django.contrib.auth.models import User
 else:
     User = get_user_model()
 
 TEST_ALTERNATIVE = 'blue'
-EXPERIMENT_NAME='backgroundcolor'
+EXPERIMENT_NAME = 'backgroundcolor'
+
 
 class WebUserIncorporateTestCase(object):
     def test_can_incorporate(self):
@@ -34,16 +35,20 @@ class WebUserIncorporateTestCase(object):
     def _has_data(self):
         return not isinstance(self.incorporated, DummyUser) and not isinstance(self.incorporating, DummyUser)
 
+
 def dummy(incorporating):
     return DummyUser()
 
+
 def anonymous(incorporating):
     return SessionUser(session=DatabaseSession())
+
 
 def authenticated(incorporating):
     return AuthenticatedUser(user=User.objects.create(username=['incorporating_user', 'incorporated_user'][incorporating]))
 
 user_factories = (dummy, anonymous, authenticated)
+
 
 def load_tests(loader, standard_tests, _):
     suite = TestSuite()
@@ -66,4 +71,3 @@ def build_test_case(incorporating, incorporated):
             self.incorporated = incorporated(False)
     InstantiatedTestCase.__name__ = "WebUserIncorporateTestCase_into_%s_from_%s" % (incorporating.__name__, incorporated.__name__)
     return InstantiatedTestCase
-

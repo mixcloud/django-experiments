@@ -2,6 +2,7 @@ from django.utils.unittest import TestCase
 
 from experiments.significance import mann_whitney
 
+
 # The hardcoded p and u values in these tests were calculated using scipy
 class MannWhitneyTestCase(TestCase):
     longMessage = True
@@ -18,7 +19,7 @@ class MannWhitneyTestCase(TestCase):
 
     def test_large_range(self):
         distribution_a = dict((x, 1) for x in range(10000))
-        distribution_b = dict((x+1, 1) for x in range(10000))
+        distribution_b = dict((x + 1, 1) for x in range(10000))
         self.assertUandPCorrect(distribution_a, distribution_b, 49990000.5, 0.49023014794874586)
 
     def test_very_different_sizes(self):

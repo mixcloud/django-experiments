@@ -1,5 +1,6 @@
 from experiments.stats import zprob, chisqprob
 
+
 def mann_whitney(a_distribution, b_distribution, use_continuity=True):
     """Returns (u, p_value)"""
     MINIMUM_VALUES = 20
@@ -26,7 +27,7 @@ def mann_whitney(a_distribution, b_distribution, use_continuity=True):
         b_count += b_for_value
         count_so_far += total_for_value
 
-        variance_adjustment += total_for_value**3 - total_for_value
+        variance_adjustment += total_for_value ** 3 - total_for_value
 
     if a_count < MINIMUM_VALUES or b_count < MINIMUM_VALUES:
         return 0, None
@@ -41,8 +42,8 @@ def mann_whitney(a_distribution, b_distribution, use_continuity=True):
     total_count = float(a_count + b_count)
     u_distribution_mean = a_count * b_count / 2.0
     u_distribution_sd = (
-        (a_count * b_count / (total_count * (total_count-1))) ** 0.5 *
-        ((total_count**3 - total_count - variance_adjustment)/12.0) ** 0.5 )
+        (a_count * b_count / (total_count * (total_count - 1))) ** 0.5 *
+        ((total_count ** 3 - total_count - variance_adjustment) / 12.0) ** 0.5)
 
     if u_distribution_sd == 0:
         return small_u, None
@@ -82,20 +83,20 @@ def chi_square_p_value(matrix):
     """
     num_rows = len(matrix)
     num_columns = len(matrix[0])
-    
+
     # Sanity checking
     if num_rows == 0:
         return None
     for row in matrix:
         if len(row) != num_columns:
             return None
-    
+
     row_sums = []
     # for each row
     for row in matrix:
         # add up all the values in the row
         row_sums.append(sum(row))
-    
+
     column_sums = []
     # for each column i
     for i in range(num_columns):
@@ -104,28 +105,27 @@ def chi_square_p_value(matrix):
         for row in matrix:
             column_sum += row[i]
         column_sums.append(column_sum)
-    
+
     # the total sum could be calculated from either the rows or the columns
     # coerce to float to make subsequent division generate float results
     grand_total = float(sum(row_sums))
-    
+
     if grand_total <= 0:
         return None, None
-    
+
     observed_test_statistic = 0.0
     for i in range(num_rows):
         for j in range(num_columns):
-            expected_value = (row_sums[i]/grand_total)*(column_sums[j]/grand_total)*grand_total
+            expected_value = (row_sums[i] / grand_total) * (column_sums[j] / grand_total) * grand_total
             if expected_value <= 0:
                 return None, None
             observed_value = matrix[i][j]
-            observed_test_statistic += ((observed_value - expected_value)**2) / expected_value
+            observed_test_statistic += ((observed_value - expected_value) ** 2) / expected_value
             # See https://bitbucket.org/akoha/django-lean/issue/16/g_test-formula-is-incorrect
             #observed_test_statistic += 2 * (observed_value*log(observed_value/expected_value))
 
-
     degrees_freedom = (num_columns - 1) * (num_rows - 1)
-    
+
     p_value = chisqprob(observed_test_statistic, degrees_freedom)
 
     return observed_test_statistic, p_value

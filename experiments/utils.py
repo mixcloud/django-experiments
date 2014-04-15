@@ -14,6 +14,7 @@ import collections
 import numbers
 from datetime import timedelta
 
+
 def record_goal(request, goal_name):
     _record_goal(goal_name, request)
 
@@ -40,7 +41,7 @@ def _get_participant(request, session, user):
     if request and hasattr(request, 'session') and not session:
         session = request.session
 
-    if request and conf.BOT_REGEX.search(request.META.get("HTTP_USER_AGENT","")):
+    if request and conf.BOT_REGEX.search(request.META.get("HTTP_USER_AGENT", "")):
         return DummyUser()
     elif user and user.is_authenticated():
         return AuthenticatedUser(user, request)
@@ -50,6 +51,7 @@ def _get_participant(request, session, user):
         return DummyUser()
 
 EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative', 'enrollment_date', 'last_seen'])
+
 
 class WebUser(object):
     """Represents a user (either authenticated or session based) which can take part in experiments"""
@@ -185,25 +187,35 @@ class WebUser(object):
 class DummyUser(WebUser):
     def _get_enrollment(self, experiment):
         return None
+
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
         pass
+
     def is_enrolled(self, experiment_name, alternative, request):
         return alternative == conf.CONTROL_GROUP
+
     def incorporate(self, other_user):
         for enrollment in other_user._get_all_enrollments():
             other_user._cancel_enrollment(enrollment.experiment)
+
     def _participant_identifier(self):
         return ""
+
     def _get_all_enrollments(self):
         return []
+
     def _is_enrolled_in_experiment(self, experiment):
         return False
+
     def _cancel_enrollment(self, experiment):
         pass
+
     def _get_goal_counts(self, experiment, alternative):
         return {}
+
     def _experiment_goal(self, experiment, alternative, goal_name, count):
         pass
+
     def _set_last_seen(self, experiment, last_seen):
         pass
 
@@ -213,7 +225,7 @@ class AuthenticatedUser(WebUser):
         self._enrollment_cache = {}
         self.user = user
         self.request = request
-        super(AuthenticatedUser,self).__init__()
+        super(AuthenticatedUser, self).__init__()
 
     def _get_enrollment(self, experiment):
         if experiment.name not in self._enrollment_cache:
@@ -228,7 +240,7 @@ class AuthenticatedUser(WebUser):
             del self._enrollment_cache[experiment.name]
 
         try:
-            enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative':alternative})
+            enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative})
         except IntegrityError, exc:
             # Already registered (db race condition under high load)
             return
@@ -250,7 +262,7 @@ class AuthenticatedUser(WebUser):
         experiment.increment_participant_count(alternative, self._participant_identifier())
 
     def _participant_identifier(self):
-        return 'user:%d' % (self.user.pk,)
+        return 'user:%d' % (self.user.pk, )
 
     def _get_all_enrollments(self):
         enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
@@ -276,6 +288,7 @@ class AuthenticatedUser(WebUser):
     def _gargoyle_key(self):
         return self.request or self.user
 
+
 def _session_enrollment_latest_version(data):
     try:
         alternative, unused, enrollment_date, last_seen = data
@@ -285,7 +298,7 @@ def _session_enrollment_latest_version(data):
             last_seen = datetime_from_timestamp(last_seen)
         if last_seen:
             last_seen = fix_awareness(last_seen)
-    except ValueError: # Data from previous version
+    except ValueError:  # Data from previous version
         alternative, unused = data
         enrollment_date = None
         last_seen = None
@@ -296,7 +309,7 @@ class SessionUser(WebUser):
     def __init__(self, session, request=None):
         self.session = session
         self.request = request
-        super(SessionUser,self).__init__()
+        super(SessionUser, self).__init__()
 
     def _get_enrollment(self, experiment):
         enrollments = self.session.get('experiments_enrollments', None)
@@ -330,16 +343,16 @@ class SessionUser(WebUser):
                     if experiment:
                         experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
             except ValueError:
-                pass # Values from older version
+                pass  # Values from older version
             finally:
                 del self.session['experiments_goals']
 
     def _participant_identifier(self):
         if 'experiments_session_key' not in self.session:
             if not self.session.session_key:
-                self.session.save() # Force session key
+                self.session.save()  # Force session key
             self.session['experiments_session_key'] = self.session.session_key
-        return 'session:%s' % (self.session['experiments_session_key'],)
+        return 'session:%s' % (self.session['experiments_session_key'], )
 
     def _is_verified_human(self):
         if conf.VERIFY_HUMAN:
@@ -368,7 +381,7 @@ class SessionUser(WebUser):
             experiment.increment_goal_count(alternative, goal_name, self._participant_identifier(), count)
         else:
             goals = self.session.get('experiments_goals', [])
-            goals.append( (experiment.name, alternative, goal_name, count) )
+            goals.append((experiment.name, alternative, goal_name, count))
             self.session['experiments_goals'] = goals
 
     def _set_last_seen(self, experiment, last_seen):
@@ -379,6 +392,5 @@ class SessionUser(WebUser):
 
     def _gargoyle_key(self):
         return self.request
-
 
 __all__ = ['participant', 'record_goal']

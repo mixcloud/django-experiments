@@ -18,17 +18,20 @@ from experiments import conf
 import nexus
 import json
 
-MIN_ACTIONS_TO_SHOW=3
+MIN_ACTIONS_TO_SHOW = 3
+
 
 def rate(a, b):
     if not b or a == None:
         return None
     return 100. * a / b
 
+
 def improvement(a, b):
     if not b or not a:
         return None
     return (a - b) * 100. / b
+
 
 def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     contingency_table = [[a_count - a_conversion, a_conversion],
@@ -40,28 +43,32 @@ def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     else:
         return None
 
+
 def average_actions(distribution):
     total_users = 0
     total_actions = 0
     for actions, frequency in distribution.items():
         total_users += frequency
-        total_actions += actions*frequency
+        total_actions += actions * frequency
     if total_users:
         return total_actions / float(total_users)
     else:
         return 0
+
 
 def fixup_distribution(distribution, count):
     zeros = count - sum(distribution.values())
     distribution[0] = zeros + distribution.get(0, 0)
     return distribution
 
+
 def mann_whitney_confidence(a_distribution, b_distribution):
     p_value = mann_whitney(a_distribution, b_distribution)[1]
     if p_value is not None:
-        return (1 - p_value * 2) * 100 # Two tailed probability
+        return (1 - p_value * 2) * 100  # Two tailed probability
     else:
         return None
+
 
 def points_with_surrounding_gaps(points):
     """
@@ -86,21 +93,22 @@ def points_with_surrounding_gaps(points):
         last_point = point
     return points_with_gaps
 
+
 def conversion_distributions_to_graph_table(conversion_distributions):
     ordered_distributions = list(conversion_distributions.items())
-    total_entries = dict( (name,float(sum(dist.values()) or 1)) for name, dist in ordered_distributions)
+    total_entries = dict((name, float(sum(dist.values()) or 1)) for name, dist in ordered_distributions)
     graph_head = [['x'] + [name for name, dist in ordered_distributions]]
 
     points_in_any_distribution = sorted(set(k for name, dist in ordered_distributions for k in dist.keys()))
     points_with_gaps = points_with_surrounding_gaps(points_in_any_distribution)
-    graph_body = [[point] + [dist.get(point, 0)/total_entries[name] for name, dist in ordered_distributions] for point in points_with_gaps]
+    graph_body = [[point] + [dist.get(point, 0) / total_entries[name] for name, dist in ordered_distributions] for point in points_with_gaps]
 
     accumulator = [0] * len(ordered_distributions)
-    for point in range(len(graph_body)-1, -1, -1):
-        accumulator  = [graph_body[point][j+1] + accumulator[j] for j in range(len(ordered_distributions))]
+    for point in range(len(graph_body) - 1, -1, -1):
+        accumulator = [graph_body[point][j + 1] + accumulator[j] for j in range(len(ordered_distributions))]
         graph_body[point][1:] = accumulator
 
-    interesting_points = [point for point in points_in_any_distribution if max(dist.get(point,0) for name,dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW]
+    interesting_points = [point for point in points_in_any_distribution if max(dist.get(point, 0) for name, dist in ordered_distributions) >= MIN_ACTIONS_TO_SHOW]
     if len(interesting_points):
         highest_interesting_point = max(interesting_points)
     else:
@@ -110,11 +118,14 @@ def conversion_distributions_to_graph_table(conversion_distributions):
     graph_table = graph_head + graph_body
     return json.dumps(graph_table)
 
+
 class ExperimentException(Exception):
     pass
 
+
 def json_result(func):
     "Decorator to make JSON views simpler"
+
     def wrapper(self, request, *args, **kwargs):
         try:
             response = {
@@ -144,6 +155,7 @@ def json_result(func):
         return HttpResponse(json.dumps(response), mimetype="application/json")
     wrapper = wraps(func)(wrapper)
     return wrapper
+
 
 class ExperimentsModule(nexus.NexusModule):
     home_url = 'index'
@@ -222,7 +234,7 @@ class ExperimentsModule(nexus.NexusModule):
                 if not alternative_name == conf.CONTROL_GROUP:
                     alternative_conversions = experiment.goal_count(alternative_name, goal)
                     alternative_participants = experiment.participant_count(alternative_name)
-                    alternative_conversion_rate = rate(alternative_conversions,  alternative_participants)
+                    alternative_conversion_rate = rate(alternative_conversions, alternative_participants)
                     alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
                     if show_mwu:
                         alternative_conversion_distribution = fixup_distribution(experiment.goal_distribution(alternative_name, goal), alternative_participants)
@@ -243,8 +255,8 @@ class ExperimentsModule(nexus.NexusModule):
                     alternatives_conversions[alternative_name] = alternative
 
             control = {
-                'conversions':control_conversions,
-                'conversion_rate':control_conversion_rate,
+                'conversions': control_conversions,
+                'conversion_rate': control_conversion_rate,
                 'average_goal_actions': control_average_goal_actions,
             }
 
@@ -252,7 +264,7 @@ class ExperimentsModule(nexus.NexusModule):
                 "control": control,
                 "alternatives": sorted(alternatives_conversions.items()),
                 "relevant": goal in relevant_goals or relevant_goals == set([u'']),
-                "mwu" : goal in mwu_goals,
+                "mwu": goal in mwu_goals,
                 "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram) if show_mwu else None
             }
 
@@ -261,7 +273,7 @@ class ExperimentsModule(nexus.NexusModule):
             'alternatives': alternatives,
             'control_participants': control_participants,
             'results': results,
-            'column_count': len(alternatives_conversions) * 3 + 2, # Horrible coupling with template design
+            'column_count': len(alternatives_conversions) * 3 + 2,  # Horrible coupling with template design
             'user_alternative': participant(request).get_alternative(experiment.name),
         }, request)
 
@@ -306,12 +318,12 @@ class ExperimentsModule(nexus.NexusModule):
             raise ExperimentException("Name must be less than or equal to 128 characters in length")
 
         experiment, created = Experiment.objects.get_or_create(
-            name         = name,
-            defaults     = dict(
-                switch_key = request.POST.get("switch_key"),
-                description = request.POST.get("desc"),
-                relevant_chi2_goals = request.POST.get("chi2_goals"),
-                relevant_mwu_goals = request.POST.get("mwu_goals"),
+            name=name,
+            defaults=dict(
+                switch_key=request.POST.get("switch_key"),
+                description=request.POST.get("desc"),
+                relevant_chi2_goals=request.POST.get("chi2_goals"),
+                relevant_mwu_goals=request.POST.get("mwu_goals"),
             ),
         )
 
@@ -344,7 +356,6 @@ class ExperimentsModule(nexus.NexusModule):
         }
 
         return response
-
 
 #    @permission_required(u'experiments.delete_experiment')
     @json_result

@@ -2,6 +2,7 @@ from django.test import TestCase
 
 from experiments.templatetags.experiments import _parse_token_contents
 
+
 class ExperimentTemplateTagTestCase(TestCase):
     """These test cases are rather nastily coupled, and are mainly intended to check the token parsing code"""
 

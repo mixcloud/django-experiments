@@ -8,7 +8,6 @@ from jsonfield import JSONField
 from gargoyle.manager import gargoyle
 from gargoyle.models import Switch
 
-
 import random
 import json
 
@@ -17,7 +16,6 @@ from experiments.dateutils import now
 
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
-
 
 CONTROL_STATE = 0
 ENABLED_STATE = 1
@@ -31,13 +29,14 @@ STATES = (
     (TRACK_STATE, 'Track'),
 )
 
+
 class Experiment(models.Model):
     name = models.CharField(primary_key=True, max_length=128)
     description = models.TextField(default="", blank=True, null=True)
     alternatives = JSONField(default={}, blank=True)
-    relevant_chi2_goals = models.TextField(default = "", null=True, blank=True)
-    relevant_mwu_goals = models.TextField(default = "", null=True, blank=True)
-    switch_key = models.CharField(default = "", max_length=50, null=True, blank=True)
+    relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
+    relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
+    switch_key = models.CharField(default="", max_length=50, null=True, blank=True)
 
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
 
@@ -55,7 +54,6 @@ class Experiment(models.Model):
             return True
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
-        
 
     def is_accepting_new_users(self, request):
         if self.state == CONTROL_STATE:
@@ -187,11 +185,12 @@ class Enrollment(models.Model):
         }
         return data
 
+
 def weighted_choice(choices):
-   total = sum(w for c,w in choices)
-   r = random.uniform(0, total)
-   upto = 0
-   for c, w in choices:
-      upto += w
-      if upto >= r:
-         return c
+    total = sum(w for c, w in choices)
+    r = random.uniform(0, total)
+    upto = 0
+    for c, w in choices:
+        upto += w
+        if upto >= r:
+            return c
