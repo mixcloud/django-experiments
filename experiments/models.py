@@ -123,7 +123,8 @@ class Experiment(models.Model):
         default="", max_length=50, null=True, blank=True,
         help_text='Connected to a feature switch. (Optional)')
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
-    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(
+        default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
     @staticmethod
