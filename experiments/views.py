@@ -2,6 +2,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 from experiments.utils import participant, record_goal
 from experiments import record_goal
@@ -20,6 +21,7 @@ TRANSPARENT_1X1_PNG = \
 
 
 @never_cache
+@csrf_exempt
 @require_POST
 def confirm_human(request):
     experiment_user = participant(request)
