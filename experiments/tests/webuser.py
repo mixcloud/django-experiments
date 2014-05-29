@@ -5,6 +5,7 @@ from django.test.client import RequestFactory
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
+from experiments.experiment_counters import ExperimentCounter
 from experiments.models import Experiment, ENABLED_STATE
 from experiments.conf import CONTROL_GROUP, VISIT_COUNT_GOAL
 from experiments.utils import participant
@@ -29,15 +30,16 @@ class WebUserTests(object):
         self.experiment.save()
         self.request = request_factory.get('/')
         self.request.session = DatabaseSession()
+        self.experiment_counter = ExperimentCounter()
 
     def tearDown(self):
-        self.experiment.delete()
+        self.experiment_counter.delete(self.experiment)
 
     def confirm_human(self, experiment_user):
         pass
 
     def participants(self, alternative):
-        return self.experiment.participant_count(alternative)
+        return self.experiment_counter.participant_count(self.experiment, alternative)
 
     def enrollment_initially_none(self, ):
         experiment_user = participant(self.request)
@@ -53,9 +55,9 @@ class WebUserTests(object):
         self.confirm_human(experiment_user)
         experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
 
-        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 0)
         experiment_user.goal(TEST_GOAL)
-        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_can_record_goal_multiple_times(self):
         experiment_user = participant(self.request)
@@ -65,7 +67,7 @@ class WebUserTests(object):
         experiment_user.goal(TEST_GOAL)
         experiment_user.goal(TEST_GOAL)
         experiment_user.goal(TEST_GOAL)
-        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1)
 
     def test_counts_increment_immediately_once_confirmed_human(self):
         experiment_user = participant(self.request)
@@ -81,7 +83,7 @@ class WebUserTests(object):
 
         experiment_user.visit()
 
-        self.assertEqual(self.experiment.goal_distribution(TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1})
+        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1})
 
     def test_visit_twice_increases_once(self):
         experiment_user = participant(self.request)
@@ -91,7 +93,7 @@ class WebUserTests(object):
         experiment_user.visit()
         experiment_user.visit()
 
-        self.assertEqual(self.experiment.goal_distribution(TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1})
+        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1})
 
 
 class WebUserAnonymousTestCase(WebUserTests, TestCase):
@@ -108,10 +110,10 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
         experiment_user.goal(TEST_GOAL)
 
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 0, "Counted participant before confirmed human")
-        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")
         experiment_user.confirm_human()
         self.assertEqual(self.participants(TEST_ALTERNATIVE), 1, "Did not count participant after confirm human")
-        self.assertEqual(self.experiment.goal_count(TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
 
 
 class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
@@ -126,11 +128,15 @@ class BotTestCase(TestCase):
         self.experiment = Experiment(name='backgroundcolor', state=ENABLED_STATE)
         self.experiment.save()
         self.request = request_factory.get('/', HTTP_USER_AGENT='GoogleBot/2.1')
+        self.experiment_counter = ExperimentCounter()
 
     def test_user_does_not_enroll(self):
         experiment_user = participant(self.request)
         experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
-        self.assertEqual(self.experiment.participant_count(TEST_ALTERNATIVE), 0, "Bot counted towards results")
+        self.assertEqual(
+            self.experiment_counter.participant_count(self.experiment, TEST_ALTERNATIVE),
+            0,
+            "Bot counted towards results")
 
     def test_bot_in_control_group(self):
         experiment_user = participant(self.request)
@@ -140,4 +146,4 @@ class BotTestCase(TestCase):
         self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")
 
     def tearDown(self):
-        self.experiment.delete()
+        self.experiment_counter.delete(self.experiment)

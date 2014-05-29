@@ -9,6 +9,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 
+from experiments.experiment_counters import ExperimentCounter
 from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE
 from experiments.significance import chi_square_p_value, mann_whitney
 from experiments.dateutils import now
@@ -196,6 +197,7 @@ class ExperimentsModule(nexus.NexusModule):
 
     def results(self, request, name):
         experiment = Experiment.objects.get(name=name)
+        experiment_counter = ExperimentCounter()
 
         try:
             chi2_goals = experiment.relevant_chi2_goals.replace(" ", "").split(",")
@@ -209,10 +211,10 @@ class ExperimentsModule(nexus.NexusModule):
 
         alternatives = {}
         for alternative_name in experiment.alternatives.keys():
-            alternatives[alternative_name] = experiment.participant_count(alternative_name)
+            alternatives[alternative_name] = experiment_counter.participant_count(experiment, alternative_name)
         alternatives = sorted(alternatives.items())
 
-        control_participants = experiment.participant_count(conf.CONTROL_GROUP)
+        control_participants = experiment_counter.participant_count(experiment, conf.CONTROL_GROUP)
 
         results = {}
 
@@ -220,24 +222,24 @@ class ExperimentsModule(nexus.NexusModule):
             show_mwu = goal in mwu_goals
 
             alternatives_conversions = {}
-            control_conversions = experiment.goal_count(conf.CONTROL_GROUP, goal)
+            control_conversions = experiment_counter.goal_count(experiment, conf.CONTROL_GROUP, goal)
             control_conversion_rate = rate(control_conversions, control_participants)
 
             if show_mwu:
                 mwu_histogram = {}
-                control_conversion_distribution = fixup_distribution(experiment.goal_distribution(conf.CONTROL_GROUP, goal), control_participants)
+                control_conversion_distribution = fixup_distribution(experiment_counter.goal_distribution(experiment, conf.CONTROL_GROUP, goal), control_participants)
                 control_average_goal_actions = average_actions(control_conversion_distribution)
                 mwu_histogram['control'] = control_conversion_distribution
             else:
                 control_average_goal_actions = None
             for alternative_name in experiment.alternatives.keys():
                 if not alternative_name == conf.CONTROL_GROUP:
-                    alternative_conversions = experiment.goal_count(alternative_name, goal)
-                    alternative_participants = experiment.participant_count(alternative_name)
+                    alternative_conversions = experiment_counter.goal_count(experiment, alternative_name, goal)
+                    alternative_participants = experiment_counter.participant_count(experiment, alternative_name)
                     alternative_conversion_rate = rate(alternative_conversions, alternative_participants)
                     alternative_confidence = chi_squared_confidence(alternative_participants, alternative_conversions, control_participants, control_conversions)
                     if show_mwu:
-                        alternative_conversion_distribution = fixup_distribution(experiment.goal_distribution(alternative_name, goal), alternative_participants)
+                        alternative_conversion_distribution = fixup_distribution(experiment_counter.goal_distribution(experiment, alternative_name, goal), alternative_participants)
                         alternative_average_goal_actions = average_actions(alternative_conversion_distribution)
                         alternative_distribution_confidence = mann_whitney_confidence(alternative_conversion_distribution, control_conversion_distribution)
                         mwu_histogram[alternative_name] = alternative_conversion_distribution
@@ -362,10 +364,11 @@ class ExperimentsModule(nexus.NexusModule):
     def delete(self, request):
         if not request.user.has_perm('experiments.delete_experiment'):
             raise ExperimentException("You don't have permission to do that!")
+        experiment_counter = ExperimentCounter()
         experiment = Experiment.objects.get(name=request.POST.get("name"))
 
         experiment.enrollment_set.all().delete()
-        experiment.delete()
+        experiment_counter.delete(experiment)
         return {'successful': True}
 
     @json_result
