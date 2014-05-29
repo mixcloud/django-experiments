@@ -1,12 +1,9 @@
 from django.conf import settings
 
 import redis
+from redis.sentinel import Sentinel
 from redis.exceptions import ConnectionError, ResponseError
 
-REDIS_HOST = getattr(settings, 'EXPERIMENTS_REDIS_HOST', 'localhost')
-REDIS_PORT = getattr(settings, 'EXPERIMENTS_REDIS_PORT', 6379)
-REDIS_PASSWORD = getattr(settings, 'EXPERIMENTS_REDIS_PASSWORD', None)
-REDIS_EXPERIMENTS_DB = getattr(settings, 'EXPERIMENTS_REDIS_DB', 0)
 
 COUNTER_CACHE_KEY = 'experiments:participants:%s'
 COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
@@ -14,7 +11,17 @@ COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
 
 class Counters(object):
     def __init__(self):
-        self.redis = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=REDIS_EXPERIMENTS_DB)
+        if getattr(settings, 'EXPERIMENTS_REDIS_SENTINELS', None):
+            sentinel = Sentinel(settings.EXPERIMENTS_REDIS_SENTINELS)
+            host, port = sentinel.discover_master(settings.EXPERIMENTS_REDIS_MASTER_NAME)
+        else:
+            host = getattr(settings, 'EXPERIMENTS_REDIS_HOST', 'localhost')
+            port = getattr(settings, 'EXPERIMENTS_REDIS_PORT', 6379)
+
+        password = getattr(settings, 'EXPERIMENTS_REDIS_PASSWORD', None)
+        db = getattr(settings, 'EXPERIMENTS_REDIS_DB', 0)
+
+        self.redis = redis.Redis(host=host, port=port, password=password, db=db)
 
     def increment(self, key, participant_identifier, count=1):
         if count == 0:
