@@ -11,11 +11,9 @@ from gargoyle.models import Switch
 import random
 import json
 
-from experiments import counters, conf
+from experiments import conf
 from experiments.dateutils import now
 
-PARTICIPANT_KEY = '%s:%s:participant'
-GOAL_KEY = '%s:%s:%s:goal'
 
 CONTROL_STATE = 0
 ENABLED_STATE = 1
@@ -82,39 +80,6 @@ class Experiment(models.Model):
         else:
             return random.choice(self.alternatives.keys())
 
-    def increment_participant_count(self, alternative_name, participant_identifier):
-        # Increment experiment_name:alternative:participant counter
-        counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
-        counters.increment(counter_key, participant_identifier)
-
-    def increment_goal_count(self, alternative_name, goal_name, participant_identifier, count=1):
-        # Increment experiment_name:alternative:participant counter
-        counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
-        counters.increment(counter_key, participant_identifier, count)
-
-    def remove_participant(self, alternative_name, participant_identifier):
-        # Remove participation record
-        counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
-        counters.clear(counter_key, participant_identifier)
-
-        # Remove goal records
-        for goal_name in conf.ALL_GOALS:
-            counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
-            counters.clear(counter_key, participant_identifier)
-
-    def participant_count(self, alternative):
-        return counters.get(PARTICIPANT_KEY % (self.name, alternative))
-
-    def goal_count(self, alternative, goal):
-        return counters.get(GOAL_KEY % (self.name, alternative, goal))
-
-    def participant_goal_frequencies(self, alternative, participant_identifier):
-        for goal in conf.ALL_GOALS:
-            yield goal, counters.get_frequency(GOAL_KEY % (self.name, alternative, goal), participant_identifier)
-
-    def goal_distribution(self, alternative, goal):
-        return counters.get_frequencies(GOAL_KEY % (self.name, alternative, goal))
-
     def __unicode__(self):
         return self.name
 
@@ -155,8 +120,6 @@ class Experiment(models.Model):
                 Switch.objects.get(key=Experiment.objects.get(name=self.name).switch_key).delete()
             except Switch.DoesNotExist:
                 pass
-
-        counters.reset_pattern(self.name + "*")
 
         super(Experiment, self).delete(*args, **kwargs)
 
