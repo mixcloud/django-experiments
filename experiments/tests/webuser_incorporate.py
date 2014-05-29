@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.utils.unittest import TestSuite
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 
+from experiments.experiment_counters import ExperimentCounter
 from experiments.utils import DummyUser, SessionUser, AuthenticatedUser
 from experiments.models import Experiment, ENABLED_STATE
 
@@ -17,6 +18,10 @@ EXPERIMENT_NAME = 'backgroundcolor'
 
 
 class WebUserIncorporateTestCase(object):
+    def __init__(self, *args, **kwargs):
+        super(WebUserIncorporateTestCase, self).__init__(*args, **kwargs)
+        self.experiment_counter = ExperimentCounter()
+
     def test_can_incorporate(self):
         self.incorporating.incorporate(self.incorporated)
 
@@ -30,7 +35,7 @@ class WebUserIncorporateTestCase(object):
             self.incorporating.incorporate(self.incorporated)
             self.assertEqual(self.incorporating.get_alternative(EXPERIMENT_NAME), TEST_ALTERNATIVE)
         finally:
-            experiment.delete()
+            self.experiment_counter.delete(experiment)
 
     def _has_data(self):
         return not isinstance(self.incorporated, DummyUser) and not isinstance(self.incorporating, DummyUser)
