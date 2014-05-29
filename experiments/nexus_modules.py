@@ -369,6 +369,7 @@ class ExperimentsModule(nexus.NexusModule):
 
         experiment.enrollment_set.all().delete()
         experiment_counter.delete(experiment)
+        experiment.delete()
         return {'successful': True}
 
     @json_result

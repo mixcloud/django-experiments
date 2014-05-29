@@ -40,4 +40,3 @@ class ExperimentCounter(object):
 
     def delete(self, experiment):
         self.counters.reset_pattern(experiment.name + "*")
-        return experiment.delete()
