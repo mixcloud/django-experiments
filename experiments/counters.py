@@ -13,7 +13,7 @@ class Counters(object):
     def __init__(self):
         if getattr(settings, 'EXPERIMENTS_REDIS_SENTINELS', None):
             sentinel = Sentinel(settings.EXPERIMENTS_REDIS_SENTINELS)
-            host, port = sentinel.discover_master(settings.EXPERIMENTS_REDIS_MASTER_NAME)
+            host, port = sentinel.discover_master(settings.EXPERIMENTS_REDIS_MASTER_NAME, socket_timeout=settings.EXPERIMENTS_REDIS_SENTINELS_TIMEOUT)
         else:
             host = getattr(settings, 'EXPERIMENTS_REDIS_HOST', 'localhost')
             port = getattr(settings, 'EXPERIMENTS_REDIS_PORT', 6379)
