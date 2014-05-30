@@ -15,8 +15,8 @@ class Counters(object):
     @cached_property
     def _redis(self):
         if getattr(settings, 'EXPERIMENTS_REDIS_SENTINELS', None):
-            sentinel = Sentinel(settings.EXPERIMENTS_REDIS_SENTINELS)
-            host, port = sentinel.discover_master(settings.EXPERIMENTS_REDIS_MASTER_NAME, socket_timeout=settings.EXPERIMENTS_REDIS_SENTINELS_TIMEOUT)
+            sentinel = Sentinel(settings.EXPERIMENTS_REDIS_SENTINELS, socket_timeout=settings.EXPERIMENTS_REDIS_SENTINELS_TIMEOUT)
+            host, port = sentinel.discover_master(settings.EXPERIMENTS_REDIS_MASTER_NAME)
         else:
             host = getattr(settings, 'EXPERIMENTS_REDIS_HOST', 'localhost')
             port = getattr(settings, 'EXPERIMENTS_REDIS_PORT', 6379)
