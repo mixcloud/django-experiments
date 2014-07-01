@@ -1,4 +1,4 @@
-from experiments import record_goal
+from experiments.utils import record_goal
 
 from urllib import unquote
 

@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
 from experiments.utils import participant, record_goal
-from experiments import record_goal
 from experiments.models import Experiment
 
 TRANSPARENT_1X1_PNG = \
