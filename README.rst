@@ -114,15 +114,6 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
         'experiments',
     ]
 
-And add our middleware:
-
-::
-
-    MIDDLEWARE_CLASSES [
-        ...
-        'experiments.middleware.ExperimentsMiddleware',
-    ]
-
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
 
@@ -349,11 +340,6 @@ All Settings
     EXPERIMENTS_REDIS_PORT = 6379
     EXPERIMENTS_REDIS_DB = 0
 
-    #Middleware
-    MIDDLEWARE_CLASSES [
-        ...
-        'experiments.middleware.ExperimentsMiddleware',
-    ]
 
     #Installed Apps
     INSTALLED_APPS = [
