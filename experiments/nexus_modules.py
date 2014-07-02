@@ -33,7 +33,6 @@ def improvement(a, b):
         return None
     return (a - b) * 100. / b
 
-
 def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     contingency_table = [[a_count - a_conversion, a_conversion],
                          [b_count - b_conversion, b_conversion]]
@@ -153,7 +152,7 @@ def json_result(func):
                 import traceback
                 traceback.print_exc()
             raise
-        return HttpResponse(json.dumps(response), mimetype="application/json")
+        return HttpResponse(json.dumps(response), content_type="application/json")
     wrapper = wraps(func)(wrapper)
     return wrapper
 

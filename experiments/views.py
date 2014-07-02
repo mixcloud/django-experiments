@@ -29,7 +29,7 @@ def confirm_human(request):
 @never_cache
 def record_experiment_goal(request, goal_name, cache_buster=None):
     record_goal(goal_name, request)
-    return HttpResponse(TRANSPARENT_1X1_PNG, mimetype="image/png")
+    return HttpResponse(TRANSPARENT_1X1_PNG, content_type="image/png")
 
 
 def change_alternative(request, experiment_name, alternative_name):
