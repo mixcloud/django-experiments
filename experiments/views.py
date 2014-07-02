@@ -3,7 +3,7 @@ from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
-from experiments.utils import participant, record_goal
+from experiments.utils import participant
 from experiments.models import Experiment
 
 TRANSPARENT_1X1_PNG = \
@@ -28,7 +28,7 @@ def confirm_human(request):
 
 @never_cache
 def record_experiment_goal(request, goal_name, cache_buster=None):
-    record_goal(goal_name, request)
+    participant(request).goal(goal_name)
     return HttpResponse(TRANSPARENT_1X1_PNG, content_type="image/png")
 
 

@@ -1,5 +1,4 @@
 from django.db import IntegrityError
-from django.contrib.sessions.backends.base import SessionBase
 
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
@@ -10,21 +9,9 @@ from experiments import conf
 
 from collections import namedtuple
 
-import re
-import warnings
 import collections
 import numbers
 from datetime import timedelta
-
-
-def record_goal(request, goal_name):
-    _record_goal(goal_name, request)
-
-
-def _record_goal(goal_name, request=None, session=None, user=None):
-    warnings.warn('record_goal is deprecated. Please use participant().goal() instead.', DeprecationWarning)
-    experiment_user = participant(request, session, user)
-    experiment_user.goal(goal_name)
 
 
 def participant(request=None, session=None, user=None):
@@ -144,7 +131,7 @@ class WebUser(object):
 
     def _get_enrollment(self, experiment):
         """Get the name of the alternative this user is enrolled in for the specified experiment
-        
+
         `experiment` is an instance of Experiment. If the user is not currently enrolled returns None."""
         raise NotImplementedError
 
@@ -250,7 +237,7 @@ class AuthenticatedUser(WebUser):
 
         try:
             enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative})
-        except IntegrityError, exc:
+        except IntegrityError:
             # Already registered (db race condition under high load)
             return
         # Update alternative if it doesn't match
@@ -411,4 +398,4 @@ class SessionUser(WebUser):
     def _gargoyle_key(self):
         return self.request
 
-__all__ = ['participant', 'record_goal']
+__all__ = ['participant']
