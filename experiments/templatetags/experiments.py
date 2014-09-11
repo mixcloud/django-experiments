@@ -32,14 +32,12 @@ class ExperimentNode(template.Node):
         if self.user_variable:
             auth_user = self.user_variable.resolve(context)
             user = participant(user=auth_user)
-            gargoyle_key = auth_user
         else:
             request = context.get('request', None)
             user = participant(request)
-            gargoyle_key = request
 
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key):
+        if user.is_enrolled(self.experiment_name, self.alternative):
             response = self.node_list.render(context)
         else:
             response = ""

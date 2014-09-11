@@ -138,8 +138,8 @@ class BotTestCase(TestCase):
         experiment_user = participant(self.request)
         experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), 'control', "Bot enrolled in a group")
-        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE, self.request), False, "Bot in test alternative")
-        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP, self.request), True, "Bot not in control group")
+        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE), False, "Bot in test alternative")
+        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP), True, "Bot not in control group")
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)

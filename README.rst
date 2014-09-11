@@ -2,8 +2,7 @@ Django-Experiments
 ==================
 
 Django-Experiments is an AB Testing Framework for Django and Nexus. It is
-completely usable via template tags. It provides support for conditional
-user enrollment via Gargoyle.
+completely usable via template tags.
 
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
@@ -70,7 +69,6 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Nexus <https://github.com/dcramer/nexus/>`_
-- `Gargoyle <https://github.com/disqus/gargoyle/>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 
@@ -110,7 +108,6 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
         ...
         'django.contrib.humanize',
         'nexus',
-        'gargoyle',
         'experiments',
     ]
 
@@ -298,19 +295,6 @@ the control alternative, and no data will be collected.
 
 **Enabled** - The experiment is enabled globally, for all users.
 
-**Gargoyle** - If a switch\_key is specified, the experiment will rely
-on the gargoyle switch to determine if the user is included in the
-experiment. More on this below.
-
-Using Gargoyle
-~~~~~~~~~~~~~~
-
-Gargoyle lets you toggle features to selective sets of users based on a
-set of conditions. Connecting an experiment to a gargoyle “switch”
-allows us to run targeted experiments - very useful if we don’t want to
-expose everyone to it. For example, we could specify to run the result
-to 10% of our users, or only to staff.
-
 
 All Settings
 ------------
@@ -322,15 +306,6 @@ All Settings
 
     #Auto-create experiment if doesn't exist
     EXPERIMENTS_AUTO_CREATE = True
-
-    #Auto-create gargoyle switch if switch doesn't exist when added to experiment
-    EXPERIMENTS_SWITCH_AUTO_CREATE = True
-
-    #Auto-delete gargoyle switch that the experiment is linked to on experiment deletion
-    EXPERIMENTS_SWITCH_AUTO_DELETE = True
-
-    #Naming scheme for gargoyle switch name if auto-creating
-    EXPERIMENTS_SWITCH_LABEL = "Experiment: %s"
 
     #Toggle whether the framework should verify user is human. Be careful.
     EXPERIMENTS_VERIFY_HUMAN = False
@@ -346,6 +321,5 @@ All Settings
         ...
         'django.contrib.humanize',
         'nexus',
-        'gargoyle',
         'experiments',
     ]

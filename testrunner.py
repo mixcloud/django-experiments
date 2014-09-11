@@ -19,7 +19,6 @@ def runtests():
                         'django.contrib.contenttypes',
                         'django.contrib.sessions',
                         'django.contrib.admin',
-                        'gargoyle',
                         'experiments',),
         ROOT_URLCONF='experiments.urls',
     )

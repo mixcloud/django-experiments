@@ -67,7 +67,7 @@ class WebUser(object):
             assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:
                 chosen_alternative = assigned_alternative
-            elif experiment.is_accepting_new_users(self._gargoyle_key()):
+            elif experiment.is_accepting_new_users():
                 chosen_alternative = experiment.random_alternative()
                 self._set_enrollment(experiment, chosen_alternative)
 
@@ -142,7 +142,7 @@ class WebUser(object):
         alternative will be increment, but those for the old one will not be decremented."""
         raise NotImplementedError
 
-    def is_enrolled(self, experiment_name, alternative, request):
+    def is_enrolled(self, experiment_name, alternative):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
         """Test if the user is enrolled in the supplied alternative for the given experiment.
 
@@ -172,9 +172,6 @@ class WebUser(object):
         "Set the last time the user was seen associated with this experiment"
         raise NotImplementedError
 
-    def _gargoyle_key(self):
-        return None
-
 
 class DummyUser(WebUser):
     def _get_enrollment(self, experiment):
@@ -187,7 +184,7 @@ class DummyUser(WebUser):
             user=None, session=None)
         pass
 
-    def is_enrolled(self, experiment_name, alternative, request):
+    def is_enrolled(self, experiment_name, alternative):
         return alternative == conf.CONTROL_GROUP
 
     def incorporate(self, other_user):
@@ -285,9 +282,6 @@ class AuthenticatedUser(WebUser):
 
     def _set_last_seen(self, experiment, last_seen):
         Enrollment.objects.filter(user=self.user, experiment=experiment).update(last_seen=last_seen)
-
-    def _gargoyle_key(self):
-        return self.request or self.user
 
 
 def _session_enrollment_latest_version(data):
@@ -395,7 +389,5 @@ class SessionUser(WebUser):
         enrollments[experiment.name] = (alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))
         self.session['experiments_enrollments'] = enrollments
 
-    def _gargoyle_key(self):
-        return self.request
 
 __all__ = ['participant']

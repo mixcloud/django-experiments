@@ -1,7 +1,6 @@
 {% extends "nexus/module.html" %}
 {% load humanize %}
 {% load experiment_helpers %}
-{% load url from future %}
 
 {% block head %}
     {{ block.super }}
@@ -39,10 +38,6 @@
                 Track
             </button>
 
-            <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"{% endif %}>
-                Gargoyle
-            </button>
-
             <button class="xtrasmall button {% if experiment.state == 1 %}toggled{% endif %}" data-state="1">
                 Enabled
             </button>
@@ -52,12 +47,6 @@
             </button>
         </div>
     </div>
-
-    {% if experiment.switch_key %}
-        <div data-experiment-name="{{experiment.name}}" class="results header" style>
-            Connected to Gargoyle switch <a href="{% url 'gargoyle:index' %}#id_{{experiment.switch_key}}">{{experiment.switch_key}}</a>.
-        </div>
-    {% endif %}
 
     <div class="results header bottom">
         {% if experiment.description %}<p>{{ experiment.description }}</p>{% endif %}

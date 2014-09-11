@@ -113,7 +113,6 @@ $(document).ready(function () {
             add:                 false,
             curname:             row.attr("data-experiment-name"),
             name:                row.attr("data-experiment-name"),
-            switch_key:          row.attr("data-experiment-switch"),
             desc:                row.attr("data-experiment-desc"),
             relevant_goals:      row.attr("data-experiment-goals"),
             relevant_chi2_goals: row.attr("data-experiment-chi2-goals").split(","),
@@ -142,7 +141,6 @@ $(document).ready(function () {
             {
                 curname: curname,
                 name:       $("#facebox input[name=name]").val(),
-                switch_key: $("#facebox input[name=switch_key]").val(),
                 desc:       $("#facebox textarea[name=desc]").val(),
                 chi2_goals: relevant_chi2_goals,
                 mwu_goals:  relevant_mwu_goals
