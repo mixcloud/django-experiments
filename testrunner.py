@@ -26,7 +26,7 @@ def runtests():
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, failfast=False)
-    failures = test_runner.run_tests(['experiments.tests', ])
+    failures = test_runner.run_tests(['experiments', ])
     sys.exit(bool(failures))
 
 
