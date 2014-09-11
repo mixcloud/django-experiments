@@ -6,12 +6,7 @@ from experiments.experiment_counters import ExperimentCounter
 from experiments.utils import DummyUser, SessionUser, AuthenticatedUser
 from experiments.models import Experiment, ENABLED_STATE
 
-try:
-    from django.contrib.auth import get_user_model
-except ImportError:  # django < 1.5
-    from django.contrib.auth.models import User
-else:
-    User = get_user_model()
+from django.contrib.auth import get_user_model
 
 TEST_ALTERNATIVE = 'blue'
 EXPERIMENT_NAME = 'backgroundcolor'
@@ -50,6 +45,7 @@ def anonymous(incorporating):
 
 
 def authenticated(incorporating):
+    User = get_user_model()
     return AuthenticatedUser(user=User.objects.create(username=['incorporating_user', 'incorporated_user'][incorporating]))
 
 user_factories = (dummy, anonymous, authenticated)

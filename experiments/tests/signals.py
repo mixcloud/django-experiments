@@ -1,11 +1,5 @@
 from django.test import TestCase
-
-try:
-    from django.contrib.auth import get_user_model
-except ImportError:  # django < 1.5
-    from django.contrib.auth.models import User
-else:
-    User = get_user_model()
+from django.contrib.auth import get_user_model
 
 from experiments.models import Experiment, ENABLED_STATE
 from experiments.signals import user_enrolled
@@ -33,6 +27,7 @@ class WatchSignal(object):
 class SignalsTestCase(TestCase):
     def setUp(self):
         self.experiment = Experiment.objects.create(name=EXPERIMENT_NAME, state=ENABLED_STATE)
+        User = get_user_model()
         self.user = User.objects.create(username='brian')
 
     def test_sends_enroll_signal(self):
