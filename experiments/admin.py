@@ -1,8 +1,6 @@
 from django.contrib import admin
 
-from django import forms
-from experiments.models import Experiment, Enrollment
-
+from experiments.models import Experiment
 
 class ExperimentAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'state')
