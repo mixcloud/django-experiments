@@ -3,6 +3,7 @@ import sys
 
 from django.conf import settings
 
+import django
 
 def runtests():
     test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +23,8 @@ def runtests():
                         'experiments',),
         ROOT_URLCONF='experiments.urls',
     )
+    django.setup()
+
 
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
