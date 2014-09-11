@@ -10,11 +10,6 @@ EXPERIMENTS_GOALS = (
 
 EXPERIMENTS_AUTO_CREATE = True
 
-EXPERIMENTS_SWITCH_AUTO_CREATE = True
-EXPERIMENTS_SWITCH_AUTO_DELETE = True
-
-EXPERIMENTS_SWITCH_LABEL = "Experiment: %s"
-
 EXPERIMENTS_VERIFY_HUMAN = True #Careful with this setting, if it is toggled then participant counters will not increment accordingly
 
 # Redis Settings
