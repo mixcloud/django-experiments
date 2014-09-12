@@ -1,4 +1,5 @@
 from django.utils.unittest import TestCase
+import random
 
 from experiments.significance import mann_whitney, chi_square_p_value
 
@@ -31,4 +32,42 @@ class MannWhitneyTestCase(TestCase):
         our_u, our_p = mann_whitney(distribution_a, distribution_b)
         self.assertEqual(our_u, u, "U score incorrect")
         self.assertAlmostEqual(our_p, p, msg="p value incorrect")
+
+class ChiSquare(TestCase):
+    def test_equal(self):
+        self.assertChiSquareCorrect(((100, 10), (200, 20)), 0, 1)
+        self.assertChiSquareCorrect(((100, 10), (200, 20), (300, 30), (400, 40)), 0, 1)
+        self.assertChiSquareCorrect(((100, 100, 100), (200, 200, 200), (300, 300, 300)), 0, 1)
+
+    def test_error(self):
+        self.assertRaises(TypeError, chi_square_p_value((1,)))
+        self.assertRaises(TypeError, chi_square_p_value(((1,2,3))))
+
+    def test_is_none(self):
+        self.assertEqual(chi_square_p_value(((1, 1), (1, -1))), (None, None), "Negative numbers should not be allowed")
+        self.assertEqual(chi_square_p_value(((0, 0), (0, 0))), (None, None), "Zero sample size should not be allowed")
+        self.assertIsNone(chi_square_p_value(((1,),(1,2))))
+        self.assertIsNone(chi_square_p_value(((1,2,3),(1,2,3),(1,2))))
+
+    def test_stress(self):
+        # Generate a large matrix
+        matrix = []
+        for col in xrange(0, 100):
+            matrix.append([])
+            for row in xrange(0, 100):
+                matrix[col].append(random.randint(0, 10))
+
+    def test_accept_hypothesis(self):
+        self.assertChiSquareCorrect(((36, 14), (30, 25)), 3.418, 0.065, 3)
+        self.assertChiSquareCorrect(((100, 50), (210, 110)), 0.04935, 0.8242, 3)
+        self.assertChiSquareCorrect(((100, 50, 10), (110, 50, 10), (140, 55, 11)), 1.2238, 0.8741, 3)
+
+    def test_reject_hypothesis(self):
+        self.assertChiSquareCorrect(((100, 20), (200, 20)), 4.2929, 0.0383, 4)
+        self.assertChiSquareCorrect(((100, 50, 10), (110, 70, 20), (140, 55, 6)), 13.0217, 0.0111, 3)
+
+    def assertChiSquareCorrect(self, matrix, observed_test_statistic, p_value, accuracy=7):
+        observed_test_statistic_result, p_value_result = chi_square_p_value(matrix)
+        self.assertAlmostEqual(observed_test_statistic_result, observed_test_statistic, accuracy, 'Wrong observed result')
+        self.assertAlmostEqual(p_value_result, p_value, accuracy, 'Wrong P Value')
 
