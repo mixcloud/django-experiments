@@ -1,6 +1,6 @@
 from django.utils.unittest import TestCase
 
-from experiments.significance import mann_whitney
+from experiments.significance import mann_whitney, chi_square_p_value
 
 
 # The hardcoded p and u values in these tests were calculated using scipy
@@ -31,3 +31,10 @@ class MannWhitneyTestCase(TestCase):
         our_u, our_p = mann_whitney(distribution_a, distribution_b)
         self.assertEqual(our_u, u, "U score incorrect")
         self.assertAlmostEqual(our_p, p, msg="p value incorrect")
+
+#
+# class ChiSquare(TestCase):
+#     def test_empty(self):
+#         self.assertEqual(chi_square_p_value(((100, 10), (200, 20))), 50)
+#
+#         
