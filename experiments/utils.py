@@ -6,13 +6,15 @@ from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, t
 from experiments.signals import user_enrolled
 from experiments.experiment_counters import ExperimentCounter
 from experiments import conf
+from experiments import logging
 
 from collections import namedtuple
+from datetime import timedelta
 
 import collections
 import numbers
-from datetime import timedelta
 
+logger = logging.getLogger('experiments')
 
 def participant(request=None, session=None, user=None):
     if request and hasattr(request, '_experiments_user'):
@@ -319,6 +321,9 @@ class SessionUser(WebUser):
         self.session['experiments_enrollments'] = enrollments
         if self._is_verified_human():
             self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
+        else:
+            logger.debug({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()})
+
         user_enrolled.send(
             self,
             experiment=experiment.name, alternative=alternative,
@@ -329,6 +334,7 @@ class SessionUser(WebUser):
             return
 
         self.session['experiments_verified_human'] = True
+        logger.debug({'type':'confirm_human', 'participant': self._participant_identifier()})
 
         # Replay enrollments
         for enrollment in self._get_all_enrollments():
@@ -382,6 +388,8 @@ class SessionUser(WebUser):
             goals = self.session.get('experiments_goals', [])
             goals.append((experiment.name, alternative, goal_name, count))
             self.session['experiments_goals'] = goals
+            logger.debug({'type':'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()})
+
 
     def _set_last_seen(self, experiment, last_seen):
         enrollments = self.session.get('experiments_enrollments', {})
