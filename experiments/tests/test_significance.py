@@ -32,9 +32,17 @@ class MannWhitneyTestCase(TestCase):
         self.assertEqual(our_u, u, "U score incorrect")
         self.assertAlmostEqual(our_p, p, msg="p value incorrect")
 
-#
-# class ChiSquare(TestCase):
-#     def test_empty(self):
-#         self.assertEqual(chi_square_p_value(((100, 10), (200, 20))), 50)
-#
-#         
+
+class ChiSquare(TestCase):
+    def test_equal(self):
+        self.assertChiSquareCorrect(((100, 10), (200, 20)), 0, 1, 4)
+
+    def test_worse(self):
+        self.assertChiSquareCorrect(((100, 20), (200, 20)), 3.594, 0.0580, 8)
+
+    def assertChiSquareCorrect(self, matrix, observed_test_statistic, p_value, accuracy):
+        observed_test_statistic_result, p_value_result = chi_square_p_value(matrix)
+        print observed_test_statistic, observed_test_statistic_result
+        print p_value,p_value_result
+        self.assertAlmostEqual(observed_test_statistic_result, observed_test_statistic, accuracy, 'Wrong observed result')
+        self.assertAlmostEqual(p_value_result, p_value, accuracy, 'Wrong P Value')
