@@ -389,7 +389,7 @@ class SessionUser(WebUser):
             goals = self.session.get('experiments_goals', [])
             goals.append((experiment.name, alternative, goal_name, count))
             self.session['experiments_goals'] = goals
-            logger.debug({'type':'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()})
+            logger.debug(json.dumps({'type':'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
 
     def _set_last_seen(self, experiment, last_seen):
