@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 
+
 class ExperimentsConfig(AppConfig):
     def ready(self):
         from django.contrib.auth.signals import user_logged_in
