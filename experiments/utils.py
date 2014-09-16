@@ -323,7 +323,7 @@ class SessionUser(WebUser):
         if self._is_verified_human():
             self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
         else:
-            logger.debug(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
+            logger.info(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
         user_enrolled.send(
             self,
@@ -335,7 +335,7 @@ class SessionUser(WebUser):
             return
 
         self.session['experiments_verified_human'] = True
-        logger.debug(json.dumps({'type':'confirm_human', 'participant': self._participant_identifier()}))
+        logger.info(json.dumps({'type':'confirm_human', 'participant': self._participant_identifier()}))
 
         # Replay enrollments
         for enrollment in self._get_all_enrollments():
@@ -389,7 +389,7 @@ class SessionUser(WebUser):
             goals = self.session.get('experiments_goals', [])
             goals.append((experiment.name, alternative, goal_name, count))
             self.session['experiments_goals'] = goals
-            logger.debug(json.dumps({'type':'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
+            logger.info(json.dumps({'type':'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
 
     def _set_last_seen(self, experiment, last_seen):
