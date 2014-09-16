@@ -6,13 +6,13 @@ from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, t
 from experiments.signals import user_enrolled
 from experiments.experiment_counters import ExperimentCounter
 from experiments import conf
-from experiments import logging
 
 from collections import namedtuple
 from datetime import timedelta
 
 import collections
 import numbers
+import logging
 
 logger = logging.getLogger('experiments')
 
