@@ -85,7 +85,7 @@ def chi_square_p_value(matrix):
         num_rows = len(matrix)
         num_columns = len(matrix[0])
     except TypeError:
-        return
+        return None
 
     if num_rows != num_columns:
         return None
