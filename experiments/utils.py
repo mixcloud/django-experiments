@@ -13,6 +13,7 @@ from datetime import timedelta
 import collections
 import numbers
 import logging
+import json
 
 logger = logging.getLogger('experiments')
 
@@ -322,7 +323,7 @@ class SessionUser(WebUser):
         if self._is_verified_human():
             self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
         else:
-            logger.debug({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()})
+            logger.debug(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
         user_enrolled.send(
             self,
@@ -334,7 +335,7 @@ class SessionUser(WebUser):
             return
 
         self.session['experiments_verified_human'] = True
-        logger.debug({'type':'confirm_human', 'participant': self._participant_identifier()})
+        logger.debug(json.dumps({'type':'confirm_human', 'participant': self._participant_identifier()}))
 
         # Replay enrollments
         for enrollment in self._get_all_enrollments():
