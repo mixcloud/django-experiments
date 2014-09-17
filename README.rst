@@ -307,9 +307,6 @@ All Settings
     #Auto-create experiment if doesn't exist
     EXPERIMENTS_AUTO_CREATE = True
 
-    #Toggle whether the framework should verify user is human. Be careful.
-    EXPERIMENTS_VERIFY_HUMAN = False
-
     #Example Redis Settings
     EXPERIMENTS_REDIS_HOST = 'localhost'
     EXPERIMENTS_REDIS_PORT = 6379

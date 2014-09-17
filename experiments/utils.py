@@ -1,6 +1,7 @@
 from django.db import IntegrityError
+from django.db.models.expressions import F
 
-from experiments.models import Enrollment
+from experiments.models import Enrollment, UnconfirmedGoals
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
 from experiments.signals import user_enrolled
@@ -16,6 +17,7 @@ import logging
 import json
 
 logger = logging.getLogger('experiments')
+
 
 def participant(request=None, session=None, user=None):
     if request and hasattr(request, '_experiments_user'):
@@ -36,7 +38,7 @@ def _get_participant(request, session, user):
     if request and conf.BOT_REGEX.search(request.META.get("HTTP_USER_AGENT", "")):
         return DummyUser()
     elif user and user.is_authenticated():
-        return AuthenticatedUser(user, request)
+        return AuthenticatedUser(user, session, request)
     elif session:
         return SessionUser(session, request)
     else:
@@ -102,6 +104,9 @@ class WebUser(object):
         for enrollment in self._get_all_enrollments():
             if enrollment.experiment.is_displaying_alternatives():
                 self._experiment_goal(enrollment.experiment, enrollment.alternative, goal_name, count)
+
+    def _is_verified_human(self):
+        return self.session.get('experiments_verified_human', False) if self.session else False
 
     def confirm_human(self):
         """Mark that this is a real human being (not a bot) and thus results should be counted"""
@@ -181,11 +186,7 @@ class DummyUser(WebUser):
         return None
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
-        user_enrolled.send(
-            self,
-            experiment=experiment.name, alternative=alternative,
-            user=None, session=None)
-        pass
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=None)
 
     def is_enrolled(self, experiment_name, alternative):
         return alternative == conf.CONTROL_GROUP
@@ -217,10 +218,11 @@ class DummyUser(WebUser):
 
 
 class AuthenticatedUser(WebUser):
-    def __init__(self, user, request=None):
+    def __init__(self, user, session=None, request=None):
         self._enrollment_cache = {}
         self.user = user
         self.request = request
+        self.session = session
         super(AuthenticatedUser, self).__init__()
 
     def _get_enrollment(self, experiment):
@@ -236,34 +238,70 @@ class AuthenticatedUser(WebUser):
             del self._enrollment_cache[experiment.name]
 
         try:
-            enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative})
+            enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative, 'enrollment_date': enrollment_date, 'last_seen':last_seen})
         except IntegrityError:
             # Already registered (db race condition under high load)
             return
+
         # Update alternative if it doesn't match
-        enrollment_changed = False
+        update_fields = []
         if enrollment.alternative != alternative:
             enrollment.alternative = alternative
-            enrollment_changed = True
+            update_fields.append('alternative')
         if enrollment_date:
             enrollment.enrollment_date = enrollment_date
-            enrollment_changed = True
+            update_fields.append('enrollment_date')
         if last_seen:
             enrollment.last_seen = last_seen
-            enrollment_changed = True
+            update_fields.append('last_seen')
 
-        if enrollment_changed:
-            enrollment.save()
 
-        self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
+        if self._is_verified_human():
+            # confirmed so setup and count all enrollments
+            if not enrollment.confirmed:
+                enrollment.confirmed = True
+                update_fields.append('confirmed')
+            self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
 
-        user_enrolled.send(
-            self,
-            experiment=experiment.name, alternative=alternative,
-            user=self.user, session=None)
+        if update_fields:
+            enrollment.save(update_fields=update_fields)
+
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=self.user, session=None)
+
+    def confirm_human(self):
+        if self.session.get('experiments_verified_human', False):
+            return
+        self.session['experiments_verified_human'] = True
+
+        logger.info(json.dumps({'type':'confirm_human', 'participant': self._participant_identifier()}))
+
+        # Get unconfirmed enrollments
+        enrollments = Enrollment.objects.filter(user=self.user, confirmed=False)
+
+        for enrollment in enrollments:
+            self.experiment_counter.increment_participant_count(enrollment.experiment, enrollment.alternative, self._participant_identifier())
+
+        # update the db to ensure these don't get recounted if confirm fires off again
+        enrollments.update(confirmed=True)
+
+        # Get unconfirmed goals
+        goals = UnconfirmedGoals.objects.filter(user=self.user)
+        for goal in goals:
+            self.experiment_counter.increment_goal_count(goal.experiment, goal.alternative, goal.goal_name, self._participant_identifier(), goal.count)
+        # remove unconfirmed goals from db to ensure we don't double count them
+        goals.delete()
 
     def _participant_identifier(self):
         return 'user:%d' % (self.user.pk, )
+
+    def _get_all_unconfirmed_enrollments(self):
+        enrollments = self.session.get('experiments_unconfirmed_enrollments', None)
+        if enrollments:
+            for experiment_name, data in enrollments.items():
+                alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
+                experiment = experiment_manager.get(experiment_name, None)
+                if experiment:
+                    yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
 
     def _get_all_enrollments(self):
         enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
@@ -281,7 +319,12 @@ class AuthenticatedUser(WebUser):
             enrollment.delete()
 
     def _experiment_goal(self, experiment, alternative, goal_name, count):
-        self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
+        if self._is_verified_human():
+            self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
+        else:
+            unconfirmed_goal, created = UnconfirmedGoals.objects.get_or_create(user=self.user, experiment=experiment, alternative=alternative, goal_name=goal_name, defaults={'count':count})
+            if not created:
+                UnconfirmedGoals.objects.filter(id=unconfirmed_goal.id).update(count=F('count') + count)
 
     def _set_last_seen(self, experiment, last_seen):
         Enrollment.objects.filter(user=self.user, experiment=experiment).update(last_seen=last_seen)
@@ -325,10 +368,7 @@ class SessionUser(WebUser):
         else:
             logger.info(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
-        user_enrolled.send(
-            self,
-            experiment=experiment.name, alternative=alternative,
-            user=None, session=self.session)
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=self.session)
 
     def confirm_human(self):
         if self.session.get('experiments_verified_human', False):
@@ -359,12 +399,6 @@ class SessionUser(WebUser):
                 self.session.save()  # Force session key
             self.session['experiments_session_key'] = self.session.session_key
         return 'session:%s' % (self.session['experiments_session_key'], )
-
-    def _is_verified_human(self):
-        if conf.VERIFY_HUMAN:
-            return self.session.get('experiments_verified_human', False)
-        else:
-            return True
 
     def _get_all_enrollments(self):
         enrollments = self.session.get('experiments_enrollments', None)

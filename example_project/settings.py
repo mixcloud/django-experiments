@@ -10,8 +10,6 @@ EXPERIMENTS_GOALS = (
 
 EXPERIMENTS_AUTO_CREATE = True
 
-EXPERIMENTS_VERIFY_HUMAN = True #Careful with this setting, if it is toggled then participant counters will not increment accordingly
-
 # Redis Settings
 EXPERIMENTS_REDIS_HOST = 'localhost'
 EXPERIMENTS_REDIS_PORT = 6379

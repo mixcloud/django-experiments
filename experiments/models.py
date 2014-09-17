@@ -88,13 +88,15 @@ class Experiment(models.Model):
     def to_dict_serialized(self):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
+
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
-    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), null=True)
+    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
     experiment = models.ForeignKey(Experiment)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
+    confirmed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('user', 'experiment')
@@ -102,15 +104,18 @@ class Enrollment(models.Model):
     def __unicode__(self):
         return u'%s - %s' % (self.user, self.experiment)
 
-    def to_dict(self):
-        data = {
-            'user': self.user,
-            'experiment': self.experiment,
-            'enrollment_date': self.enrollment_date,
-            'alternative': self.alternative,
-            'goals': self.goals,
-        }
-        return data
+
+class UnconfirmedGoals(models.Model):
+    """ A participant in a split testing experiment """
+    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
+    experiment = models.ForeignKey(Experiment)
+    alternative = models.CharField(max_length=255)
+    goal_name = models.CharField(max_length=255)
+    count = models.PositiveIntegerField(default=0)
+
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.user, self.goal)
 
 
 def weighted_choice(choices):
