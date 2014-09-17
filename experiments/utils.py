@@ -36,7 +36,10 @@ def _get_participant(request, session, user):
     if request and conf.BOT_REGEX.search(request.META.get("HTTP_USER_AGENT", "")):
         return DummyUser()
     elif user and user.is_authenticated():
-        return AuthenticatedUser(user, request)
+        if getattr(user, 'is_confirmed_human', True):
+            return AuthenticatedUser(user, request)
+        else:
+            return DummyUser()
     elif session:
         return SessionUser(session, request)
     else:

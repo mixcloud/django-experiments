@@ -117,25 +117,43 @@ class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
         self.request.user = User(username='brian')
         self.request.user.save()
 
-
-class BotTestCase(TestCase):
+class BotTests(object):
     def setUp(self):
         self.experiment = Experiment(name='backgroundcolor', state=ENABLED_STATE)
         self.experiment.save()
-        self.request = request_factory.get('/', HTTP_USER_AGENT='GoogleBot/2.1')
         self.experiment_counter = ExperimentCounter()
 
     def test_user_does_not_enroll(self):
-        experiment_user = participant(self.request)
-        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        self.experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, TEST_ALTERNATIVE), 0, "Bot counted towards results")
+
+    def test_user_does_not_fire_goals(self):
+        self.experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        self.experiment_user.goal(TEST_GOAL)
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, TEST_ALTERNATIVE), 0, "Bot counted towards results")
 
     def test_bot_in_control_group(self):
-        experiment_user = participant(self.request)
-        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
-        self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), 'control', "Bot enrolled in a group")
-        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE), False, "Bot in test alternative")
-        self.assertEqual(experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP), True, "Bot not in control group")
+        self.experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        self.assertEqual(self.experiment_user.get_alternative(EXPERIMENT_NAME), 'control', "Bot enrolled in a group")
+        self.assertEqual(self.experiment_user.is_enrolled(self.experiment.name, TEST_ALTERNATIVE), False, "Bot in test alternative")
+        self.assertEqual(self.experiment_user.is_enrolled(self.experiment.name, CONTROL_GROUP), True, "Bot not in control group")
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)
+
+class LoggedOutBotTestCase(BotTests, TestCase):
+    def setUp(self):
+        super(LoggedOutBotTestCase, self).setUp()
+        self.request = request_factory.get('/', HTTP_USER_AGENT='GoogleBot/2.1')
+        self.experiment_user = participant(self.request)
+
+
+class LoggedInBotTestCase(BotTests, TestCase):
+    def setUp(self):
+        super(LoggedInBotTestCase, self).setUp()
+        User = get_user_model()
+        self.user = User(username='brian')
+        self.user.is_confirmed_human = False
+        self.user.save()
+
+        self.experiment_user = participant(user=self.user)
