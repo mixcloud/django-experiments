@@ -96,12 +96,26 @@ class Enrollment(models.Model):
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
+    confirmed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('user', 'experiment')
 
     def __unicode__(self):
         return u'%s - %s' % (self.user, self.experiment)
+
+
+class UnconfirmedGoals(models.Model):
+    """ A participant in a split testing experiment """
+    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
+    experiment = models.ForeignKey(Experiment)
+    alternative = models.CharField(max_length=255)
+    goal_name = models.CharField(max_length=255)
+    count = models.PositiveIntegerField(default=0)
+
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.user, self.goal)
 
 
 def weighted_choice(choices):
