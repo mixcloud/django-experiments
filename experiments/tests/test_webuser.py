@@ -85,24 +85,29 @@ class WebUserTests(object):
 
         self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1}, "Visit was not correctly counted")
 
-
-class WebUserAnonymousTestCase(WebUserTests, TestCase):
-    def setUp(self):
-        super(WebUserAnonymousTestCase, self).setUp()
-        self.request.user = AnonymousUser()
-
-    def test_confirm_human_increments_counts(self):
+    def test_confirm_human_increments_participant_count(self):
         experiment_user = participant(self.request)
         experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         experiment_user.goal(TEST_GOAL)
 
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, TEST_ALTERNATIVE), 0, "Counted participant before confirmed human")
-        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")
-
         experiment_user.confirm_human()
-
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, TEST_ALTERNATIVE), 1, "Did not count participant after confirm human")
+
+    def test_confirm_human_increments_goal_count(self):
+        experiment_user = participant(self.request)
+        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        experiment_user.goal(TEST_GOAL)
+
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 0, "Counted goal before confirmed human")
+        experiment_user.confirm_human()
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
+
+
+class WebUserAnonymousTestCase(WebUserTests, TestCase):
+    def setUp(self):
+        super(WebUserAnonymousTestCase, self).setUp()
+        self.request.user = AnonymousUser()
 
 
 class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
