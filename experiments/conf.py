@@ -4,18 +4,18 @@ import re
 
 CONTROL_GROUP = 'control'
 
-VISIT_COUNT_GOAL = '_retention_visits'
+VISIT_PRESENT_COUNT_GOAL = '_retention_present_visits'
+VISIT_NOT_PRESENT_COUNT_GOAL = '_retention_not_present_visits'
 
 BUILT_IN_GOALS = (
-    VISIT_COUNT_GOAL,
+    VISIT_PRESENT_COUNT_GOAL,
+    VISIT_NOT_PRESENT_COUNT_GOAL,
 )
+
+SESSION_LENGTH = getattr(settings, 'EXPERIMENTS_SESSION_LENGTH', 6)
 
 USER_GOALS = getattr(settings, 'EXPERIMENTS_GOALS', [])
 ALL_GOALS = tuple(chain(USER_GOALS, BUILT_IN_GOALS))
-
-DO_NOT_AGGREGATE_GOALS = (
-    VISIT_COUNT_GOAL,
-)
 
 VERIFY_HUMAN = getattr(settings, 'EXPERIMENTS_VERIFY_HUMAN', True)
 

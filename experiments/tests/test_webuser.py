@@ -1,16 +1,20 @@
 from __future__ import absolute_import
 
+from datetime import timedelta
+
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
+from django.utils import timezone
 
 from experiments.experiment_counters import ExperimentCounter
 from experiments.models import Experiment, ENABLED_STATE
-from experiments.conf import CONTROL_GROUP, VISIT_COUNT_GOAL
+from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_PRESENT_COUNT_GOAL
 from experiments.utils import participant
 
+from mock import patch
 
 request_factory = RequestFactory()
 
@@ -67,13 +71,20 @@ class WebUserTests(object):
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, TEST_ALTERNATIVE), 1, "Did not count participant after confirm human")
 
     def test_visit_increases_goal(self):
-        experiment_user = participant(self.request)
-        experiment_user.confirm_human()
-        experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        thetime = timezone.now()
+        with patch('experiments.utils.now', return_value=thetime):
+            experiment_user = participant(self.request)
+            experiment_user.confirm_human()
+            experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
 
-        experiment_user.visit()
+            experiment_user.visit()
+            self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Not Present Visit was not correctly counted")
+            self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
-        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1}, "Visit was not correctly counted")
+        with patch('experiments.utils.now', return_value=thetime + timedelta(hours=7)):
+            experiment_user.visit()
+            self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {2: 1}, "No Present Visit was not correctly counted")
+            self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {1: 1}, "Present Visit was not correctly counted")
 
     def test_visit_twice_increases_once(self):
         experiment_user = participant(self.request)
@@ -83,7 +94,8 @@ class WebUserTests(object):
         experiment_user.visit()
         experiment_user.visit()
 
-        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_COUNT_GOAL), {1: 1}, "Visit was not correctly counted")
+        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Visit was not correctly counted")
+        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
 
 class WebUserAnonymousTestCase(WebUserTests, TestCase):
