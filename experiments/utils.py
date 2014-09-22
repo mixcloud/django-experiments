@@ -131,6 +131,13 @@ class WebUser(object):
         """Record that the user has visited the site for the purposes of retention tracking"""
         for enrollment in self._get_all_enrollments():
             if enrollment.experiment.is_displaying_alternatives():
+                # We have two different goals, VISIT_NOT_PRESENT_COUNT_GOAL and VISIT_PRESENT_COUNT_GOAL.
+                # VISIT_PRESENT_COUNT_GOAL will avoid firing on the first time we set last_seen as it is assumed that the user is
+                # on the page and therefore it would automatically trigger and be valueless.
+                # This should be used for experiments when we enroll the user as part of the pageview,
+                # alternatively we can use the NOT_PRESENT GOAL which will increment on the first pageview,
+                # this is mainly useful for notification actions when the users isn't initially present.
+
                 if not enrollment.last_seen:
                     self._experiment_goal(enrollment.experiment, enrollment.alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL, 1)
                     self._set_last_seen(enrollment.experiment, now())

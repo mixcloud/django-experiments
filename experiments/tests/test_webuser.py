@@ -78,9 +78,6 @@ class WebUserTests(object):
             experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
 
             experiment_user.visit()
-            # we have two different goals, VISIT_NOT_PRESENT_COUNT_GOAL and VISIT_PRESENT_COUNT_GOAL. Present will avoid firing on the first time we set last_seen as this is assumed that the user is
-            # on the page and therefore it would automatically trigger and be valueless. This should be used for experiments when we enroll the user as part of the pageview
-            # Alternatively we can use the NOT_PRESENT GOAL which will increment on the first pageview, this is mainly useful for notification actions when the users isn't initially present.
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Not Present Visit was not correctly counted")
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
