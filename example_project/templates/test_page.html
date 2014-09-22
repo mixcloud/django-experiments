@@ -48,7 +48,7 @@
 
 </head>
 <body>
-    {%  csrf_token %}
+    {% csrf_token %}
 
     {% experiment helloworld control %}
         <a href="{% url 'goal' %}">Click Me (Control)</a>

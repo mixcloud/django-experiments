@@ -131,8 +131,12 @@ class WebUser(object):
         """Record that the user has visited the site for the purposes of retention tracking"""
         for enrollment in self._get_all_enrollments():
             if enrollment.experiment.is_displaying_alternatives():
-                if not enrollment.last_seen or now() - enrollment.last_seen >= timedelta(1):
-                    self._experiment_goal(enrollment.experiment, enrollment.alternative, conf.VISIT_COUNT_GOAL, 1)
+                if not enrollment.last_seen:
+                    self._experiment_goal(enrollment.experiment, enrollment.alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL, 1)
+                    self._set_last_seen(enrollment.experiment, now())
+                elif now() - enrollment.last_seen >= timedelta(hours=conf.SESSION_LENGTH):
+                    self._experiment_goal(enrollment.experiment, enrollment.alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL, 1)
+                    self._experiment_goal(enrollment.experiment, enrollment.alternative, conf.VISIT_PRESENT_COUNT_GOAL, 1)
                     self._set_last_seen(enrollment.experiment, now())
 
     def _get_enrollment(self, experiment):

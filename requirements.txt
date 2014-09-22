@@ -3,3 +3,4 @@ django>=1.7.0
 nexus>=0.2.3
 django-jsonfield==0.9.13
 django-modeldict==1.4.1
+mock==1.0.1
