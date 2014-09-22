@@ -181,11 +181,7 @@ class DummyUser(WebUser):
         return None
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
-        user_enrolled.send(
-            self,
-            experiment=experiment.name, alternative=alternative,
-            user=None, session=None)
-        pass
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=None)
 
     def is_enrolled(self, experiment_name, alternative):
         return alternative == conf.CONTROL_GROUP
@@ -257,10 +253,7 @@ class AuthenticatedUser(WebUser):
 
         self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
 
-        user_enrolled.send(
-            self,
-            experiment=experiment.name, alternative=alternative,
-            user=self.user, session=None)
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=self.user, session=None)
 
     def _participant_identifier(self):
         return 'user:%d' % (self.user.pk, )
@@ -325,10 +318,7 @@ class SessionUser(WebUser):
         else:
             logger.info(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
-        user_enrolled.send(
-            self,
-            experiment=experiment.name, alternative=alternative,
-            user=None, session=self.session)
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=self.session)
 
     def confirm_human(self):
         if self.session.get('experiments_verified_human', False):
