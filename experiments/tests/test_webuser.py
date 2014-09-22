@@ -95,6 +95,7 @@ class WebUserTests(object):
         experiment_user.visit()
 
         self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Visit was not correctly counted")
+        self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
 
 class WebUserAnonymousTestCase(WebUserTests, TestCase):
