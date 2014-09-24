@@ -273,8 +273,9 @@ Confirming Human
 The framework can distinguish between humans and bots. By including
 
 ::
+    {% load experiments %}
 
-    {% include "experiments/confirm_human.html" %}
+    {% experiments_confirm_human %}
 
 at some point in your code (we recommend you put it in your base.html
 file), unregistered users will then be confirmed as human. This can be

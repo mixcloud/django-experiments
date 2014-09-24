@@ -335,10 +335,10 @@ class SessionUser(WebUser):
         user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=self.session)
 
     def confirm_human(self):
-        if self.session.get('experiments_verified_human', False):
+        if self.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False):
             return
 
-        self.session['experiments_verified_human'] = True
+        self.session[conf.CONFIRM_HUMAN_SESSION_KEY] = True
         logger.info(json.dumps({'type':'confirm_human', 'participant': self._participant_identifier()}))
 
         # Replay enrollments
@@ -366,7 +366,7 @@ class SessionUser(WebUser):
 
     def _is_verified_human(self):
         if conf.VERIFY_HUMAN:
-            return self.session.get('experiments_verified_human', False)
+            return self.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)
         else:
             return True
 

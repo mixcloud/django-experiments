@@ -5,6 +5,8 @@ from django.core.urlresolvers import reverse
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
+from experiments import conf
+
 from uuid import uuid4
 
 register = template.Library()
@@ -14,6 +16,10 @@ register = template.Library()
 def experiment_goal(goal_name):
     return {'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()})}
 
+@register.inclusion_tag('experiments/confirm_human.html', takes_context=True)
+def experiments_confirm_human(context):
+    request = context.get('request')
+    return {'confirmed_human': request.session[conf.CONFIRM_HUMAN_SESSION_KEY]}
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative, weight, user_variable):
