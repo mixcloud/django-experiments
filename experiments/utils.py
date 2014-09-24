@@ -195,7 +195,7 @@ class DummyUser(WebUser):
         return None
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
-        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=None)
+        pass
 
     def is_enrolled(self, experiment_name, alternative):
         return alternative == conf.CONTROL_GROUP
