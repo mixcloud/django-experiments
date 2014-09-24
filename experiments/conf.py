@@ -19,4 +19,6 @@ ALL_GOALS = tuple(chain(USER_GOALS, BUILT_IN_GOALS))
 
 VERIFY_HUMAN = getattr(settings, 'EXPERIMENTS_VERIFY_HUMAN', True)
 
+CONFIRM_HUMAN = getattr(settings, 'EXPERIMENTS_CONFIRM_HUMAN', True)
+
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)

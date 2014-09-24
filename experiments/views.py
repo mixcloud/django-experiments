@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 
 from experiments.utils import participant
 from experiments.models import Experiment
+from experiments import conf
 
 TRANSPARENT_1X1_PNG = \
 ("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52"
@@ -21,8 +22,9 @@ TRANSPARENT_1X1_PNG = \
 @never_cache
 @require_POST
 def confirm_human(request):
-    experiment_user = participant(request)
-    experiment_user.confirm_human()
+    if conf.CONFIRM_HUMAN:
+        experiment_user = participant(request)
+        experiment_user.confirm_human()
     return HttpResponse(status=204)
 
 
