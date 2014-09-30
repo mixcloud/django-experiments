@@ -17,7 +17,10 @@ import json
 
 logger = logging.getLogger('experiments')
 
+
 def participant(request=None, session=None, user=None):
+    # This caches the experiment user on the request object because AuthenticatedUser can involve database lookups that
+    # it caches. Signals are attached to login/logout to clear the cache using clear_participant_cache
     if request and hasattr(request, '_experiments_user'):
         return request._experiments_user
     else:
@@ -25,6 +28,11 @@ def participant(request=None, session=None, user=None):
         if request:
             request._experiments_user = result
         return result
+
+
+def clear_participant_cache(request):
+    if hasattr(request, '_experiments_user'):
+        del request._experiments_user
 
 
 def _get_participant(request, session, user):
@@ -44,6 +52,7 @@ def _get_participant(request, session, user):
         return SessionUser(session, request)
     else:
         return DummyUser()
+
 
 EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative', 'enrollment_date', 'last_seen'])
 
@@ -335,11 +344,8 @@ class SessionUser(WebUser):
         user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=self.session)
 
     def confirm_human(self):
-        if self.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False):
-            return
-
         self.session[conf.CONFIRM_HUMAN_SESSION_KEY] = True
-        logger.info(json.dumps({'type':'confirm_human', 'participant': self._participant_identifier()}))
+        logger.info(json.dumps({'type': 'confirm_human', 'participant': self._participant_identifier()}))
 
         # Replay enrollments
         for enrollment in self._get_all_enrollments():
@@ -385,6 +391,7 @@ class SessionUser(WebUser):
             self.experiment_counter.remove_participant(experiment, alternative, self._participant_identifier())
             enrollments = self.session.get('experiments_enrollments', None)
             del enrollments[experiment.name]
+            self.session['experiments_enrollments'] = enrollments
 
     def _experiment_goal(self, experiment, alternative, goal_name, count):
         if self._is_verified_human():
@@ -393,8 +400,7 @@ class SessionUser(WebUser):
             goals = self.session.get('experiments_goals', [])
             goals.append((experiment.name, alternative, goal_name, count))
             self.session['experiments_goals'] = goals
-            logger.info(json.dumps({'type':'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
-
+            logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
     def _set_last_seen(self, experiment, last_seen):
         enrollments = self.session.get('experiments_enrollments', {})

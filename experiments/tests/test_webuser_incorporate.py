@@ -1,10 +1,14 @@
-from django.test import TestCase
+from django.http import HttpResponse
+from django.test import TestCase, RequestFactory
 from django.utils.unittest import TestSuite
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
+from experiments import conf
 
 from experiments.experiment_counters import ExperimentCounter
-from experiments.utils import DummyUser, SessionUser, AuthenticatedUser
-from experiments.models import Experiment, ENABLED_STATE
+from experiments.middleware import ExperimentsRetentionMiddleware
+from experiments.signal_handlers import transfer_enrollments_to_user
+from experiments.utils import DummyUser, SessionUser, AuthenticatedUser, participant
+from experiments.models import Experiment, ENABLED_STATE, Enrollment
 
 from django.contrib.auth import get_user_model
 
@@ -72,3 +76,52 @@ def build_test_case(incorporating, incorporated):
             self.incorporated = incorporated(False)
     InstantiatedTestCase.__name__ = "WebUserIncorporateTestCase_into_%s_from_%s" % (incorporating.__name__, incorporated.__name__)
     return InstantiatedTestCase
+
+
+class IncorporateTestCase(TestCase):
+    def setUp(self):
+        self.experiment = Experiment.objects.create(name=EXPERIMENT_NAME, state=ENABLED_STATE)
+        self.experiment_counter = ExperimentCounter()
+
+        User = get_user_model()
+        self.user = User.objects.create(username='incorporate_user')
+        self.user.is_confirmed_human = True
+
+        request_factory = RequestFactory()
+        self.request = request_factory.get('/')
+        self.request.session = DatabaseSession()
+        participant(self.request).confirm_human()
+
+    def tearDown(self):
+        self.experiment_counter.delete(self.experiment)
+
+    def _login(self):
+        self.request.user = self.user
+        transfer_enrollments_to_user(None, self.request, self.user)
+
+    def test_visit_incorporate(self):
+        alternative = participant(self.request).enroll(self.experiment.name, ['alternative'])
+
+        ExperimentsRetentionMiddleware().process_response(self.request, HttpResponse())
+
+        self.assertEqual(
+            dict(self.experiment_counter.participant_goal_frequencies(self.experiment,
+                                                                      alternative,
+                                                                      participant(self.request)._participant_identifier()))[conf.VISIT_NOT_PRESENT_COUNT_GOAL],
+            1
+        )
+
+        self.assertFalse(Enrollment.objects.all().exists())
+        self._login()
+
+        self.assertTrue(Enrollment.objects.all().exists())
+        self.assertIsNotNone(Enrollment.objects.all()[0].last_seen)
+        self.assertEqual(
+            dict(self.experiment_counter.participant_goal_frequencies(self.experiment,
+                                                                      alternative,
+                                                                      participant(self.request)._participant_identifier()))[conf.VISIT_NOT_PRESENT_COUNT_GOAL],
+            1
+        )
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL), 1)
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, alternative), 1)
+

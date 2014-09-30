@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from datetime import timedelta
+from django.http import HttpResponse
 
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -8,10 +9,13 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
 from django.utils import timezone
+from experiments import conf
 
 from experiments.experiment_counters import ExperimentCounter
-from experiments.models import Experiment, ENABLED_STATE
+from experiments.middleware import ExperimentsRetentionMiddleware
+from experiments.models import Experiment, ENABLED_STATE, Enrollment
 from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_PRESENT_COUNT_GOAL
+from experiments.signal_handlers import transfer_enrollments_to_user
 from experiments.utils import participant
 
 from mock import patch
@@ -169,3 +173,73 @@ class LoggedInBotTestCase(BotTests, TestCase):
         self.user.save()
 
         self.experiment_user = participant(user=self.user)
+
+
+class ParticipantCacheTestCase(TestCase):
+    def setUp(self):
+        self.experiment = Experiment.objects.create(name='test_experiment1', state=ENABLED_STATE)
+        self.experiment_counter = ExperimentCounter()
+
+    def tearDown(self):
+        self.experiment_counter.delete(self.experiment)
+
+    def test_transfer_enrollments(self):
+        User = get_user_model()
+        user = User.objects.create(username='test')
+        request = request_factory.get('/')
+        request.session = DatabaseSession()
+        participant(request).enroll('test_experiment1', ['alternative'])
+        request.user = user
+        transfer_enrollments_to_user(None, request, user)
+        # the call to the middleware will set last_seen on the experiment
+        # if the participant cache hasn't been wiped appropriately then the
+        # session experiment user will be impacted instead of the authenticated
+        # experiment user
+        ExperimentsRetentionMiddleware().process_response(request, HttpResponse())
+        self.assertIsNotNone(Enrollment.objects.all()[0].last_seen)
+
+
+class ConfirmHumanTestCase(TestCase):
+    def setUp(self):
+        self.experiment = Experiment.objects.create(name='test_experiment1', state=ENABLED_STATE)
+        self.experiment_counter = ExperimentCounter()
+        self.experiment_user = participant(session=DatabaseSession())
+        self.alternative = self.experiment_user.enroll(self.experiment.name, ['alternative'])
+        self.experiment_user.goal('my_goal')
+
+    def tearDown(self):
+        self.experiment_counter.delete(self.experiment)
+
+    def test_confirm_human_updates_experiment(self):
+        self.assertIn('experiments_goals', self.experiment_user.session)
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 0)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 0)
+        self.experiment_user.confirm_human()
+        self.assertNotIn('experiments_goals', self.experiment_user.session)
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
+
+    def test_confirm_human_called_twice(self):
+        """
+        Ensuring that counters aren't incremented twice
+        """
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 0)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 0)
+        self.experiment_user.confirm_human()
+        self.experiment_user.confirm_human()
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
+
+    def test_confirm_human_sets_session(self):
+        self.assertFalse(self.experiment_user.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False))
+        self.experiment_user.confirm_human()
+        self.assertTrue(self.experiment_user.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False))
+
+    def test_session_already_confirmed(self):
+        """
+        Testing that confirm_human works even if code outside of django-experiments updates the key
+        """
+        self.experiment_user.session[conf.CONFIRM_HUMAN_SESSION_KEY] = True
+        self.experiment_user.confirm_human()
+        self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
+        self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
