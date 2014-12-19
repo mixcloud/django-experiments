@@ -13,11 +13,9 @@ from multiselectfield import MultiSelectField
 import waffle
 from waffle import Flag
 
-from experiments import counters, conf
+from experiments import conf
 from experiments.dateutils import now
 
-PARTICIPANT_KEY = '%s:%s:participant'
-GOAL_KEY = '%s:%s:%s:goal'
 
 CONTROL_STATE = 0  # The experiment is essentially disabled.
                    # All users will see the control alternative, and no data
@@ -212,8 +210,6 @@ class Experiment(models.Model):
                 Flag.objects.filter(name=self.switch_key).delete()
             except Flag.DoesNotExist:
                 pass
-
-        counters.reset_pattern(self.name + "*")
 
         super(Experiment, self).delete(*args, **kwargs)
 

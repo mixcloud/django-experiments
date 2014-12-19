@@ -5,15 +5,19 @@ Django-Experiments is an AB Testing Framework for Django. It is
 completely usable via template tags. It provides support for conditional
 user enrollment via django-waffle.
 
-This version is based on `Mixcloud Django-Experiments <https://github.com/mixcloud/django-experiments>`_.
-
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
+
+* This version is based on `Mixcloud Django-Experiments <https://github.com/mixcloud/django-experiments>`_.
+
+.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.32+PM.png
+
+.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.47+PM.png
 
 Changelog
 ---------
 
-0.4.0
-~~~~~
+0.3.5b
+~~~~~~
 
 - Replaced Gargoyle by Django Waffle
 - Removed Nexus dependency

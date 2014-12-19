@@ -16,13 +16,18 @@ def experiment_goal(goal_name):
 
 
 class ExperimentNode(template.Node):
-    def __init__(self, node_list, experiment_name, alternative, user_variable):
+    def __init__(self, node_list, experiment_name, alternative, weight, user_variable):
         self.node_list = node_list
         self.experiment_name = experiment_name
         self.alternative = alternative
+        self.weight = weight
         self.user_variable = user_variable
 
     def render(self, context):
+        experiment = experiment_manager.get(self.experiment_name, None)
+        if experiment:
+            experiment.ensure_alternative_exists(self.alternative, self.weight)
+
         # Get User object
         if self.user_variable:
             auth_user = self.user_variable.resolve(context)
@@ -87,11 +92,7 @@ def experiment(parser, token):
         raise template.TemplateSyntaxError("Syntax should be like :"
                 "{% experiment experiment_name alternative [weight=val] [user=val] %}")
 
-    experiment = experiment_manager.get(experiment_name, None)
-    if experiment:
-        experiment.ensure_alternative_exists(alternative, weight)
-
-    return ExperimentNode(node_list, experiment_name, alternative, user_variable)
+    return ExperimentNode(node_list, experiment_name, alternative, weight, user_variable)
 
 
 @register.simple_tag(takes_context=True)
