@@ -144,6 +144,17 @@ Finally, the cache for the manager and Waffle:
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
 
+Don't forget to include the module to your urls:
+
+::
+
+    #urls.py
+    urlpatterns = patterns(
+        ...
+        url(r'experiments/', include('experiments.urls')),
+    )
+
+
 *Note, more configuration options are detailed below.*
 
 
