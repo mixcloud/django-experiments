@@ -15,7 +15,9 @@ EXPERIMENTS_SWITCH_AUTO_DELETE = True
 
 EXPERIMENTS_SWITCH_LABEL = "Experiment: %s"
 
-EXPERIMENTS_VERIFY_HUMAN = True #Careful with this setting, if it is toggled then participant counters will not increment accordingly
+EXPERIMENTS_VERIFY_HUMAN = True  # Careful with this setting, if it is toggled
+                                 # then participant counters will not increment
+                                 # accordingly
 
 # Redis Settings
 EXPERIMENTS_REDIS_HOST = 'localhost'
@@ -27,8 +29,7 @@ EXPERIMENTS_REDIS_DB = 0
 STATIC_URL = '/static/'
 
 # Other settings
-# Django settings for example_project project.
-NEXUS_MEDIA_PREFIX = '/nexus/media/'
+# Django settings for example project.
 
 DEBUG = True
 TEMPLATE_DEBUG = True
@@ -48,11 +49,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(PROJECT_ROOT, '..')))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'experiments.db',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        'NAME': 'experiments.db',   # Or path to database file if using sqlite3.
+        'USER': '',                 # Not used with sqlite3.
+        'PASSWORD': '',             # Not used with sqlite3.
+        'HOST': '',                 # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                 # Set to empty string for default. Not used with sqlite3.
+    }
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 
@@ -100,7 +107,7 @@ SECRET_KEY = 'gfjo;2r3l;hjropjf30j3fl;m234nc9p;o2mnpfnpfj'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
+    # 'django.template.loaders.eggs.Loader',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -119,10 +126,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'waffle.middleware.WaffleMiddleware',
     'experiments.middleware.ExperimentsMiddleware',
 )
 
-ROOT_URLCONF = 'example_project.urls'
+ROOT_URLCONF = 'example.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -137,9 +145,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'nexus',
+    'waffle',
     'experiments',
-    'gargoyle',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
 )

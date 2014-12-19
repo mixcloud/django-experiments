@@ -13,13 +13,19 @@ def runtests():
         DATABASES={
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': 'test.db',
+            }
+        },
+        CACHES={
+            'default': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
             }
         },
         INSTALLED_APPS=('django.contrib.auth',
                         'django.contrib.contenttypes',
                         'django.contrib.sessions',
                         'django.contrib.admin',
-                        'gargoyle',
+                        'waffle',
                         'experiments',),
         ROOT_URLCONF='experiments.urls',
     )

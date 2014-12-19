@@ -1,11 +1,13 @@
 Django-Experiments
 ==================
 
-Django-Experiments is an AB Testing Framework for Django and Nexus. It is
+Django-Experiments is an AB Testing Framework for Django. It is
 completely usable via template tags. It provides support for conditional
-user enrollment via Gargoyle.
+user enrollment via django-waffle.
 
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
+
+* This version is based on `Mixcloud Django-Experiments <https://github.com/mixcloud/django-experiments>`_.
 
 .. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.32+PM.png
 
@@ -13,6 +15,13 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 Changelog
 ---------
+
+0.3.5b
+~~~~~~
+
+- Replaced Gargoyle by Django Waffle
+- Removed Nexus dependency
+- Added custom Django admin views to replace Nexus ones
 
 0.3.5
 ~~~~~
@@ -57,7 +66,7 @@ Django-Experiments is best installed via pip:
 
 ::
 
-    pip install django-experiments
+    pip install git+https://github.com/robertobarreda/django-experiments.git@waffle#egg=django-experiments
 
 This should download django-experiments and any dependencies. If downloading from the repo, 
 pip is still the recommended way to install dependencies:
@@ -69,8 +78,7 @@ pip is still the recommended way to install dependencies:
 Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
-- `Nexus <https://github.com/dcramer/nexus/>`_
-- `Gargoyle <https://github.com/disqus/gargoyle/>`_
+- `Django Waffle <https://github.com/jsocol/django-waffle>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 
@@ -80,7 +88,7 @@ Usage
 -----
 
 The example project is a good place to get started and have a play.
-Results are stored in redis and displayed in the nexus admin. The key
+Results are stored in redis and displayed in the django admin. The key
 components of this framework are: the experiments, alternatives and
 goals.
 
@@ -109,8 +117,7 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
     INSTALLED_APPS = [
         ...
         'django.contrib.humanize',
-        'nexus',
-        'gargoyle',
+        'waffle',
         'experiments',
     ]
 
@@ -118,13 +125,35 @@ And add our middleware:
 
 ::
 
-    MIDDLEWARE_CLASSES [
+    #Middleware
+    MIDDLEWARE_CLASSES = [
         ...
         'experiments.middleware.ExperimentsMiddleware',
     ]
 
+Finally, the cache for the manager and Waffle:
+
+::
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
+
+Don't forget to include the module to your urls:
+
+::
+
+    #urls.py
+    urlpatterns = patterns(
+        ...
+        url(r'experiments/', include('experiments.urls')),
+    )
+
 
 *Note, more configuration options are detailed below.*
 
@@ -132,10 +161,10 @@ you have correctly configured your STATIC_URL setting.
 Experiments and Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The experiment is manually created in your nexus admin.\*
+The experiment is manually created in your django admin.\*
 
 An experiment allows you to test the effect of various design
-alternatives on user interaction. Nexus Experiments is designed to work
+alternatives on user interaction. Django Experiments is designed to work
 from within django templates, to make it easier for designers. We begin
 by loading our module:
 
@@ -296,7 +325,7 @@ your results!
 Managing Experiments
 --------------------
 
-Experiments can be managed in the nexus dashboard (/nexus/experiments by
+Experiments can be managed in the django admin dashboard (/admin/experiments by
 default).
 
 The States
@@ -307,15 +336,15 @@ the control alternative, and no data will be collected.
 
 **Enabled** - The experiment is enabled globally, for all users.
 
-**Gargoyle** - If a switch\_key is specified, the experiment will rely
-on the gargoyle switch to determine if the user is included in the
+**Switch** - If a switch\_key is specified, the experiment will rely
+on the waffle flag to determine if the user is included in the
 experiment. More on this below.
 
-Using Gargoyle
-~~~~~~~~~~~~~~
+Using Django Waffle
+~~~~~~~~~~~~~~~~~~~
 
-Gargoyle lets you toggle features to selective sets of users based on a
-set of conditions. Connecting an experiment to a gargoyle “switch”
+Django Waffle lets you toggle features to selective sets of users based on a
+set of conditions. Connecting an experiment to a waffle “flag”
 allows us to run targeted experiments - very useful if we don’t want to
 expose everyone to it. For example, we could specify to run the result
 to 10% of our users, or only to staff.
@@ -332,13 +361,13 @@ All Settings
     #Auto-create experiment if doesn't exist
     EXPERIMENTS_AUTO_CREATE = True
 
-    #Auto-create gargoyle switch if switch doesn't exist when added to experiment
+    #Auto-create waffle flag if switch doesn't exist when added to experiment
     EXPERIMENTS_SWITCH_AUTO_CREATE = True
 
-    #Auto-delete gargoyle switch that the experiment is linked to on experiment deletion
+    #Auto-delete waffle flag that the experiment is linked to on experiment deletion
     EXPERIMENTS_SWITCH_AUTO_DELETE = True
 
-    #Naming scheme for gargoyle switch name if auto-creating
+    #Naming scheme for waffle flag name if auto-creating
     EXPERIMENTS_SWITCH_LABEL = "Experiment: %s"
 
     #Toggle whether the framework should verify user is human. Be careful.
@@ -350,7 +379,7 @@ All Settings
     EXPERIMENTS_REDIS_DB = 0
 
     #Middleware
-    MIDDLEWARE_CLASSES [
+    MIDDLEWARE_CLASSES = [
         ...
         'experiments.middleware.ExperimentsMiddleware',
     ]
@@ -359,7 +388,12 @@ All Settings
     INSTALLED_APPS = [
         ...
         'django.contrib.humanize',
-        'nexus',
-        'gargoyle',
+        'waffle',
         'experiments',
     ]
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }

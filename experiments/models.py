@@ -1,92 +1,172 @@
+import random
+
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
+from django.utils import simplejson as json
+from django.utils.safestring import mark_safe
 
 from jsonfield import JSONField
+from multiselectfield import MultiSelectField
 
-from gargoyle.manager import gargoyle
-from gargoyle.models import Switch
-
-import random
-import json
+import waffle
+from waffle.models import Flag
 
 from experiments import conf
 from experiments.dateutils import now
 
 
-CONTROL_STATE = 0
-ENABLED_STATE = 1
-GARGOYLE_STATE = 2
-TRACK_STATE = 3
+CONTROL_STATE = 0  # The experiment is essentially disabled.
+                   # All users will see the control alternative, and no data
+                   # will be collected.
+ENABLED_STATE = 1  # The experiment is enabled globally, for all users.
+SWITCH_STATE = 2   # If a switch_key is specified, the experiment will rely on
+                   # the switch/flag to determine if the user is included in
+                   # the experiment.
+TRACK_STATE = 3    # The experiment is enabled globally,
+                   # but no new users are accepted.
 
 STATES = (
     (CONTROL_STATE, 'Control'),
     (ENABLED_STATE, 'Enabled'),
-    (GARGOYLE_STATE, 'Gargoyle'),
+    (SWITCH_STATE, 'Switch'),
     (TRACK_STATE, 'Track'),
 )
 
 
 class Experiment(models.Model):
-    name = models.CharField(primary_key=True, max_length=128)
-    description = models.TextField(default="", blank=True, null=True)
+    name = models.CharField(
+        primary_key=True, max_length=128,
+        help_text='The experiment name.')
+    description = models.TextField(
+        default="", blank=True, null=True,
+        help_text='A brief description of this experiment.')
     alternatives = JSONField(default={}, blank=True)
-    relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
-    relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
-    switch_key = models.CharField(default="", max_length=50, null=True, blank=True)
-
+    relevant_chi2_goals = MultiSelectField(
+        default="", null=True, blank=True,
+        choices=((goal, goal) for goal in conf.ALL_GOALS),
+        verbose_name='Chi-squared test',
+        help_text=mark_safe(
+            '<a href="http://en.wikipedia.org/wiki/Chi-squared_test" '
+            'target="_blank">Used when optimising for conversion rate.</a>'))
+    relevant_mwu_goals = MultiSelectField(
+        default="", null=True, blank=True,
+        choices=((goal, goal) for goal in conf.ALL_GOALS),
+        verbose_name='Mann-Whitney U',
+        help_text=mark_safe(
+            '<a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" '
+            'target="_blank">Used when optimising for number of times '
+            'users perform an action. (Advanced)</a>'))
+    switch_key = models.CharField(
+        default="", max_length=50, null=True, blank=True,
+        help_text='Connected to a feature switch. (Optional)')
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
-
-    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(
+        default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
+
+    @staticmethod
+    def enabled_experiments():
+        return Experiment.objects.filter(
+            state__in=[ENABLED_STATE, SWITCH_STATE])
 
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
             return False
-        elif self.state == ENABLED_STATE:
+        if self.state == ENABLED_STATE:
             return True
-        elif self.state == GARGOYLE_STATE:
+        if self.state == SWITCH_STATE:
             return True
-        elif self.state == TRACK_STATE:
+        if self.state == TRACK_STATE:
             return True
-        else:
-            raise Exception("Invalid experiment state %s!" % self.state)
+        raise Exception("Invalid experiment state %s!" % self.state)
 
     def is_accepting_new_users(self, request):
         if self.state == CONTROL_STATE:
             return False
-        elif self.state == ENABLED_STATE:
+        if self.state == ENABLED_STATE:
             return True
-        elif self.state == GARGOYLE_STATE:
-            return gargoyle.is_active(self.switch_key, request)
-        elif self.state == TRACK_STATE:
+        if self.state == SWITCH_STATE:
+            return waffle.flag_is_active(request, self.switch_key)
+        if self.state == TRACK_STATE:
             return False
-        else:
-            raise Exception("Invalid experiment state %s!" % self.state)
+        raise Exception("Invalid experiment state %s!" % self.state)
+
+    @property
+    def switch(self):
+        if self.switch_key and conf.SWITCH_AUTO_CREATE:
+            try:
+                return Flag.objects.get(name=self.switch_key)
+            except Flag.DoesNotExist:
+                pass
+        return None
 
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
             self.alternatives[alternative] = {}
             self.alternatives[alternative]['enabled'] = True
             self.save()
-        if weight is not None and 'weight' not in self.alternatives[alternative]:
+        if (weight is not None
+                and 'weight' not in self.alternatives[alternative]):
             self.alternatives[alternative]['weight'] = float(weight)
             self.save()
 
     def random_alternative(self):
         if all('weight' in alt for alt in self.alternatives.values()):
-            return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
-        else:
-            return random.choice(self.alternatives.keys())
+            return weighted_choice(
+                [(name, details['weight'])
+                 for name, details in self.alternatives.items()])
+        return random.choice(self.alternatives.keys())
+
+    def increment_participant_count(self, alternative_name,
+                                    participant_identifier):
+        # Increment experiment_name:alternative:participant counter
+        counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
+        counters.increment(counter_key, participant_identifier)
+
+    def increment_goal_count(self, alternative_name, goal_name,
+                             participant_identifier, count=1):
+        # Increment experiment_name:alternative:participant counter
+        counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
+        counters.increment(counter_key, participant_identifier, count)
+
+    def remove_participant(self, alternative_name, participant_identifier):
+        # Remove participation record
+        counter_key = PARTICIPANT_KEY % (self.name, alternative_name)
+        counters.clear(counter_key, participant_identifier)
+
+        # Remove goal records
+        for goal_name in conf.ALL_GOALS:
+            counter_key = GOAL_KEY % (self.name, alternative_name, goal_name)
+            counters.clear(counter_key, participant_identifier)
+
+    def participant_count(self, alternative):
+        return counters.get(PARTICIPANT_KEY % (self.name, alternative))
+
+    def goal_count(self, alternative, goal):
+        return counters.get(GOAL_KEY % (self.name, alternative, goal))
+
+    def participant_goal_frequencies(self, alternative,
+                                     participant_identifier):
+        for goal in conf.ALL_GOALS:
+            yield goal, counters.get_frequency(
+                GOAL_KEY % (self.name, alternative, goal),
+                participant_identifier)
+
+    def goal_distribution(self, alternative, goal):
+        return counters.get_frequencies(
+            GOAL_KEY % (self.name, alternative, goal))
 
     def __unicode__(self):
         return self.name
 
     def to_dict(self):
+        info = self._meta.app_label, self._meta.module_name
         data = {
             'name': self.name,
-            'edit_url': reverse('experiments:results', kwargs={'name': self.name}),
+            'edit_url': reverse('admin:%s_%s_results' % info,
+                                args=(self.name,)),
             'start_date': self.start_date,
             'end_date': self.end_date,
             'state': self.state,
@@ -101,24 +181,34 @@ class Experiment(models.Model):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
     def save(self, *args, **kwargs):
-        # Create new switch
+        # Create new flag
         if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
-                Switch.objects.get(key=self.switch_key)
-            except Switch.DoesNotExist:
-                Switch.objects.create(key=self.switch_key, label=conf.SWITCH_LABEL % self.name, description=self.description)
+                Flag.objects.get(name=self.switch_key)
+            except Flag.DoesNotExist:
+                Flag.objects.create(
+                    name=self.switch_key,
+                    note=self.description)
 
         if not self.switch_key and self.state == 2:
             self.state = 0
 
+        if self.state == 0:
+            self.end_date = now()
+        else:
+            self.end_date = None
+
         super(Experiment, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Delete existing switch
-        if conf.SWITCH_AUTO_DELETE:
+        # Delete existing enrollments
+        self.enrollment_set.all().delete()
+
+        # Delete existing flag
+        if self.switch_key and conf.SWITCH_AUTO_CREATE:
             try:
-                Switch.objects.get(key=Experiment.objects.get(name=self.name).switch_key).delete()
-            except Switch.DoesNotExist:
+                Flag.objects.filter(name=self.switch_key).delete()
+            except Flag.DoesNotExist:
                 pass
 
         super(Experiment, self).delete(*args, **kwargs)
@@ -126,7 +216,8 @@ class Experiment(models.Model):
 
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
-    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), null=True)
+    user = models.ForeignKey(
+        getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), null=True)
     experiment = models.ForeignKey(Experiment)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
@@ -157,5 +248,3 @@ def weighted_choice(choices):
         upto += w
         if upto >= r:
             return c
-
-

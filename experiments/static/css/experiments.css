@@ -1,0 +1,218 @@
+/*
+Facebox css
+*/
+
+#facebox h2 {
+    font-size: 100%;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#facebox table.experimentForm {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+#facebox table.experimentForm th, #facebox table.experimentForm td {
+    vertical-align: top;
+}
+
+#facebox table.experimentForm th {
+    width: 100px;
+    font-weight: normal;
+    text-align: right;
+    padding-right: 10px;
+}
+
+#facebox table.experimentForm td input,
+#facebox table.experimentForm td textarea {
+    width: 230px;
+    padding: 2px 3px;
+}
+
+#facebox table.experimentForm td input[disabled],
+#facebox table.experimentForm td textarea[disabled] {
+    background-color:#eeeeee;
+}
+
+#facebox table.experimentForm td p {
+    margin-top: 5px;
+    font-size: 80%;
+    color: #666;
+}
+
+#facebox table.experimentForm td textarea {
+    height: 30px;
+}
+
+#facebox table.experimentForm td.buttons {
+    text-align: right;
+}
+
+#facebox div.select-list-container {
+    max-height: 20ex;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    width: 230px;
+    padding: 2px; 3px;
+}
+
+#facebox table.experimentForm td div.select-list-container input {
+    width: 15px;
+}
+
+#facebox table.experimentForm td div.select-list-container label {
+    width: 180px;
+    display: inline-block;
+}
+
+#facebox table.experimentForm td div.select-list-header div.label-header {
+    width: 180px;
+    display: inline-block;
+    margin-left: 3px;
+}
+
+#facebox table.experimentForm td div.select-list-header div.checkbox-header {
+    width: 15px;
+    display: inline-block;
+    text-align: center;
+}
+
+/*Results table*/
+#container table {
+    width: 100%;
+}
+
+#container table.tbody th {
+    width: 16em;
+}
+
+#container table.goals{
+    border-spacing:0px;
+}
+
+#container table.goals td{
+    padding:8px;
+    width:100px;
+    border-bottom:1px solid #DDD;
+}
+
+#container table.goals td.goal{
+    min-width:200px;
+    max-width:200px;
+    overflow:hidden;
+}
+
+#container table.goals td.chart {
+    width: 100%;
+    display: none;
+}
+
+#container table.goals tbody td{
+    color:#344259;
+}
+
+#container table.goals thead{
+    font-weight:bold;
+    color:#2457A9;
+}
+
+#container table.goals .enrollment-indicator {
+    font-size: 75%;
+    color: black;
+    font-weight: normal;
+}
+
+#container table.goals .enrollment-indicator a {
+}
+
+#container table.goals thead td{
+    border-left:solid 1px #EEE;
+}
+
+#container table.goals thead td.goal{
+    border-left:none;
+}
+
+
+#container table.goals tbody td.conversion2{
+    border-left:solid 1px #DDD;
+}
+
+#container table.goals tbody td.even{
+    background:#EEE;
+}
+
+#container table.goals tbody td.even.shine{
+    background:#DDD;
+}
+
+#container table.goals td.filler{
+    padding:0px;
+    width:0px;
+    border:none;
+}
+
+#container table.goals tbody tr{
+    border-top:1px solid #000;
+}
+s
+#container table.goals tbody tr:hover,
+#container table.goals tbody tr:focus{
+    background:#E4E9F1;
+}
+
+#container table.goals tbody tr:hover td,
+#container table.goals tbody tr:focus td{
+    background:#C6D0E0 !important;
+}
+
+#container table.goals tbody tr.hiddengoal{
+    display:none;
+}
+
+#container #ToggleGoals{
+    padding-left:5px;
+    font-weight:normal;
+    font-size:.8em;
+    color:blue;
+    text-decoration:none;
+}
+
+#container #ToggleGoals {
+    text-decoration:underline;
+}
+
+/*Statistical CSS*/
+.positive_improvement {
+    font-weight: bold;
+    color: green;
+}
+.negative_improvement {
+    font-weight: bold;
+    color: red;
+}
+
+.low_confidence {
+    color: #333;
+}
+.medium_confidence {
+    color: #ff9900;
+    font-weight: bold;
+}
+.high_confidence {
+    color: green;
+    font-weight: bold;
+}
+
+.low_confidence:after {
+    content: '  ✗';
+}
+.medium_confidence:after {
+    content: '  ✓';
+}
+.high_confidence:after {
+    content: '  ✔';
+}
