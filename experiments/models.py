@@ -11,7 +11,7 @@ from jsonfield import JSONField
 from multiselectfield import MultiSelectField
 
 import waffle
-from waffle import Flag
+from waffle.models import Flag
 
 from experiments import conf
 from experiments.dateutils import now
