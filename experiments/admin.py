@@ -187,7 +187,7 @@ class ExperimentsAdmin(admin.ModelAdmin):
         return render_to_response(template, data, context_instance=RequestContext(request))
 
     def get_urls(self):
-        urls = super(ExperimentAdmin, self).get_urls()
+        urls = super(ExperimentsAdmin, self).get_urls()
         info = self.model._meta.app_label, self.model._meta.module_name
         urlpatterns = patterns('',
             url(r'^state/$', self.as_view(self.state), name='state'),
@@ -337,4 +337,4 @@ class ExperimentsAdmin(admin.ModelAdmin):
         }
 
 admin.site.register(Enrollment)
-admin.site.register(Experiment, ExperimentAdmin)
+admin.site.register(Experiment, ExperimentsAdmin)
