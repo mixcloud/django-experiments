@@ -164,9 +164,9 @@ def json_result(func):
     return wrapper
 
 
-class ExperimentsAdmin(admin.ModelAdmin):
+class ExperimentAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'state')
-    list_filter = ('name', 'start_date', 'end_date', 'state')
+    list_filter = ('name', 'start_date', 'state')
     # date_hierarchy = 'start_date'
     ordering = ('-start_date', )
     search_fields = ('name', )
@@ -187,7 +187,7 @@ class ExperimentsAdmin(admin.ModelAdmin):
         return render_to_response(template, data, context_instance=RequestContext(request))
 
     def get_urls(self):
-        urls = super(ExperimentsAdmin, self).get_urls()
+        urls = super(ExperimentAdmin, self).get_urls()
         info = self.model._meta.app_label, self.model._meta.module_name
         urlpatterns = patterns('',
             url(r'^state/$', self.as_view(self.state), name='state'),
@@ -337,4 +337,4 @@ class ExperimentsAdmin(admin.ModelAdmin):
         }
 
 admin.site.register(Enrollment)
-admin.site.register(Experiment, ExperimentsAdmin)
+admin.site.register(Experiment, ExperimentAdmin)
