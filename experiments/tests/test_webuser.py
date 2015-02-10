@@ -20,6 +20,8 @@ from experiments.utils import participant
 
 from mock import patch
 
+import random
+
 request_factory = RequestFactory()
 
 TEST_ALTERNATIVE = 'blue'
@@ -101,6 +103,33 @@ class WebUserTests(object):
         self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Visit was not correctly counted")
         self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
+    def test_user_force_enrolls(self):
+        experiment_user = participant(self.request)
+        experiment_user.enroll(EXPERIMENT_NAME, ['control', 'alternative1', 'alternative2'], force_alternative='alternative2')
+        self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), 'alternative2')
+
+    def test_user_does_not_force_enroll_to_new_alternative(self):
+        alternatives = ['control', 'alternative1', 'alternative2']
+        experiment_user = participant(self.request)
+        experiment_user.enroll(EXPERIMENT_NAME, alternatives)
+        alternative = experiment_user.get_alternative(EXPERIMENT_NAME)
+        self.assertIsNotNone(alternative)
+
+        other_alternative = random.choice(list(set(alternatives) - set(alternative)))
+        experiment_user.enroll(EXPERIMENT_NAME, alternatives, force_alternative=other_alternative)
+        self.assertEqual(alternative, experiment_user.get_alternative(EXPERIMENT_NAME))
+
+    def test_second_force_enroll_does_not_change_alternative(self):
+        alternatives = ['control', 'alternative1', 'alternative2']
+        experiment_user = participant(self.request)
+        experiment_user.enroll(EXPERIMENT_NAME, alternatives, force_alternative='alternative1')
+        alternative = experiment_user.get_alternative(EXPERIMENT_NAME)
+        self.assertIsNotNone(alternative)
+
+        other_alternative = random.choice(list(set(alternatives) - set(alternative)))
+        experiment_user.enroll(EXPERIMENT_NAME, alternatives, force_alternative=other_alternative)
+        self.assertEqual(alternative, experiment_user.get_alternative(EXPERIMENT_NAME))
+
 
 class WebUserAnonymousTestCase(WebUserTests, TestCase):
     def setUp(self):
@@ -133,6 +162,7 @@ class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
         self.request.user = User(username='brian')
         self.request.user.save()
 
+
 class BotTests(object):
     def setUp(self):
         self.experiment = Experiment(name='backgroundcolor', state=ENABLED_STATE)
@@ -156,6 +186,7 @@ class BotTests(object):
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)
+
 
 class LoggedOutBotTestCase(BotTests, TestCase):
     def setUp(self):
