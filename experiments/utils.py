@@ -83,14 +83,14 @@ class WebUser(object):
                 for alternative in alternatives_including_control:
                     experiment.ensure_alternative_exists(alternative)
 
-            if force_alternative:
-                self._set_enrollment(experiment, force_alternative)
-
             assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:
                 chosen_alternative = assigned_alternative
             elif experiment.is_accepting_new_users():
-                chosen_alternative = experiment.random_alternative()
+                if force_alternative:
+                    chosen_alternative = force_alternative
+                else:
+                    chosen_alternative = experiment.random_alternative()
                 self._set_enrollment(experiment, chosen_alternative)
 
         return chosen_alternative
