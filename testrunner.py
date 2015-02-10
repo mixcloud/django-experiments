@@ -3,6 +3,7 @@ import sys
 
 from django.conf import settings
 
+import django
 
 def runtests():
     test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -19,15 +20,16 @@ def runtests():
                         'django.contrib.contenttypes',
                         'django.contrib.sessions',
                         'django.contrib.admin',
-                        'gargoyle',
                         'experiments',),
         ROOT_URLCONF='experiments.urls',
     )
+    django.setup()
+
 
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, failfast=False)
-    failures = test_runner.run_tests(['experiments.tests', ])
+    failures = test_runner.run_tests(['experiments', ])
     sys.exit(bool(failures))
 
 

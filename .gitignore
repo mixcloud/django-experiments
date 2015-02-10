@@ -6,3 +6,4 @@
 *experiments.db
 .DS_Store
 django_experiments.egg-info
+*.egg

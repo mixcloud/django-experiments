@@ -1,7 +1,4 @@
-try:
-    from django.conf.urls import patterns, url
-except ImportError:  # django < 1.4
-    from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 from functools import wraps
 
@@ -10,7 +7,7 @@ from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 
 from experiments.experiment_counters import ExperimentCounter
-from experiments.models import Experiment, ENABLED_STATE, GARGOYLE_STATE
+from experiments.models import Experiment, ENABLED_STATE
 from experiments.significance import chi_square_p_value, mann_whitney
 from experiments.dateutils import now
 from experiments.utils import participant
@@ -32,7 +29,6 @@ def improvement(a, b):
     if not b or not a:
         return None
     return (a - b) * 100. / b
-
 
 def chi_squared_confidence(a_count, a_conversion, b_count, b_conversion):
     contingency_table = [[a_count - a_conversion, a_conversion],
@@ -153,7 +149,7 @@ def json_result(func):
                 import traceback
                 traceback.print_exc()
             raise
-        return HttpResponse(json.dumps(response), mimetype="application/json")
+        return HttpResponse(json.dumps(response), content_type="application/json")
     wrapper = wraps(func)(wrapper)
     return wrapper
 
@@ -178,8 +174,8 @@ class ExperimentsModule(nexus.NexusModule):
         return urlpatterns
 
     def render_on_dashboard(self, request):
-        enabled_experiments_count = Experiment.objects.filter(state__in=[ENABLED_STATE, GARGOYLE_STATE]).count()
-        enabled_experiments = list(Experiment.objects.filter(state__in=[ENABLED_STATE, GARGOYLE_STATE]).order_by("start_date")[:5])
+        enabled_experiments_count = Experiment.objects.filter(state=ENABLED_STATE).count()
+        enabled_experiments = list(Experiment.objects.filter(state=ENABLED_STATE).order_by("start_date")[:5])
         return self.render_to_string('nexus/experiments/dashboard.html', {
             'enabled_experiments': enabled_experiments,
             'enabled_experiments_count': enabled_experiments_count,
@@ -322,7 +318,6 @@ class ExperimentsModule(nexus.NexusModule):
         experiment, created = Experiment.objects.get_or_create(
             name=name,
             defaults=dict(
-                switch_key=request.POST.get("switch_key"),
                 description=request.POST.get("desc"),
                 relevant_chi2_goals=request.POST.get("chi2_goals"),
                 relevant_mwu_goals=request.POST.get("mwu_goals"),
@@ -346,7 +341,6 @@ class ExperimentsModule(nexus.NexusModule):
 
         experiment = Experiment.objects.get(name=request.POST.get("curname"))
 
-        experiment.switch_key = request.POST.get("switch_key")
         experiment.description = request.POST.get("desc")
         experiment.relevant_chi2_goals = request.POST.get("chi2_goals")
         experiment.relevant_mwu_goals = request.POST.get("mwu_goals")

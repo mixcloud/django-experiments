@@ -1,4 +1,3 @@
-import django.dispatch
+from django.dispatch import Signal
 
-
-user_enrolled = django.dispatch.Signal(providing_args=['experiment', 'alternative', 'user', 'session'])
+user_enrolled = Signal(providing_args=['experiment', 'alternative', 'user', 'session'])

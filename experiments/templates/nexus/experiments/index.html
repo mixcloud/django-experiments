@@ -1,7 +1,6 @@
 {% extends "nexus/module.html" %}
 
 {% load experiment_helpers %}
-{% load url from future %}
 
 {% block head %}
     {{ block.super }}
@@ -62,7 +61,7 @@
 
     <table class="experiments {% if not experiments %}empty{% endif %}">
         {% for experiment in experiments %}
-        <tr data-experiment-name="{{ experiment.name }}" data-experiment-switch="{{ experiment.switch_key }}" data-experiment-desc="{{ experiment.description }}" data-experiment-chi2-goals="{{ experiment.relevant_chi2_goals }}" data-experiment-mwu-goals="{{ experiment.relevant_mwu_goals }}" class="collapsed">
+        <tr data-experiment-name="{{ experiment.name }}" data-experiment-desc="{{ experiment.description }}" data-experiment-chi2-goals="{{ experiment.relevant_chi2_goals }}" data-experiment-mwu-goals="{{ experiment.relevant_mwu_goals }}" class="collapsed">
             <td class="name">
                 <h4>{{ experiment.name }}
                 <a href="{% url 'experiments:results' experiment.name %}">(View Results)</a>
@@ -88,10 +87,6 @@
                     {% if experiment.description %}
                         <p>{{ experiment.description }}</p>
                     {% endif %}
-
-                    {% if experiment.switch_key %}
-                        <p>Connected to Gargoyle switch <a href="{% url 'gargoyle:index' %}#id_{{ experiment.switch_key }}">{{ experiment.switch_key }}</a>.</p>
-                    {% endif %}
                 </div>
 
             </td>
@@ -100,10 +95,6 @@
                 <div data-experiment-name="{{experiment.name}}" class="state">
                     <button class="xtrasmall button {% if experiment.state == 3 %}toggled{% endif %}" data-state="3">
                         Track
-                    </button>
-
-                    <button class="xtrasmall button {% if experiment.state == 2 %}toggled{% endif %}" data-state="2" {% if not experiment.switch_key %}disabled="disabled"s{% endif %}>
-                        Gargoyle
                     </button>
 
                     <button class="xtrasmall button {% if experiment.state == 1 %}toggled{% endif %}" data-state="1">
@@ -141,13 +132,6 @@
                     <td>
                         <input name="name" type="text" value="{{ if name }}${name}{{ /if }}" {{ if add }}{{ else }}disabled{{ /if }}>
                         <p>The experiment name.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Switch Key:</th>
-                    <td>
-                        <input name="switch_key" type="text" value="{{ if switch_key }}${switch_key}{{ /if }}">
-                        <p>Connected gargoyle switch. (Optional)</p>
                     </td>
                 </tr>
                 <tr>
@@ -191,7 +175,7 @@
             </table>
         </script>
         <script type="text/x-jquery-tmpl" id="experimentData">
-            <tr data-experiment-name="${name}" data-experiment-switch="${switch_key}" data-experiment-desc="${description}" data-experiment-chi2-goals="${relevant_chi2_goals}" data-experiment-mwu-goals="${relevant_mwu_goals}">
+            <tr data-experiment-name="${name}" data-experiment-desc="${description}" data-experiment-chi2-goals="${relevant_chi2_goals}" data-experiment-mwu-goals="${relevant_mwu_goals}">
                 <td class="name">
                     <h4>
                         ${name}
@@ -209,9 +193,6 @@
                             <p>${description}</p>
                         {{ /if }}
 
-                        {{ if switch_key }}
-                            <p>Connected to Gargoyle switch <a href="{% endraw %}{% url 'gargoyle:index' %}{% raw %}#id_${switch_key}">${switch_key}</a>.</p>
-                        {{ /if }}
                     </div>
                 </td>
 
@@ -219,10 +200,6 @@
                     <div class = "state" data-experiment-name="${name}">
                         <button class="xtrasmall button {{if state == 3}}toggled{{/if}}" data-state="3">
                             Track
-                        </button>
-
-                        <button class="xtrasmall button {{if state == 2}}toggled{{/if}}" data-state="2" {{ if !switch_key }}disabled="disabled"{{ /if }}>
-                            Gargoyle
                         </button>
 
                         <button class="xtrasmall button {{if state == 1}}toggled{{/if}}" data-state="1">

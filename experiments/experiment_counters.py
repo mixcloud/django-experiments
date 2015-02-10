@@ -1,8 +1,11 @@
 from experiments import counters, conf
+import logging
+import json
 
 PARTICIPANT_KEY = '%s:%s:participant'
 GOAL_KEY = '%s:%s:%s:goal'
 
+logger = logging.getLogger('experiments')
 
 class ExperimentCounter(object):
     def __init__(self):
@@ -11,14 +14,17 @@ class ExperimentCounter(object):
     def increment_participant_count(self, experiment, alternative_name, participant_identifier):
         counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
         self.counters.increment(counter_key, participant_identifier)
+        logger.info(json.dumps({'type':'participant_add', 'experiment': experiment.name, 'alternative': alternative_name, 'participant': participant_identifier}))
 
     def increment_goal_count(self, experiment, alternative_name, goal_name, participant_identifier, count=1):
         counter_key = GOAL_KEY % (experiment.name, alternative_name, goal_name)
         self.counters.increment(counter_key, participant_identifier, count)
+        logger.info(json.dumps({'type':'goal_hit', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative_name, 'participant': participant_identifier}))
 
     def remove_participant(self, experiment, alternative_name, participant_identifier):
         counter_key = PARTICIPANT_KEY % (experiment.name, alternative_name)
         self.counters.clear(counter_key, participant_identifier)
+        logger.info(json.dumps({'type':'participant_remove', 'experiment': experiment.name, 'alternative': alternative_name, 'participant': participant_identifier}))
 
         # Remove goal records
         for goal_name in conf.ALL_GOALS:

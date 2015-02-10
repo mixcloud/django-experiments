@@ -4,23 +4,23 @@ import re
 
 CONTROL_GROUP = 'control'
 
-VISIT_COUNT_GOAL = '_retention_visits'
+VISIT_PRESENT_COUNT_GOAL = '_retention_present_visits'
+VISIT_NOT_PRESENT_COUNT_GOAL = '_retention_not_present_visits'
 
 BUILT_IN_GOALS = (
-    VISIT_COUNT_GOAL,
+    VISIT_PRESENT_COUNT_GOAL,
+    VISIT_NOT_PRESENT_COUNT_GOAL,
 )
+
+SESSION_LENGTH = getattr(settings, 'EXPERIMENTS_SESSION_LENGTH', 6)
 
 USER_GOALS = getattr(settings, 'EXPERIMENTS_GOALS', [])
 ALL_GOALS = tuple(chain(USER_GOALS, BUILT_IN_GOALS))
 
-DO_NOT_AGGREGATE_GOALS = (
-    VISIT_COUNT_GOAL,
-)
-
 VERIFY_HUMAN = getattr(settings, 'EXPERIMENTS_VERIFY_HUMAN', True)
 
-SWITCH_AUTO_CREATE = getattr(settings, 'EXPERIMENTS_SWITCH_AUTO_CREATE', True)
-SWITCH_LABEL = getattr(settings, 'EXPERIMENTS_SWITCH_LABEL', "Experiment: %s")
-SWITCH_AUTO_DELETE = getattr(settings, 'EXPERIMENTS_SWITCH_AUTO_DELETE', True)
+CONFIRM_HUMAN = getattr(settings, 'EXPERIMENTS_CONFIRM_HUMAN', True)
+
+CONFIRM_HUMAN_SESSION_KEY = getattr(settings, 'EXPERIMENTS_CONFIRM_HUMAN_SESSION_KEY', 'experiments_verified_human')
 
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)

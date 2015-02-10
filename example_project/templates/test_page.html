@@ -1,5 +1,4 @@
 {% load experiments %}
-{% load url from future %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -49,7 +48,7 @@
 
 </head>
 <body>
-    {%  csrf_token %}
+    {% csrf_token %}
 
     {% experiment helloworld control %}
         <a href="{% url 'goal' %}">Click Me (Control)</a>
@@ -62,6 +61,6 @@
     <span onclick="experiments.goal('js_goal')">JS GOAL</span>
     <span data-experiments-goal="cookie_goal">COOKIE GOAL</span>
 
-    {% include "experiments/confirm_human.html" %}
+    {% experiments_confirm_human %}
 </body>
 </html>

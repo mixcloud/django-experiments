@@ -81,8 +81,14 @@ def chi_square_p_value(matrix):
     
     Code adapted from http://codecomments.wordpress.com/2008/02/13/computing-chi-squared-p-value-from-contingency-table-in-python/
     """
-    num_rows = len(matrix)
-    num_columns = len(matrix[0])
+    try:
+        num_rows = len(matrix)
+        num_columns = len(matrix[0])
+    except TypeError:
+        return None
+
+    if num_rows != num_columns:
+        return None
 
     # Sanity checking
     if num_rows == 0:

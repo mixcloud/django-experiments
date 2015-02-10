@@ -5,6 +5,8 @@ from django.core.urlresolvers import reverse
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
+from experiments import conf
+
 from uuid import uuid4
 
 register = template.Library()
@@ -14,6 +16,10 @@ register = template.Library()
 def experiment_goal(goal_name):
     return {'url': reverse('experiment_goal', kwargs={'goal_name': goal_name, 'cache_buster': uuid4()})}
 
+@register.inclusion_tag('experiments/confirm_human.html', takes_context=True)
+def experiments_confirm_human(context):
+    request = context.get('request')
+    return {'confirmed_human': request.session[conf.CONFIRM_HUMAN_SESSION_KEY]}
 
 class ExperimentNode(template.Node):
     def __init__(self, node_list, experiment_name, alternative, weight, user_variable):
@@ -32,14 +38,12 @@ class ExperimentNode(template.Node):
         if self.user_variable:
             auth_user = self.user_variable.resolve(context)
             user = participant(user=auth_user)
-            gargoyle_key = auth_user
         else:
             request = context.get('request', None)
             user = participant(request)
-            gargoyle_key = request
 
         # Should we render?
-        if user.is_enrolled(self.experiment_name, self.alternative, gargoyle_key):
+        if user.is_enrolled(self.experiment_name, self.alternative):
             response = self.node_list.render(context)
         else:
             response = ""
@@ -93,10 +97,3 @@ def experiment(parser, token):
                 "{% experiment experiment_name alternative [weight=val] [user=val] %}")
 
     return ExperimentNode(node_list, experiment_name, alternative, weight, user_variable)
-
-
-@register.simple_tag(takes_context=True)
-def visit(context):
-    request = context.get('request', None)
-    participant(request).visit()
-    return ""

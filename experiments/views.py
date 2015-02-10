@@ -3,9 +3,9 @@ from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
-from experiments.utils import participant, record_goal
-from experiments import record_goal
+from experiments.utils import participant
 from experiments.models import Experiment
+from experiments import conf
 
 TRANSPARENT_1X1_PNG = \
 ("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52"
@@ -22,15 +22,16 @@ TRANSPARENT_1X1_PNG = \
 @never_cache
 @require_POST
 def confirm_human(request):
-    experiment_user = participant(request)
-    experiment_user.confirm_human()
+    if conf.CONFIRM_HUMAN:
+        experiment_user = participant(request)
+        experiment_user.confirm_human()
     return HttpResponse(status=204)
 
 
 @never_cache
 def record_experiment_goal(request, goal_name, cache_buster=None):
-    record_goal(goal_name, request)
-    return HttpResponse(TRANSPARENT_1X1_PNG, mimetype="image/png")
+    participant(request).goal(goal_name)
+    return HttpResponse(TRANSPARENT_1X1_PNG, content_type="image/png")
 
 
 def change_alternative(request, experiment_name, alternative_name):

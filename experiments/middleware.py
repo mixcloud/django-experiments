@@ -1,13 +1,13 @@
-from experiments import record_goal
+from experiments.utils import participant
 
-from urllib import unquote
-
-
-class ExperimentsMiddleware(object):
+class ExperimentsRetentionMiddleware(object):
     def process_response(self, request, response):
-        experiments_goal = request.COOKIES.get('experiments_goal', None)
-        if experiments_goal:
-            for goal in unquote(experiments_goal).split(' '):  # multiple goals separated by space
-                record_goal(goal, request)
-            response.delete_cookie('experiments_goal')
+        # Don't track, failed pages, ajax requests, logged out users or widget impressions.
+        # We detect widgets by relying on the fact that they are flagged as being embedable
+        if response.status_code != 200 or request.is_ajax() or getattr(response, 'xframe_options_exempt', False):
+            return response
+
+        experiment_user = participant(request)
+        experiment_user.visit()
+
         return response
