@@ -63,8 +63,12 @@ class WebUser(object):
     def __init__(self):
         self.experiment_counter = ExperimentCounter()
 
-    def enroll(self, experiment_name, alternatives):
-        """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
+    def enroll(self, experiment_name, alternatives, force_alternative=None):
+        """
+        Enroll this user in the experiment if they are not already part of it. Returns the selected alternative
+
+        force_alternative: Optionally force a user in an alternative at enrollment time
+        """
         chosen_alternative = conf.CONTROL_GROUP
 
         experiment = experiment_manager.get(experiment_name, None)
@@ -78,6 +82,9 @@ class WebUser(object):
                 alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
                 for alternative in alternatives_including_control:
                     experiment.ensure_alternative_exists(alternative)
+
+            if force_alternative:
+                self._set_enrollment(experiment, force_alternative)
 
             assigned_alternative = self._get_enrollment(experiment)
             if assigned_alternative:
