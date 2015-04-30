@@ -12,6 +12,19 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 Changelog
 ---------
+1.0.0
+~~~~~
+
+Bumping version to 1.0.0 because django-experiments is definitely production
+ready but also due to backwards incompatible changes that have been merged in.
+ - Django 1.7 support (including custom user models)
+ - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
+ - Fixed bug caused by the participant cache on request
+ - Fixed bugs related to confirm human and made the functionality pluggable
+ - Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
+ - Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
+ - ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
+ - More tests and logging added
 
 0.3.5
 ~~~~~
@@ -113,6 +126,16 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
 
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
+
+OPTIONAL:
+If you want to use the built in retention goals you will need to include the retention middleware:
+
+::
+
+    MIDDLEWARE_CLASSES [
+        ...
+        'experiments.middleware.ExperimentsRetentionMiddleware',
+    ]
 
 *Note, more configuration options are detailed below.*
 
@@ -267,6 +290,20 @@ The goal is independent from the experiment as many experiments can all
 have the same goal. The goals are defined in the settings.py file for
 your project.
 
+Retention Goals
+~~~~~~~~~~~~~~~
+
+There are two retention goals (VISIT_PRESENT_COUNT_GOAL and VISIT_NOT_PRESENT_COUNT_GOAL that
+default to '_retention_present_visits' and '_retention_not_present_visits' respectively). To
+use these install the retention middleware. A visit is defined by no page views within
+SESSION_LENGTH hours (defaults to 6).
+
+VISIT_PRESENT_COUNT_GOAL does not trigger until the next visit after the user is enrolled and
+should be used in most cases. VISIT_NOT_PRESENT_COUNT_GOAL triggers on the first visit after
+enrollment and should be used in situations where the user isn't present when being enrolled
+(for example when sending an email). Both goals are tracked for all experiments so take care
+to only use one when interpreting the results.
+
 Confirming Human
 ~~~~~~~~~~~~~~~~
 
@@ -281,6 +318,12 @@ at some point in your code (we recommend you put it in your base.html
 file), unregistered users will then be confirmed as human. This can be
 quickly overridden in settings, but be careful - bots can really mess up
 your results!
+
+If you want to customize the confirm human code you can change the
+CONFIRM_HUMAN_SESSION_KEY setting and manage setting the value yourself.
+Note that you need to call confirm_human on the participant when they
+become confirmed as well as setting session[CONFIRM_HUMAN_SESSION_KEY]
+equal to True.
 
 Managing Experiments
 --------------------
@@ -316,11 +359,4 @@ All Settings
     EXPERIMENTS_REDIS_PORT = 6379
     EXPERIMENTS_REDIS_DB = 0
 
-
-    #Installed Apps
-    INSTALLED_APPS = [
-        ...
-        'django.contrib.humanize',
-        'nexus',
-        'experiments',
-    ]
+See conf.py for other settings
