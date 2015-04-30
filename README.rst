@@ -6,9 +6,9 @@ completely usable via template tags.
 
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
-.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/screenshot1.jpg
+.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.32+PM.png
 
-.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/screenshot2.jpg
+.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.47+PM.png
 
 Changelog
 ---------
