@@ -118,7 +118,7 @@
         </tr>
         {% endfor %}
     </table>
-    {% verbatim %}
+    {% raw %}
         <script type="text/x-jquery-tmpl" id="experimentForm">
             {{ if add }}
                 <h2>Add an Experiment</h2>
@@ -211,7 +211,7 @@
                     </div>
                 </td>
 
-                {% endverbatim %}
+                {% endraw %}
                 <td class="actions">
                     {% if perms.experiments.change_experiment %}
                         <button class="edit xtrasmall button"><span></span></button>
@@ -220,10 +220,10 @@
                         <button class="delete xtrasmall button"><span></span></button>
                     {%  endif %}
                 </td>
-                {% verbatim %}
+                {% raw %}
             </tr>
         </script>
 
-    {% endverbatim %}
+    {% endraw %}
 
 {% endblock %}
