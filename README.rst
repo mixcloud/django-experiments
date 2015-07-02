@@ -69,7 +69,7 @@ pip is still the recommended way to install dependencies:
 Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
-- `Nexus <https://github.com/dcramer/nexus/>`_
+- `Nexus <https://github.com/disqus/nexus>`_
 - `Gargoyle <https://github.com/disqus/gargoyle/>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
