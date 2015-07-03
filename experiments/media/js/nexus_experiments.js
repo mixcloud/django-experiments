@@ -117,7 +117,9 @@ $(document).ready(function () {
             relevant_goals:      row.attr("data-experiment-goals"),
             relevant_chi2_goals: row.attr("data-experiment-chi2-goals").split(","),
             relevant_mwu_goals:  row.attr("data-experiment-mwu-goals").split(","),
-            all_goals:           nexus_experiments_all_goals
+            all_goals:           nexus_experiments_all_goals,
+            alternatives:        row.attr("data-experiment-alternatives").split(","),
+            default_alternative: row.attr("data-experiment-default-alternative")
         }));
     });
 
@@ -143,7 +145,8 @@ $(document).ready(function () {
                 name:       $("#facebox input[name=name]").val(),
                 desc:       $("#facebox textarea[name=desc]").val(),
                 chi2_goals: relevant_chi2_goals,
-                mwu_goals:  relevant_mwu_goals
+                mwu_goals:  relevant_mwu_goals,
+                default_alternative: $("#facebox select[name=default_alternative]").val()
             },
 
             function (response) {

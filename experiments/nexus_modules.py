@@ -189,6 +189,7 @@ class ExperimentsModule(nexus.NexusModule):
             "experiments": [e.to_dict() for e in experiments],
             "all_goals": json.dumps(conf.ALL_GOALS),
             "sorted_by": sort_by,
+            "control_group": conf.CONTROL_GROUP,
         }, request)
 
     def results(self, request, name):
@@ -344,6 +345,7 @@ class ExperimentsModule(nexus.NexusModule):
         experiment.description = request.POST.get("desc")
         experiment.relevant_chi2_goals = request.POST.get("chi2_goals")
         experiment.relevant_mwu_goals = request.POST.get("mwu_goals")
+        experiment.set_default_alternative(request.POST.get("default_alternative"))
         experiment.save()
 
         response = {

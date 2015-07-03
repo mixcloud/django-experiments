@@ -61,7 +61,7 @@
 
     <table class="experiments {% if not experiments %}empty{% endif %}">
         {% for experiment in experiments %}
-        <tr data-experiment-name="{{ experiment.name }}" data-experiment-desc="{{ experiment.description }}" data-experiment-chi2-goals="{{ experiment.relevant_chi2_goals }}" data-experiment-mwu-goals="{{ experiment.relevant_mwu_goals }}" class="collapsed">
+        <tr data-experiment-name="{{ experiment.name }}" data-experiment-desc="{{ experiment.description }}" data-experiment-chi2-goals="{{ experiment.relevant_chi2_goals }}" data-experiment-mwu-goals="{{ experiment.relevant_mwu_goals }}" data-experiment-alternatives="{{ experiment.alternatives }}" data-experiment-default-alternative="{{ experiment.default_alternative }}" class="collapsed">
             <td class="name">
                 <h4>{{ experiment.name }}
                 <a href="{% url 'experiments:results' experiment.name %}">(View Results)</a>
@@ -102,7 +102,7 @@
                     </button>
 
                     <button class="xtrasmall button {% if experiment.state == 0 %}toggled{% endif %}" data-state="0">
-                        Control
+                        {{ experiment.default_alternative }}
                     </button>
                 </div>
             </td>
@@ -141,6 +141,19 @@
                         <p>A brief description of this experiment.</p>
                     </td>
                 </tr>
+                {{ if !add }}
+                    <tr>
+                        <th>Default:</th>
+                        <td>
+                            <select name="default_alternative">
+                                {{each alternatives}}
+                                    <option value="${$value}"{{if $value==default_alternative}} selected="selected"{{/if}}>${$value}</option>
+                                {{/each}}
+                            </select>
+                            <p>The default alternative when the experiment is not running.</p>
+                        </td>
+                    </tr>
+                {{ /if }}
                 <tr>
                     <th>Relevant Goals:</th>
                     <td>
@@ -175,7 +188,7 @@
             </table>
         </script>
         <script type="text/x-jquery-tmpl" id="experimentData">
-            <tr data-experiment-name="${name}" data-experiment-desc="${description}" data-experiment-chi2-goals="${relevant_chi2_goals}" data-experiment-mwu-goals="${relevant_mwu_goals}">
+            <tr data-experiment-name="${name}" data-experiment-desc="${description}" data-experiment-chi2-goals="${relevant_chi2_goals}" data-experiment-mwu-goals="${relevant_mwu_goals}" data-experiment-alternatives="${alternatives}" data-experiment-default-alternative="${default_alternative}">
                 <td class="name">
                     <h4>
                         ${name}
@@ -206,7 +219,7 @@
                             Enabled
                         </button>
                         <button class="xtrasmall button {{if state == 0}}toggled{{/if}}" data-state="0">
-                            Control
+                            ${default_alternative}
                         </button>
                     </div>
                 </td>
