@@ -9,6 +9,7 @@ import random
 import json
 
 from experiments.dateutils import now
+from experiments import conf
 
 
 CONTROL_STATE = 0
@@ -63,6 +64,20 @@ class Experiment(models.Model):
             self.alternatives[alternative]['weight'] = float(weight)
             self.save()
 
+    @property
+    def default_alternative(self):
+        for alternative, alternative_conf in self.alternatives.iteritems():
+            if alternative_conf.get('default'):
+                return alternative
+        return conf.CONTROL_GROUP
+
+    def set_default_alternative(self, alternative):
+        for alternative_name, alternative_conf in self.alternatives.iteritems():
+            if alternative_name == alternative:
+                self.alternatives[alternative]['default'] = True
+            elif 'default' in alternative_conf:
+                del alternative_conf['default']
+
     def random_alternative(self):
         if all('weight' in alt for alt in self.alternatives.values()):
             return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
@@ -82,6 +97,8 @@ class Experiment(models.Model):
             'description': self.description,
             'relevant_chi2_goals': self.relevant_chi2_goals,
             'relevant_mwu_goals': self.relevant_mwu_goals,
+            'default_alternative': self.default_alternative,
+            'alternatives': ','.join(self.alternatives.keys()),
         }
         return data
 

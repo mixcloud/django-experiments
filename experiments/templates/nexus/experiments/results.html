@@ -43,7 +43,7 @@
             </button>
 
             <button class="xtrasmall button {% if experiment.state == 0 %}toggled{% endif %}" data-state="0">
-                Control
+                {{ experiment.default_alternative }}
             </button>
         </div>
     </div>
