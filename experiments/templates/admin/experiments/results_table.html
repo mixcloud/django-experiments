@@ -1,0 +1,146 @@
+{% load humanize %}
+
+<script>
+    window.Experiments = {
+        EXPERIMENT_CHART_DATA: {}
+    };
+</script>
+
+<table id="results-table" class="hide-irrelevant">
+    <thead>
+        <tr>
+            <th></th>
+            <th>
+                control <small>({{ control_participants|intcomma }})</small>
+                <div data-experiment="{{ experiment.name }}" data-alternative="control">
+                    {% if user_alternative == 'control' %}
+                        Enrolled
+                    {% else %}
+                        {# TODO: make not an a tag #}
+                        <a href="#" class="js-join-alternative">Join</a>
+                    {% endif %}
+                </div>
+            </th>
+            {% for alternative, participants in alternatives %}
+                 {% if alternative != 'control' %}
+                     <th colspan="3">
+                        {{ alternative }} <small>({{ participants|intcomma }})</small>
+                        <div data-experiment="{{ experiment.name }}" data-alternative="{{ alternative }}">
+                            {% if user_alternative == alternative %}
+                                Enrolled
+                            {% else %}
+                                {# TODO: make not an a tag #}
+                                <a href="#" class="js-join-alternative">Join</a>
+                            {% endif %}
+                        </div>
+                     </th>
+                 {% endif %}
+            {% endfor %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for goal, data in results.items %}
+            <tr{% if not data.relevant %} class="irrelevant-goal"{% endif %}>
+
+                <td>
+                    {% if data.mwu %}
+                        {# TODO: make not an a #}
+                        <a href="#" class="toggle_chart" data-element-id="{{ goal }}_chart">{{ goal }}</a>
+                    {% else %}
+                        {{ goal }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ data.control.conversions|intcomma }} <small>({{ data.control.conversion_rate|floatformat:2 }}%
+                    {% if data.mwu %}
+                    - APU {{ data.control.average_goal_actions|floatformat:2 }}
+                    {% endif %}
+                    )</small></td>
+
+                {% for alternative_name, results in data.alternatives %}
+                    {% if alternative_name != 'control' %}
+                        <td>
+                            {{ results.conversions|intcomma }}<small> ({{ results.conversion_rate|floatformat:2 }}%
+                            {% if data.mwu %}
+                                - APU {{ results.average_goal_actions|floatformat:2 }}
+                            {% endif %}
+                            )</small>
+                        </td>
+                        <td title="Improvement">
+                            {% with improvement=results.improvement confidence=results.confidence %}
+                                {% if improvement != None %}
+                                    {% if confidence >= 95 and improvement < 0 %}
+                                        <span style="color: #c00; font-weight: bold;">
+                                    {% elif confidence >= 95 and improvement > 0 %}
+                                        <span style="color: #0c0; font-weight: bold;">
+                                    {% else %}
+                                        <span>
+                                    {% endif %}
+                                    {{ improvement|floatformat:2 }} %</span>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td title="Confidence Interval">
+                            {% with results.confidence as confidence %}
+                                {% if confidence != None %}
+                                    {% if confidence >= 95 %}
+                                        <span style="color: #0c0; font-weight: bold;">
+                                    {% endif %}
+                                    {% if confidence < 95 %}
+                                        <span style="color: #c00; font-weight: bold;">
+                                    {% endif %}
+                                    {% if confidence >= 99.995 %}
+                                        ~{{ confidence|floatformat:2 }} %
+                                    {% else %}
+                                        {{ confidence|floatformat:2 }} %
+                                    {% endif %}
+                                    </span>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            {% endwith %}
+                            {% if data.mwu %}
+                                MWU: {{ results.mann_whitney_confidence|floatformat:2 }}%
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% if data.mwu %}
+                <tr style="display: none;">
+                    <td colspan="{{ column_count }}" >
+                        <div id="{{goal}}_chart" data-chart-key="{{goal}}" data-rendered="0"></div>
+                        <script>
+                            Experiments.EXPERIMENT_CHART_DATA['{{goal|escapejs}}'] = {{ data.mwu_histogram|safe }};
+                        </script>
+                    </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="#" id="toggle-goals" data-shown="false">Toggle All Goals</a>
+
+<style>
+
+    #results-table.hide-irrelevant .irrelevant-goal {
+        display: none;
+    }
+
+</style>
+
+<script>
+    (function($) {
+        $(function() {
+            $('#toggle-goals').click(function() {
+                $('#results-table').toggleClass('hide-irrelevant');
+                return false;
+            });
+        });
+    })(django.jQuery);
+</script>

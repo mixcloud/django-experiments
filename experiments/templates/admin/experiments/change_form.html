@@ -1,0 +1,107 @@
+{% extends "admin/change_form.html" %}
+
+{% block content_title %}{% if original %}<h1>{{ original.name }}</h1>{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block object-tools %}
+    {% if original %}
+        <div>
+            <p>Started: {{ original.start_date }}</p>
+            {% if original.end_date %}<p>Ended: {{ original.end_date }}</p>{% endif %}
+        </div>
+
+        <div class="module">
+            {% include "admin/experiments/results_table.html" %}
+        </div>
+    {% endif %}
+
+    <style>
+        .hidden-relevant-goals {
+            visibility: hidden;
+            height: 0;
+            margin: 0;
+        }
+
+    </style>
+{% endblock object-tools %}
+
+{% block after_field_sets %}
+    <div>
+        <fieldset class="module aligned collapse">
+            <h2>Relevant Goals</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Goal</th>
+                        <th><a href="http://en.wikipedia.org/wiki/Chi-squared_test" target="_blank" title="Used when optimising for conversion rate">&Chi;&sup2;</a></th>
+                        <th><a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" target="_blank" title="Used when optimising for number of times users perform an action. (Advanced.)">U</a></th>
+                    </tr>
+                </thead>
+                <tbody id="goal-list">
+                    {% for goal in all_goals %}
+                        <tr data-goal="{{ goal }}">
+                            <td>{{ goal }}</td>
+                            <td><input data-goal-type="chi2" type="checkbox"></td>
+                            <td><input data-goal-type="mwu" type="checkbox"></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+    </div>
+
+    <script>
+        (function($) {
+            $(function() {
+                function getGoalList(goalType) {
+                    if (goalType === 'chi2') {
+                        return $('#id_relevant_chi2_goals').val() + ',';
+                    }
+                    if (goalType === 'mwu') {
+                        return $('#id_relevant_mwu_goals').val() + ','
+                    }
+                }
+
+                function setGoalList(goalType, goalList) {
+                    if (goalType === 'chi2') {
+                        return $('#id_relevant_chi2_goals').val(goalList.replace(/,$/, ''));
+                    }
+                    if (goalType === 'mwu') {
+                        return $('#id_relevant_mwu_goals').val(goalList.replace(/,$/, ''));
+                    }
+                }
+
+                var chi2Goals = getGoalList('chi2'),
+                    mwuGoals = getGoalList('mwu');
+
+                var $goals = $('#goal-list').children().each(function() {
+                    var $tr = $(this);
+                    if (chi2Goals.indexOf($tr.data('goal') + ',') > -1) {
+                        $tr.find('[data-goal-type="chi2"]').attr('checked', true);
+                    }
+                    if (mwuGoals.indexOf($tr.data('goal') + ',') > -1) {
+                        $tr.find('[data-goal-type="mwu"]').attr('checked', true);
+                    }
+                });
+
+                $goals.bind('click', function(event) {
+                    var $target = $(event.target);
+                    if ($target.is(':checkbox')) {
+                        var goalType = $target.data('goal-type'),
+                            goalList = getGoalList(goalType),
+                            goal = $target.closest('tr').data('goal');
+
+                        if ($target.is(':checked')) {
+                            if (goalList.indexOf(goal + ',') === -1) {
+                                goalList += goal;
+                            }
+                        } else {
+                            goalList = goalList.replace(goal + ',', '');
+                        }
+                        setGoalList(goalType, goalList);
+                    }
+                });
+            });
+        })(django.jQuery);
+    </script>
+{% endblock after_field_sets %}
