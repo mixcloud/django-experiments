@@ -17,7 +17,7 @@ Changelog
 
 Bumping version to 1.0.0 because django-experiments is definitely production
 ready but also due to backwards incompatible changes that have been merged in.
- - Django 1.7 support (including custom user models)
+ - Django 1.7 and 1.8 support (including custom user models)
  - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
  - Fixed bug caused by the participant cache on request
  - Fixed bugs related to confirm human and made the functionality pluggable
@@ -81,7 +81,7 @@ pip is still the recommended way to install dependencies:
 Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
-- `Nexus <https://github.com/dcramer/nexus/>`_
+- `Nexus <https://github.com/disqus/nexus>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 
