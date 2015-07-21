@@ -3,26 +3,25 @@
 {% block content_title %}{% if original %}<h1>{{ original.name }}</h1>{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 {% block object-tools %}
-    {% if original %}
-        <div>
-            <p>Started: {{ original.start_date }}</p>
-            {% if original.end_date %}<p>Ended: {{ original.end_date }}</p>{% endif %}
-        </div>
+    {{ block.super }}
 
-        <div class="module">
+    {% if original %}
+        <h5 class="experiment-dates">{{ original.start_date }} &dash; {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}</h5>
+
+        <div class="module experiment-results-container">
             {% include "admin/experiments/results_table.html" %}
         </div>
     {% endif %}
-
-    <style>
-        .hidden-relevant-goals {
-            visibility: hidden;
-            height: 0;
-            margin: 0;
-        }
-
-    </style>
 {% endblock object-tools %}
+
+{% block object-tools-items %}
+    {% if original %}
+        {# These have to be links to get the correct admin styling #}
+        <li><a href="." data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %}">Control</a></li>
+        <li><a href="." data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %}">Track</a></li>
+        <li><a href="." data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %}">Enabled</a></li>
+    {% endif %}
+{% endblock object-tools-items %}
 
 {% block after_field_sets %}
     <div>

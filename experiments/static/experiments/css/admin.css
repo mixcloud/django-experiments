@@ -1,0 +1,60 @@
+a.experiment-state-selected:link {
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+h5.experiment-dates {
+    margin-top: 0;
+    letter-spacing: normal;
+}
+
+.hidden-relevant-goals {
+    /* Hides the actual Django admin "Relevant Goals" section so it can
+       be replaced with easier to use checkboxes*/
+    visibility: hidden;
+    height: 0;
+    margin: 0;
+}
+
+.form-row.field-state {
+    /* This is hidden so the controls at the top of the page can be used instead */
+    display: none;
+}
+
+.experiment-results-container {
+    max-width: 1000px;
+    margin: 30px auto;
+}
+
+.experiment-results-table {
+    width: 100%;
+}
+
+.experiment-results-table th {
+    cursor: pointer;
+}
+
+thead th.experiment-toggle-goals {
+    color: #aaa;
+}
+
+
+.experiment-results-table.experiment-hide-irrelevant .experiment-irrelevant-goal {
+    display: none;
+}
+
+.experiment-alternative-enrolled {
+    display: none;
+}
+
+.experiment-selected-alternative .experiment-alternative-join {
+    display: none;
+}
+
+.experiment-selected-alternative .experiment-alternative-enrolled {
+    display: inline;
+}
+
+.experiment-alternative-join {
+    display: inline;
+}

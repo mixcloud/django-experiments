@@ -6,33 +6,19 @@
     };
 </script>
 
-<table id="results-table" class="hide-irrelevant">
+<table id="experiment-results-table" class="experiment-results-table experiment-hide-irrelevant" data-set-state-url="{% url "admin:experiment_admin_set_state" %}" data-experiment-name="{{ experiment.name }}" data-set-alternative-url="{% url "admin:experiment_admin_set_alternative" %}">
     <thead>
         <tr>
-            <th></th>
-            <th>
+            <th id="experiment-toggle-goals" class="experiment-toggle-goals" data-shown="false">Toggle All Goals</th>
+            <th data-alternative="control"{% if user_alternative == 'control' %} class="experiment-selected-alternative"{% endif %}>
                 control <small>({{ control_participants|intcomma }})</small>
-                <div data-experiment="{{ experiment.name }}" data-alternative="control">
-                    {% if user_alternative == 'control' %}
-                        Enrolled
-                    {% else %}
-                        {# TODO: make not an a tag #}
-                        <a href="#" class="js-join-alternative">Join</a>
-                    {% endif %}
-                </div>
+                &dash; <span class="experiment-alternative-enrolled">Enrolled</span><span class="experiment-alternative-join">Join</span>
             </th>
             {% for alternative, participants in alternatives %}
                  {% if alternative != 'control' %}
-                     <th colspan="3">
+                     <th colspan="3" data-alternative="{{ alternative }}"{% if user_alternative == alternative %} class="experiment-selected-alternative"{% endif %}>
                         {{ alternative }} <small>({{ participants|intcomma }})</small>
-                        <div data-experiment="{{ experiment.name }}" data-alternative="{{ alternative }}">
-                            {% if user_alternative == alternative %}
-                                Enrolled
-                            {% else %}
-                                {# TODO: make not an a tag #}
-                                <a href="#" class="js-join-alternative">Join</a>
-                            {% endif %}
-                        </div>
+                        &dash; <span class="experiment-alternative-enrolled">Enrolled</span><span class="experiment-alternative-join">Join</span>
                      </th>
                  {% endif %}
             {% endfor %}
@@ -41,7 +27,7 @@
 
     <tbody>
         {% for goal, data in results.items %}
-            <tr{% if not data.relevant %} class="irrelevant-goal"{% endif %}>
+            <tr{% if not data.relevant %} class="experiment-irrelevant-goal"{% endif %}>
 
                 <td>
                     {% if data.mwu %}
@@ -123,24 +109,3 @@
         {% endfor %}
     </tbody>
 </table>
-
-<a href="#" id="toggle-goals" data-shown="false">Toggle All Goals</a>
-
-<style>
-
-    #results-table.hide-irrelevant .irrelevant-goal {
-        display: none;
-    }
-
-</style>
-
-<script>
-    (function($) {
-        $(function() {
-            $('#toggle-goals').click(function() {
-                $('#results-table').toggleClass('hide-irrelevant');
-                return false;
-            });
-        });
-    })(django.jQuery);
-</script>
