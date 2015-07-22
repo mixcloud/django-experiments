@@ -38,6 +38,9 @@ thead th.experiment-toggle-goals {
     color: #aaa;
 }
 
+.experiment-results-table tbody tr td:nth-child(2n) {
+    background: #eee;
+}
 
 .experiment-results-table.experiment-hide-irrelevant .experiment-irrelevant-goal {
     display: none;
@@ -57,4 +60,27 @@ thead th.experiment-toggle-goals {
 
 .experiment-alternative-join {
     display: inline;
+}
+
+.experiment-high-confidence, .experiment-positive-improvement {
+    color: green;
+    font-weight: bold;
+}
+
+.experiment-negative-improvement {
+    color: red;
+    font-weight: red;
+}
+
+.experiment-high-confidence:after {
+    content: '  ✓';
+}
+
+.experiment-low-confidence:after {
+    content: '  ✗';
+}
+
+.experiment-mwu-goal {
+    cursor: pointer;
+    text-decoration: underline;
 }

@@ -1,3 +1,5 @@
+google.load('visualization', '1.0', {'packages':['corechart']});
+
 (function($) {
 
     $(function() {
@@ -65,6 +67,90 @@
             });
 
             return false;
+        });
+
+        $('[data-chart-goal]').click(function() {
+            var goal = $(this).data('chart-goal');
+
+            $('#' + goal + '_mwu_row').toggle();
+
+            var $graph = $('#' + goal + '_chart');
+
+            if (!$graph.data('rendered')) {
+                $graph.data('rendered', true);
+
+                var chartData = google.visualization.arrayToDataTable(window.Experiments.EXPERIMENT_CHART_DATA[goal]),
+                    chart = new google.visualization.LineChart($graph[0]),
+                    options = {
+                        height: 750,
+                        hAxis: {
+                            title: 'Performed action at least this many times',
+                            logScale: true
+                        },
+                        vAxis : {
+                            title: 'Fraction of users'
+                        },
+                        legend : {
+                            position: 'top',
+                            alignment: 'center'
+                        },
+                        chartArea: {
+                            width: "75%",
+                            height: "75%"
+                        }
+                    };
+
+                chart.draw(chartData, options);
+            }
+        });
+
+        function getGoalList(goalType) {
+            if (goalType === 'chi2') {
+                return $('#id_relevant_chi2_goals').val() + ',';
+            }
+            if (goalType === 'mwu') {
+                return $('#id_relevant_mwu_goals').val() + ','
+            }
+        }
+
+        function setGoalList(goalType, goalList) {
+            if (goalType === 'chi2') {
+                return $('#id_relevant_chi2_goals').val(goalList.replace(/,$/, ''));
+            }
+            if (goalType === 'mwu') {
+                return $('#id_relevant_mwu_goals').val(goalList.replace(/,$/, ''));
+            }
+        }
+
+        var chi2Goals = getGoalList('chi2'),
+            mwuGoals = getGoalList('mwu');
+
+        var $goals = $('#goal-list').children().each(function() {
+            var $tr = $(this);
+            if (chi2Goals.indexOf($tr.data('goal') + ',') > -1) {
+                $tr.find('[data-goal-type="chi2"]').attr('checked', true);
+            }
+            if (mwuGoals.indexOf($tr.data('goal') + ',') > -1) {
+                $tr.find('[data-goal-type="mwu"]').attr('checked', true);
+            }
+        });
+
+        $goals.bind('click', function(event) {
+            var $target = $(event.target);
+            if ($target.is(':checkbox')) {
+                var goalType = $target.data('goal-type'),
+                    goalList = getGoalList(goalType),
+                    goal = $target.closest('tr').data('goal');
+
+                if ($target.is(':checked')) {
+                    if (goalList.indexOf(goal + ',') === -1) {
+                        goalList += goal;
+                    }
+                } else {
+                    goalList = goalList.replace(goal + ',', '');
+                }
+                setGoalList(goalType, goalList);
+            }
         });
     });
 

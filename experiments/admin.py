@@ -17,13 +17,14 @@ class ExperimentAdmin(admin.ModelAdmin):
             ),
         }
         js = (
+            'https://www.google.com/jsapi',
             'experiments/js/admin.js',
         )
 
     list_display = ('name', 'start_date', 'end_date', 'state')
-    list_filter = ('state',)
+    list_filter = ('state', 'start_date', 'end_date')
     ordering = ('-start_date',)
-    search_fields = ('name',)
+    search_fields = ('=name',)
     actions = None
     fieldsets = (
         (None, {
