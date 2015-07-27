@@ -274,3 +274,19 @@ class ConfirmHumanTestCase(TestCase):
         self.experiment_user.confirm_human()
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
+
+
+class DefaultAlternativeTestCase(TestCase):
+    def test_default_alternative(self):
+        experiment = Experiment.objects.create(name='test_default')
+        self.assertEqual(experiment.default_alternative, conf.CONTROL_GROUP)
+        experiment.ensure_alternative_exists('alt1')
+        experiment.ensure_alternative_exists('alt2')
+
+        self.assertEqual(conf.CONTROL_GROUP, participant(session=DatabaseSession()).enroll('test_default', ['alt1', 'alt2']))
+        experiment.set_default_alternative('alt2')
+        experiment.save()
+        self.assertEqual('alt2', participant(session=DatabaseSession()).enroll('test_default', ['alt1', 'alt2']))
+        experiment.set_default_alternative('alt1')
+        experiment.save()
+        self.assertEqual('alt1', participant(session=DatabaseSession()).enroll('test_default', ['alt1', 'alt2']))

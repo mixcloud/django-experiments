@@ -72,37 +72,45 @@ class WebUser(object):
         chosen_alternative = conf.CONTROL_GROUP
 
         experiment = experiment_manager.get(experiment_name, None)
-        if experiment and experiment.is_displaying_alternatives():
-            if isinstance(alternatives, collections.Mapping):
-                if conf.CONTROL_GROUP not in alternatives:
-                    experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
-                for alternative, weight in alternatives.items():
-                    experiment.ensure_alternative_exists(alternative, weight)
-            else:
-                alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
-                for alternative in alternatives_including_control:
-                    experiment.ensure_alternative_exists(alternative)
-
-            assigned_alternative = self._get_enrollment(experiment)
-            if assigned_alternative:
-                chosen_alternative = assigned_alternative
-            elif experiment.is_accepting_new_users():
-                if force_alternative:
-                    chosen_alternative = force_alternative
+        if experiment:
+            if experiment.is_displaying_alternatives():
+                if isinstance(alternatives, collections.Mapping):
+                    if conf.CONTROL_GROUP not in alternatives:
+                        experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
+                    for alternative, weight in alternatives.items():
+                        experiment.ensure_alternative_exists(alternative, weight)
                 else:
-                    chosen_alternative = experiment.random_alternative()
-                self._set_enrollment(experiment, chosen_alternative)
+                    alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
+                    for alternative in alternatives_including_control:
+                        experiment.ensure_alternative_exists(alternative)
+
+                assigned_alternative = self._get_enrollment(experiment)
+                if assigned_alternative:
+                    chosen_alternative = assigned_alternative
+                elif experiment.is_accepting_new_users():
+                    if force_alternative:
+                        chosen_alternative = force_alternative
+                    else:
+                        chosen_alternative = experiment.random_alternative()
+                    self._set_enrollment(experiment, chosen_alternative)
+            else:
+                chosen_alternative = experiment.default_alternative
 
         return chosen_alternative
 
     def get_alternative(self, experiment_name):
-        """Get the alternative this user is enrolled in. If not enrolled in the experiment returns 'control'"""
+        """
+        Get the alternative this user is enrolled in.
+        """
         experiment = experiment_manager.get(experiment_name, None)
-        if experiment and experiment.is_displaying_alternatives():
-            alternative = self._get_enrollment(experiment)
-            if alternative is not None:
-                return alternative
-        return 'control'
+        if experiment:
+            if experiment.is_displaying_alternatives():
+                alternative = self._get_enrollment(experiment)
+                if alternative is not None:
+                    return alternative
+            else:
+                return experiment.default_alternative
+        return conf.CONTROL_GROUP
 
     def set_alternative(self, experiment_name, alternative):
         """Explicitly set the alternative the user is enrolled in for the specified experiment.

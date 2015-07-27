@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
+from django import forms
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.utils import timezone
 from experiments.admin_utils import get_result_context
@@ -15,22 +16,49 @@ class ExperimentAdmin(admin.ModelAdmin):
     ordering = ('-start_date',)
     search_fields = ('=name',)
     actions = None
-    fieldsets = (
-        (None, {
-            'fields': ('name', 'description', 'start_date', 'end_date', 'state'),
-        }),
-        ('Relevant Goals', {
-            'classes': ('collapse', 'hidden-relevant-goals'),
-            'fields': ('relevant_chi2_goals', 'relevant_mwu_goals'),
-        })
-    )
+    readonly_fields = ['start_date', 'end_date']
 
-    def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ['start_date', 'end_date']
+    def get_fieldsets(self, request, obj=None):
+        main_fields = ('description', 'start_date', 'end_date', 'state')
+
         if obj:
-            # Cannot edit the name after creating the experiment
-            return ['name'] + readonly_fields
-        return readonly_fields
+            main_fields += ('default_alternative',)
+        else:
+            main_fields = ('name',) + main_fields
+
+        return (
+            (None, {
+                'fields': main_fields,
+            }),
+            ('Relevant Goals', {
+                'classes': ('collapse', 'hidden-relevant-goals'),
+                'fields': ('relevant_chi2_goals', 'relevant_mwu_goals'),
+            })
+        )
+
+    # --------------------------------------- Default alternative
+
+    def get_form(self, request, obj=None, **kwargs):
+        """
+        Add the default alternative dropdown with appropriate choices
+        """
+        if obj:
+            if obj.alternatives:
+                choices = [(alternative, alternative) for alternative in obj.alternatives.keys()]
+            else:
+                choices = [(conf.CONTROL_GROUP, conf.CONTROL_GROUP)]
+
+            class ExperimentModelForm(forms.ModelForm):
+                default_alternative = forms.ChoiceField(choices=choices,
+                                                        initial=obj.default_alternative,
+                                                        required=False)
+            kwargs['form'] = ExperimentModelForm
+        return super(ExperimentAdmin, self).get_form(request, obj=obj, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            obj.set_default_alternative(form.cleaned_data['default_alternative'])
+        obj.save()
 
     # --------------------------------------- Overriding admin views
 
@@ -50,7 +78,10 @@ class ExperimentAdmin(admin.ModelAdmin):
         context = {}
         if extra_context:
             context.update(extra_context)
-        context['all_goals'] = conf.ALL_GOALS
+        context.update({
+            'all_goals': conf.ALL_GOALS,
+            'control_group': conf.CONTROL_GROUP,
+        })
         return context
 
     def add_view(self, request, form_url='', extra_context=None):
