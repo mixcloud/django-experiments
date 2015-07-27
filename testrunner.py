@@ -21,7 +21,13 @@ def runtests():
                         'django.contrib.sessions',
                         'django.contrib.admin',
                         'experiments',),
-        ROOT_URLCONF='experiments.urls',
+        ROOT_URLCONF='experiments.tests.urls',
+        MIDDLEWARE_CLASSES = (
+            'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.middleware.csrf.CsrfViewMiddleware',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+        ),
     )
     django.setup()
 

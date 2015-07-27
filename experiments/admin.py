@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.utils import timezone
 from experiments.admin_utils import get_result_context
 from experiments.models import Experiment
@@ -77,8 +77,14 @@ class ExperimentAdmin(admin.ModelAdmin):
         """
         Allows the admin user to change their assigned alternative
         """
+        if not request.user.has_perm('experiments.change_experiment'):
+            return HttpResponseForbidden()
+
         experiment_name = request.POST.get("experiment")
         alternative_name = request.POST.get("alternative")
+        if not (experiment_name and alternative_name):
+            return HttpResponseBadRequest()
+
         participant(request).set_alternative(experiment_name, alternative_name)
         return JsonResponse({
             'success': True,
@@ -89,12 +95,19 @@ class ExperimentAdmin(admin.ModelAdmin):
         """
         Changes the experiment state
         """
+        if not request.user.has_perm('experiments.change_experiment'):
+            return HttpResponseForbidden()
+
         try:
-            state = int(request.POST.get("state"))
+            state = int(request.POST.get("state", ""))
         except ValueError:
             return HttpResponseBadRequest()
 
-        experiment = Experiment.objects.get(name=request.POST.get("experiment"))
+        try:
+            experiment = Experiment.objects.get(name=request.POST.get("experiment"))
+        except Experiment.DoesNotExist:
+            return HttpResponseBadRequest()
+
         experiment.state = state
 
         if state == 0:
