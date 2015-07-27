@@ -1,5 +1,6 @@
 from experiments.utils import participant
 
+
 class ExperimentsRetentionMiddleware(object):
     def process_response(self, request, response):
         # Don't track, failed pages, ajax requests, logged out users or widget impressions.
