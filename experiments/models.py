@@ -75,7 +75,6 @@ class Experiment(models.Model):
     def to_dict(self):
         data = {
             'name': self.name,
-            'edit_url': reverse('experiments:results', kwargs={'name': self.name}),
             'start_date': self.start_date,
             'end_date': self.end_date,
             'state': self.state,
