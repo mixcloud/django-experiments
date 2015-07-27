@@ -10,7 +10,7 @@ h5.experiment-dates {
 
 .hidden-relevant-goals {
     /* Hides the actual Django admin "Relevant Goals" section so it can
-       be replaced with easier to use checkboxes*/
+       be replaced with easier to use checkboxes */
     visibility: hidden;
     height: 0;
     margin: 0;
@@ -18,6 +18,11 @@ h5.experiment-dates {
 
 .form-row.field-state {
     /* This is hidden so the controls at the top of the page can be used instead */
+    display: none;
+}
+
+.experiment-changing .form-row.field-name {
+    /* Hide the name field if we are changing (not creating) an experiment - the title shows the name */
     display: none;
 }
 
@@ -62,14 +67,15 @@ thead th.experiment-toggle-goals {
     display: inline;
 }
 
-.experiment-high-confidence, .experiment-positive-improvement {
+.experiment-high-confidence,
+.experiment-positive-improvement {
     color: green;
     font-weight: bold;
 }
 
 .experiment-negative-improvement {
     color: red;
-    font-weight: red;
+    font-weight: bold;
 }
 
 .experiment-high-confidence:after {

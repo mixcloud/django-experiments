@@ -1,18 +1,5 @@
-from django.contrib import admin
-from experiments import conf
-from experiments.models import Experiment
-from django.conf.urls import patterns, url
-
-from functools import wraps
-
-from django.conf import settings
-from django.http import HttpResponse
-from django.core.exceptions import ValidationError
-
 from experiments.experiment_counters import ExperimentCounter
-from experiments.models import Experiment, ENABLED_STATE
 from experiments.significance import chi_square_p_value, mann_whitney
-from experiments.dateutils import now
 from experiments.utils import participant
 from experiments import conf
 
@@ -189,7 +176,7 @@ def get_result_context(request, experiment):
         results[goal] = {
             "control": control,
             "alternatives": sorted(alternatives_conversions.items()),
-            "relevant": goal in relevant_goals or relevant_goals == set([u'']),
+            "relevant": goal in relevant_goals or relevant_goals == {u''},
             "mwu": goal in mwu_goals,
             "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram) if show_mwu else None
         }

@@ -5,10 +5,9 @@ google.load('visualization', '1.0', {'packages':['corechart']});
     $(function() {
         var $table = $('#experiment-results-table');
 
-        $('#experiment-toggle-goals').click(function() {
-            $table.toggleClass('experiment-hide-irrelevant');
-            return false;
-        });
+        $('#experiment-toggle-goals').click(function() { $table.toggleClass('experiment-hide-irrelevant'); return false; });
+
+        // ------------------------------ Changing the alternative
 
         $('[data-alternative]').click(function() {
             var $this = $(this);
@@ -44,6 +43,8 @@ google.load('visualization', '1.0', {'packages':['corechart']});
             return false;
         });
 
+        // ------------------------------ Changing the state
+
         $('[data-set-state]').click(function() {
             var $this = $(this),
                 $stateSelect = $('#id_state');
@@ -68,6 +69,8 @@ google.load('visualization', '1.0', {'packages':['corechart']});
 
             return false;
         });
+
+        // ------------------------------ Showing MWU charts
 
         $('[data-chart-goal]').click(function() {
             var goal = $(this).data('chart-goal');
@@ -103,6 +106,8 @@ google.load('visualization', '1.0', {'packages':['corechart']});
                 chart.draw(chartData, options);
             }
         });
+
+        // ------------------------------ Relevant goal checkbox inputs
 
         function getGoalList(goalType) {
             if (goalType === 'chi2') {
@@ -154,33 +159,4 @@ google.load('visualization', '1.0', {'packages':['corechart']});
         });
     });
 
-    // ------- CSRF
-
-    function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie != '') {
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = $.trim(cookies[i]);
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) {
-                return;
-            }
-
-            if (!this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-            }
-        }
-    });
 })(django.jQuery);

@@ -1,10 +1,7 @@
 {% load humanize %}
 
-<script>
-    window.Experiments = {
-        EXPERIMENT_CHART_DATA: {}
-    };
-</script>
+{# Somewhere to dump chart data as we loop through the goals #}
+<script>window.Experiments = {EXPERIMENT_CHART_DATA: {}};</script>
 
 <table id="experiment-results-table" class="experiment-results-table experiment-hide-irrelevant" data-set-state-url="{% url "admin:experiment_admin_set_state" %}" data-experiment-name="{{ experiment.name }}" data-set-alternative-url="{% url "admin:experiment_admin_set_alternative" %}">
     <thead>
@@ -28,7 +25,6 @@
     <tbody>
         {% for goal, data in results.items %}
             <tr{% if not data.relevant %} class="experiment-irrelevant-goal"{% endif %}>
-
                 <td>
                     {% if data.mwu %}
                         <span class="experiment-mwu-goal" data-chart-goal="{{ goal }}">{{ goal }}</span>
@@ -85,7 +81,7 @@
                 <tr style="display: none;" id="{{ goal }}_mwu_row">
                     <td colspan="{{ column_count }}" >
                         <div id="{{goal}}_chart"></div>
-                        <script>Experiments.EXPERIMENT_CHART_DATA['{{goal|escapejs}}'] = {{ data.mwu_histogram|safe }};</script>
+                        <script>window.Experiments.EXPERIMENT_CHART_DATA['{{goal|escapejs}}'] = {{ data.mwu_histogram|safe }};</script>
                     </td>
                 </tr>
             {% endif %}

@@ -23,6 +23,12 @@
     {% endif %}
 {% endblock object-tools-items %}
 
+{% block field_sets %}
+    <div{% if original %} class="experiment-changing"{% endif %}>
+        {{ block.super }}
+    </div>
+{% endblock field_sets %}
+
 {% block after_field_sets %}
     <div>
         <fieldset class="module aligned collapse">
