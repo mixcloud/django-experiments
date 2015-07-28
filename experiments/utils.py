@@ -71,7 +71,8 @@ class WebUser(object):
         """
         chosen_alternative = conf.CONTROL_GROUP
 
-        experiment = experiment_manager.get(experiment_name, None)
+        experiment = experiment_manager.get_experiment(experiment_name)
+
         if experiment:
             if experiment.is_displaying_alternatives():
                 if isinstance(alternatives, collections.Mapping):
@@ -102,7 +103,12 @@ class WebUser(object):
         """
         Get the alternative this user is enrolled in.
         """
-        experiment = experiment_manager.get(experiment_name, None)
+        experiment = None
+        try:
+            # catching the KeyError instead of using .get so that the experiment is auto created if desired
+            experiment = experiment_manager[experiment_name]
+        except KeyError:
+            pass
         if experiment:
             if experiment.is_displaying_alternatives():
                 alternative = self._get_enrollment(experiment)
@@ -118,7 +124,7 @@ class WebUser(object):
         This allows you to change a user between alternatives. The user and goal counts for the new
         alternative will be increment, but those for the old one will not be decremented. The user will
         be enrolled in the experiment even if the experiment would not normally accept this user."""
-        experiment = experiment_manager.get(experiment_name, None)
+        experiment = experiment_manager.get_experiment(experiment_name)
         if experiment:
             self._set_enrollment(experiment, alternative)
 
@@ -370,7 +376,7 @@ class SessionUser(WebUser):
         if 'experiments_goals' in self.session:
             try:
                 for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
-                    experiment = experiment_manager.get(experiment_name, None)
+                    experiment = experiment_manager.get_experiment(experiment_name)
                     if experiment:
                         self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
             except ValueError:
@@ -396,7 +402,7 @@ class SessionUser(WebUser):
         if enrollments:
             for experiment_name, data in enrollments.items():
                 alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
-                experiment = experiment_manager.get(experiment_name, None)
+                experiment = experiment_manager.get_experiment(experiment_name)
                 if experiment:
                     yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
 

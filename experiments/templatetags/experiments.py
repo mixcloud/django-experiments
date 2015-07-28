@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from django import template
 from django.core.urlresolvers import reverse
-from modeldict.base import NoValue
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
@@ -33,7 +32,7 @@ class ExperimentNode(template.Node):
         self.user_variable = user_variable
 
     def render(self, context):
-        experiment = experiment_manager.get(self.experiment_name, None)
+        experiment = experiment_manager.get_experiment(self.experiment_name)
         if experiment:
             experiment.ensure_alternative_exists(self.alternative, self.weight)
 

@@ -59,10 +59,10 @@ class ExperimentAutoCreateTestCase(TestCase):
     @override_settings(EXPERIMENTS_AUTO_CREATE=False)
     def test_view_auto_create_off(self):
         user = User.objects.create(username='test')
-        participant(user=user).enroll('test_experiment', alternatives=['other'])
-        self.assertFalse(Experiment.objects.filter(name="test_experiment").exists())
+        participant(user=user).enroll('test_experiment_y', alternatives=['other'])
+        self.assertFalse(Experiment.objects.filter(name="test_experiment_y").exists())
 
     def test_view_auto_create_on(self):
         user = User.objects.create(username='test')
-        participant(user=user).enroll('test_experiment', alternatives=['other'])
-        self.assertTrue(Experiment.objects.filter(name="test_experiment").exists())
+        participant(user=user).enroll('test_experiment_x', alternatives=['other'])
+        self.assertTrue(Experiment.objects.filter(name="test_experiment_x").exists())

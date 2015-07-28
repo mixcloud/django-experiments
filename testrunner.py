@@ -28,7 +28,6 @@ def runtests():
             'django.contrib.auth.middleware.AuthenticationMiddleware',
             'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
         ),
-        EXPERIMENTS_AUTO_CREATE=True,
     )
     django.setup()
 
