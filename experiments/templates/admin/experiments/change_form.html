@@ -17,7 +17,7 @@
 {% block object-tools-items %}
     {% if original %}
         {# These have to be links to get the correct admin styling #}
-        <li><a href="." data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %}">Control</a></li>
+        <li><a href="." data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %}">{% if experiment.default_alternative != control_group %}Default: {% endif %}{{ experiment.default_alternative }}</a></li>
         <li><a href="." data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %}">Track</a></li>
         <li><a href="." data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %}">Enabled</a></li>
     {% endif %}

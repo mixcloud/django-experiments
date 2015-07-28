@@ -21,11 +21,6 @@ h5.experiment-dates {
     display: none;
 }
 
-.experiment-changing .form-row.field-name {
-    /* Hide the name field if we are changing (not creating) an experiment - the title shows the name */
-    display: none;
-}
-
 .experiment-results-container {
     max-width: 1000px;
     margin: 30px auto;
