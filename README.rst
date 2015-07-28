@@ -1,17 +1,22 @@
 Django-Experiments
 ==================
 
-Django-Experiments is an AB Testing Framework for Django and Nexus. It is
-completely usable via template tags.
+Django-Experiments is an AB Testing Framework for Django.
+
+It is possible to set up an experiment through template tags only.
+Through the Django admin you can monitor and control experiment progress.
 
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
-.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.32+PM.png
-
-.. image:: https://s3-eu-west-1.amazonaws.com/mixcloud-public/django-experiments/Screen+Shot+2014-09-03+at+2.20.47+PM.png
-
 Changelog
 ---------
+1.1.0
+~~~~~
+
+ - Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
+ - Promote an experiment to a particular alternative (other than Control) through the admin
+ - New experiment_enroll assignment tag (see below)
+
 1.0.0
 ~~~~~
 
@@ -81,9 +86,9 @@ pip is still the recommended way to install dependencies:
 Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
-- `Nexus <https://github.com/disqus/nexus>`_
 - `Redis <http://redis.io/>`_
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
+- `django-modeldict <https://github.com/disqus/django-modeldict>`_
 
 (Detailed list in requirements.txt)
 
@@ -119,8 +124,8 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
     #Installed Apps
     INSTALLED_APPS = [
         ...
+        'django.contrib.admin',
         'django.contrib.humanize',
-        'nexus',
         'experiments',
     ]
 
@@ -191,6 +196,18 @@ assigned to.
 Make sure the experiment tag has access to the request object (not an
 issue for regular templates but you might have to manually add it
 inside an inclusion tag) or it will silently fail to work.
+
+The experiment_enroll assignment tag can also be used (note that it
+takes strings or variables unlike the older experiment tag):
+
+::
+
+     {% experiment_enroll "experiment_name" "alternative1" "alternative2" as assigned_alternative %}
+     {% if assigned_alternative == "alternative1" or assigned_alternative == "alternative2" %}
+        <a href = "register.html">Please register!</a>
+     {% else %}
+        <a href = "register.html">Register now.</a>
+     {% endif %}
 
 You can also enroll users in experiments and find out what alternative they
 are part of from python. To enroll a user in an experiment and show a
@@ -328,7 +345,7 @@ equal to True.
 Managing Experiments
 --------------------
 
-Experiments can be managed in the nexus dashboard (/nexus/experiments by
+Experiments can be managed in the Django admin (/admin/experiments/experiment/ by
 default).
 
 The States
@@ -340,8 +357,8 @@ the control alternative, and no data will be collected.
 **Enabled** - The experiment is enabled globally, for all users.
 
 
-All Settings
-------------
+Settings
+--------
 
 ::
 

@@ -132,7 +132,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'nexus',
     'experiments',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',

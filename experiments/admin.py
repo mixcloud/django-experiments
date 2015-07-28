@@ -70,13 +70,13 @@ class ExperimentAdmin(admin.ModelAdmin):
     class Media:
         css = {
             "all": (
-                'experiments/css/admin.css',
+                'experiments/dashboard/css/admin.css',
             ),
         }
         js = (
             'https://www.google.com/jsapi',  # used for charts
-            'experiments/js/csrf.js',
-            'experiments/js/admin.js',
+            'experiments/dashboard/js/csrf.js',
+            'experiments/dashboard/js/admin.js',
         )
 
     def _admin_view_context(self, extra_context=None):

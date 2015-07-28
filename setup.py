@@ -23,6 +23,7 @@ def parse_requirements(file_name):
 
     return requirements
 
+
 def parse_dependency_links(file_name):
     dependency_links = []
     for line in open(file_name, 'r').read().split('\n'):
@@ -33,7 +34,7 @@ def parse_dependency_links(file_name):
 
 
 setup(name='django-experiments',
-      version='1.0.0',
+      version='1.1.0',
       description='Python Django AB Testing Framework',
       author='Mixcloud',
       author_email='technical@mixcloud.com',
@@ -41,8 +42,8 @@ setup(name='django-experiments',
       packages=find_packages(exclude=["example_project"]),
       include_package_data=True,
       license="MIT license, see LICENSE file",
-      install_requires = parse_requirements('requirements.txt'),
-      dependency_links = parse_dependency_links('requirements.txt'),
+      install_requires=parse_requirements('requirements.txt'),
+      dependency_links=parse_dependency_links('requirements.txt'),
       long_description=open('README.rst').read(),
       test_suite="testrunner.runtests",
 )
