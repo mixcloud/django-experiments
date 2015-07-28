@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from django import template
 from django.core.urlresolvers import reverse
+from modeldict.base import NoValue
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
