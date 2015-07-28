@@ -19,6 +19,11 @@ class ExperimentAdmin(admin.ModelAdmin):
     readonly_fields = ['start_date', 'end_date']
 
     def get_fieldsets(self, request, obj=None):
+        """
+        Slightly different fields are shown for Add and Change:
+         - default_alternative can only be changed
+         - name can only be set on Add
+        """
         main_fields = ('description', 'start_date', 'end_date', 'state')
 
         if obj:
