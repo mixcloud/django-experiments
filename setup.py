@@ -34,7 +34,7 @@ def parse_dependency_links(file_name):
 
 
 setup(name='django-experiments',
-      version='1.1.0',
+      version='1.1.1',
       description='Python Django AB Testing Framework',
       author='Mixcloud',
       author_email='technical@mixcloud.com',
