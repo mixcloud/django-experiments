@@ -20,7 +20,7 @@ def experiment_goal(goal_name):
 @register.inclusion_tag('experiments/confirm_human.html', takes_context=True)
 def experiments_confirm_human(context):
     request = context.get('request')
-    return {'confirmed_human': request.session[conf.CONFIRM_HUMAN_SESSION_KEY]}
+    return {'confirmed_human': request.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)}
 
 
 class ExperimentNode(template.Node):
