@@ -138,6 +138,10 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
 
 Include 'django.contrib.humanize' as above if not already included. 
 
+Include the app URLconf in your urls.py file:
+
+    url(r'experiments/', include('experiments.urls')),
+
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
 
