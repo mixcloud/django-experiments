@@ -10,6 +10,13 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 Changelog
 ---------
+1.1.2
+~~~~~
+
+ - Updating migrations
+ - Documentation improvements
+ - Updating example app
+
 1.1.1
 ~~~~~
 
