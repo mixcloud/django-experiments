@@ -10,10 +10,10 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 Changelog
 ---------
-1.1.3
+1.1.4
 ~~~~~
 
- - Removing django-jsonfield from requirements.txt (thank you to bustavo)
+ - Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
 
 1.1.2
 ~~~~~
