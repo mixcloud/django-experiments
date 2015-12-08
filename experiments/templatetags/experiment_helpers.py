@@ -1,9 +1,10 @@
 try:
     from django.template import base as template_base
+    from django.template import Library
+    register = Library()
 except ImportError:
     from django import template as template_base
-
-register = template_base.Library()
+    register = template_base.Library()
 
 def raw(parser, token):
     # Whatever is between {% raw %} and {% endraw %} will be preserved as
