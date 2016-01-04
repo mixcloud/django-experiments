@@ -10,6 +10,10 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 Changelog
 ---------
+1.1.5
+~~~~~
+ - Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
+
 1.1.4
 ~~~~~
 
