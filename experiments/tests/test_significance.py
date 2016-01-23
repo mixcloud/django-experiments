@@ -1,4 +1,4 @@
-from django.utils.unittest import TestCase
+from unittest import TestCase
 import random
 
 from experiments.significance import mann_whitney, chi_square_p_value

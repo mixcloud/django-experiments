@@ -1,13 +1,10 @@
 from django.http import HttpResponse
 from django.test import TestCase, RequestFactory
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
+
+from unittest import TestSuite
+
 from experiments import conf
-
-try:
-    from unittest import TestSuite
-except ImportError:
-    from django.utils.unittest import TestSuite
-
 from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
 from experiments.signal_handlers import transfer_enrollments_to_user

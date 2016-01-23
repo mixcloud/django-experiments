@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from django.utils.unittest import TestCase
+from unittest import TestCase
 
 from experiments import counters
 
