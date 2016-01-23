@@ -10,6 +10,11 @@ If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.
 
 Changelog
 ---------
+1.1.6
+~~~~~
+ - Change to use django-modeldict-yplan as its maintained
+ - Change to use pythons inbuilt unittest and not Django's as its Deprecated)
+
 1.1.5
 ~~~~~
  - Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
