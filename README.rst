@@ -1,6 +1,9 @@
 Django-Experiments
 ==================
 
+.. image:: https://codeship.com/projects/1c7cb7a0-caa8-0130-f2cb-36bd8b1bab14/status?branch=master
+   :target: https://codeship.com/projects/4846
+
 Django-Experiments is an AB Testing Framework for Django.
 
 It is possible to set up an experiment through template tags only.
