@@ -304,7 +304,7 @@ Add the goal to our EXPERIMENT_GOALS tuple in setting.py:
 
 ::
 
-    EXPERIMENTS_GOALS = ("registration")
+    EXPERIMENTS_GOALS = ("registration",)
 
 Goals are simple strings that uniquely identify a goal. 
 
