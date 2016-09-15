@@ -11,90 +11,6 @@ Through the Django admin you can monitor and control experiment progress.
 
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
-Changelog
----------
-1.1.6
-~~~~~
- - Change to use django-modeldict-yplan as its maintained
- - Change to use pythons inbuilt unittest and not Django's as its Deprecated)
-
-1.1.5
-~~~~~
- - Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
-
-1.1.4
-~~~~~
-
- - Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
-
-1.1.2
-~~~~~
-
- - Updating migrations
- - Documentation improvements
- - Updating example app
-
-1.1.1
-~~~~~
-
- - Fixing EXPERIMENTS_AUTO_CREATE flag (previously setting it to True did nothing)
-
-1.1.0
-~~~~~
-
- - Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
- - Promote an experiment to a particular alternative (other than Control) through the admin
- - New experiment_enroll assignment tag (see below)
-
-1.0.0
-~~~~~
-
-Bumping version to 1.0.0 because django-experiments is definitely production
-ready but also due to backwards incompatible changes that have been merged in.
- - Django 1.7 and 1.8 support (including custom user models)
- - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
- - Fixed bug caused by the participant cache on request
- - Fixed bugs related to confirm human and made the functionality pluggable
- - Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
- - Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
- - ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
- - More tests and logging added
-
-0.3.5
-~~~~~
-
-- Add migration scripts for south
-- Fix rendering when probabilities close to 100%
-- Reduce database load when a user performs an action multiple times
-
-0.3.4
-~~~~~
-
-- Updated JS goal to POST method. Requires csrf javascript.
-- Random number on template tag goal image to prevent caching
-
-
-0.3.3
-~~~~~
-
-- Static media handled by nexus again
-
-0.3.2
-~~~~~
-
-- Fixed missing edit/delete images
-
-0.3.1
-~~~~~
-
-- Replaced django static template tags. Supports django 1.3 again!
-
-0.3.0
-~~~~~
-
-- Added django permission support.
-- Started using django static instead of nexus:media. (django 1.4 only)
-
 
 Installation
 ------------
@@ -420,3 +336,88 @@ Settings
     EXPERIMENTS_REDIS_DB = 0
 
 See conf.py for other settings
+
+
+Changelog
+---------
+1.1.6
+~~~~~
+ - Change to use django-modeldict-yplan as its maintained
+ - Change to use pythons inbuilt unittest and not Django's as its Deprecated)
+
+1.1.5
+~~~~~
+ - Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
+
+1.1.4
+~~~~~
+
+ - Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
+
+1.1.2
+~~~~~
+
+ - Updating migrations
+ - Documentation improvements
+ - Updating example app
+
+1.1.1
+~~~~~
+
+ - Fixing EXPERIMENTS_AUTO_CREATE flag (previously setting it to True did nothing)
+
+1.1.0
+~~~~~
+
+ - Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
+ - Promote an experiment to a particular alternative (other than Control) through the admin
+ - New experiment_enroll assignment tag (see below)
+
+1.0.0
+~~~~~
+
+Bumping version to 1.0.0 because django-experiments is definitely production
+ready but also due to backwards incompatible changes that have been merged in.
+ - Django 1.7 and 1.8 support (including custom user models)
+ - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
+ - Fixed bug caused by the participant cache on request
+ - Fixed bugs related to confirm human and made the functionality pluggable
+ - Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
+ - Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
+ - ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
+ - More tests and logging added
+
+0.3.5
+~~~~~
+
+- Add migration scripts for south
+- Fix rendering when probabilities close to 100%
+- Reduce database load when a user performs an action multiple times
+
+0.3.4
+~~~~~
+
+- Updated JS goal to POST method. Requires csrf javascript.
+- Random number on template tag goal image to prevent caching
+
+
+0.3.3
+~~~~~
+
+- Static media handled by nexus again
+
+0.3.2
+~~~~~
+
+- Fixed missing edit/delete images
+
+0.3.1
+~~~~~
+
+- Replaced django static template tags. Supports django 1.3 again!
+
+0.3.0
+~~~~~
+
+- Added django permission support.
+- Started using django static instead of nexus:media. (django 1.4 only)
