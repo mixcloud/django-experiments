@@ -21,7 +21,7 @@ Django-Experiments is best installed via pip:
 
     pip install django-experiments
 
-This should download django-experiments and any dependencies. If downloading from the repo, 
+This should download django-experiments and any dependencies. If downloading from the repo,
 pip is still the recommended way to install dependencies:
 
 ::
@@ -76,7 +76,7 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
         'experiments',
     ]
 
-Include 'django.contrib.humanize' as above if not already included. 
+Include 'django.contrib.humanize' as above if not already included.
 
 Include the app URLconf in your urls.py file:
 
@@ -101,7 +101,7 @@ If you want to use the built in retention goals you will need to include the ret
 Experiments and Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The experiment can be manually created in your Django admin. Adding alternatives must currently be done in template tags or by calling the relevant code, as described below. 
+The experiment can be manually created in your Django admin. Adding alternatives must currently be done in template tags or by calling the relevant code, as described below.
 
 An experiment allows you to test the effect of various design
 alternatives on user interaction. Django-Experiments is designed to work
@@ -205,7 +205,7 @@ settings.*
 
 After creating an experiment either using the Django admin, or through
 template tags or code, you must enable the experiment in the Django
-admin or manually for it to work. 
+admin or manually for it to work.
 
 
 Goals
@@ -222,7 +222,7 @@ Add the goal to our EXPERIMENT_GOALS tuple in setting.py:
 
     EXPERIMENTS_GOALS = ("registration",)
 
-Goals are simple strings that uniquely identify a goal. 
+Goals are simple strings that uniquely identify a goal.
 
 Our registration successful page will contain the goal template tag:
 
@@ -233,23 +233,23 @@ Our registration successful page will contain the goal template tag:
 This will be fired when the user loads the page. This is not the only way of firing a goal. In total, there are four ways of recording goals:
 
 1. **Django Template Tags** (as above).
- 
+
     ::
-    
+
         {% experiment_goal "registration" %}
 
 2. **Server side**, using a python function somewhere in your django views:
 
     ::
-    
+
         from experiments.utils import participant
-    
+
         participant(request).goal('registration')
 
 3. **JavaScript onclick**:
 
     ::
-    
+
         <button onclick="experiments.goal('registration')">Complete Registration</button>
 
     (Please note, this requires CSRF authentication. Please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
@@ -257,7 +257,7 @@ This will be fired when the user loads the page. This is not the only way of fir
 4. **Cookies**:
 
     ::
-    
+
         <span data-experiments-goal="registration">Complete Registration</span>
 
 Multiple goals can be recorded via the cookie using space as a separator.
@@ -340,6 +340,12 @@ See conf.py for other settings
 
 Changelog
 ---------
+1.2.0
+~~~~~
+ - Add support for Django 1.10 (Thanks to @Kobold)
+ - Make requirements.txt more flexible
+ - Tox support added for testing on multiple Django Versions (Thanks to @Kobold again!)
+
 1.1.6
 ~~~~~
  - Change to use django-modeldict-yplan as its maintained
