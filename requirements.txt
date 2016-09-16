@@ -2,4 +2,5 @@ redis>=2.4.9
 django>=1.7.0
 django-modeldict-yplan==1.5.0
 jsonfield>=1.0.3
-mock==1.0.1
+mock>=1.0.1
+tox>=2.3.1

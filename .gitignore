@@ -8,3 +8,4 @@
 django_experiments.egg-info
 *.egg
 dist/
+.tox
