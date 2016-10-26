@@ -5,7 +5,7 @@ def mann_whitney(a_distribution, b_distribution, use_continuity=True):
     """Returns (u, p_value)"""
     MINIMUM_VALUES = 20
 
-    all_values = sorted(set(a_distribution.keys() + b_distribution.keys()))
+    all_values = sorted(set(list(a_distribution) + list(b_distribution)))
 
     count_so_far = 0
     a_rank_sum = 0

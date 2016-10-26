@@ -4,6 +4,7 @@ import json
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.utils import six
 
 from experiments.models import Experiment, CONTROL_STATE, ENABLED_STATE
 from experiments.utils import participant
@@ -44,7 +45,11 @@ class AdminTestCase(TestCase):
                 'experiment': experiment.name,
                 'alternative': alternative,
             })
-            self.assertDictEqual(json.loads(response.content), {
+            response_content = response.content
+            if six.PY3:
+                response_content = str(response_content, encoding='utf8')
+
+            self.assertDictEqual(json.loads(response_content), {
                 'success': True,
                 'alternative': alternative,
             })
