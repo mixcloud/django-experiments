@@ -26,6 +26,9 @@ matrix:
         - python: "3.6"
           env: DJANGO="1.11"
 
+services:
+    - redis-server
+
 install:
     - pip install tox
 
