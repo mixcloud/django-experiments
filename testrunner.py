@@ -33,7 +33,11 @@ def runtests():
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
                 'DIRS': [],
                 'APP_DIRS': True,
-                'OPTIONS': {},
+                'OPTIONS': {
+                    'context_processors': [
+                        'django.contrib.auth.context_processors.auth',
+                    ],
+                },
             },
         ],
     )
