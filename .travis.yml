@@ -1,6 +1,7 @@
 # Container-based builds used if "sudo: false" --> fast boot (1-6s)
 # https://docs.travis-ci.com/user/ci-environment/
 sudo: false
+dist: trusty
 
 language: python
 python:
