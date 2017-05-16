@@ -1,5 +1,6 @@
 from unittest import TestCase
 import random
+from django.utils.six.moves import range
 
 from experiments.significance import mann_whitney, chi_square_p_value
 
@@ -52,9 +53,9 @@ class ChiSquare(TestCase):
     def test_stress(self):
         # Generate a large matrix
         matrix = []
-        for col in xrange(0, 100):
+        for col in range(0, 100):
             matrix.append([])
-            for row in xrange(0, 100):
+            for row in range(0, 100):
                 matrix[col].append(random.randint(0, 10))
 
         self.assertIsNotNone(chi_square_p_value(matrix))
@@ -72,4 +73,3 @@ class ChiSquare(TestCase):
         observed_test_statistic_result, p_value_result = chi_square_p_value(matrix)
         self.assertAlmostEqual(observed_test_statistic_result, observed_test_statistic, accuracy, 'Wrong observed result')
         self.assertAlmostEqual(p_value_result, p_value, accuracy, 'Wrong P Value')
-

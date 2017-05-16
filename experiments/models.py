@@ -6,6 +6,7 @@ from jsonfield import JSONField
 
 import random
 import json
+from six import iteritems
 
 from experiments.dateutils import now
 from experiments import conf
@@ -65,13 +66,13 @@ class Experiment(models.Model):
 
     @property
     def default_alternative(self):
-        for alternative, alternative_conf in self.alternatives.iteritems():
+        for alternative, alternative_conf in iteritems(self.alternatives):
             if alternative_conf.get('default'):
                 return alternative
         return conf.CONTROL_GROUP
 
     def set_default_alternative(self, alternative):
-        for alternative_name, alternative_conf in self.alternatives.iteritems():
+        for alternative_name, alternative_conf in iteritems(self.alternatives):
             if alternative_name == alternative:
                 alternative_conf['default'] = True
             elif 'default' in alternative_conf:
@@ -79,9 +80,9 @@ class Experiment(models.Model):
 
     def random_alternative(self):
         if all('weight' in alt for alt in self.alternatives.values()):
-            return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
+            return weighted_choice([(name, details['weight']) for name, details in iteritems(self.alternatives)])
         else:
-            return random.choice(self.alternatives.keys())
+            return random.choice(list(self.alternatives))
 
     def __unicode__(self):
         return self.name
@@ -127,5 +128,3 @@ def weighted_choice(choices):
         upto += w
         if upto >= r:
             return c
-
-

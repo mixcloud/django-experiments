@@ -7,9 +7,11 @@ class LazyAutoCreate(object):
     """
     A lazy version of the setting is used so that tests can change the setting and still work
     """
-    def __nonzero__(self):
+    def __bool__(self):
         return getattr(settings, 'EXPERIMENTS_AUTO_CREATE', True)
 
+    def __nonzero__(self):
+        return type(self).__bool__(self)
 
 class ExperimentManager(ModelDict):
     def get_experiment(self, experiment_name):

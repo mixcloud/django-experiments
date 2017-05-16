@@ -400,7 +400,7 @@ class SessionUser(WebUser):
     def _get_all_enrollments(self):
         enrollments = self.session.get('experiments_enrollments', None)
         if enrollments:
-            for experiment_name, data in enrollments.items():
+            for experiment_name, data in list(enrollments.items()):
                 alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
                 experiment = experiment_manager.get_experiment(experiment_name)
                 if experiment:
