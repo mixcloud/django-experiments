@@ -1,2 +1,2 @@
-include LICENSE README.rst requirements.txt
+include LICENSE README.rst
 recursive-include experiments *.py *.html *.js *.css *.png *.jpg

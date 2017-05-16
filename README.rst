@@ -26,7 +26,7 @@ pip is still the recommended way to install dependencies:
 
 ::
 
-    pip install -r requirements.txt
+    pip install -e .
 
 Dependencies
 ------------
@@ -35,7 +35,7 @@ Dependencies
 - `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 - `django-modeldict <https://github.com/disqus/django-modeldict>`_
 
-(Detailed list in requirements.txt)
+(Detailed list in setup.py)
 
 It also requires 'django.contrib.humanize' to be in INSTALLED_APPS.
 
@@ -340,6 +340,18 @@ See conf.py for other settings
 
 Changelog
 ---------
+UNRELEASED
+~~~~~~~~~~
+ - Conform to common expectations in `setup.py`:
+    - Separate `install_requires` and `tests_require` (not reading from `requirements.txt`)
+    - Add trove classifiers including Python and Django supported versions
+    - Fix license name (from "MIT license, see LICENSE file" to "MIT")
+    - Make `setup.py` ready for Python 3 (read `README.rst` using codecs module)
+    - Dropped an irrelevant workaround for ancient Python bugs
+ - Add `setup.cfg` to support building of universal wheels (preparing for Python 3)
+ - Tox runs `python setup.py test` (honouring both `install_requires` and `tests_require`)
+ - Prepared `tox.ini` for Python 3 and Django 1.11 compatibility
+
 1.2.0
 ~~~~~
  - Add support for Django 1.10 (Thanks to @Kobold)
@@ -384,6 +396,7 @@ Changelog
 
 Bumping version to 1.0.0 because django-experiments is definitely production
 ready but also due to backwards incompatible changes that have been merged in.
+
  - Django 1.7 and 1.8 support (including custom user models)
  - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
  - Fixed bug caused by the participant cache on request
