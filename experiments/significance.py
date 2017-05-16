@@ -5,7 +5,7 @@ def mann_whitney(a_distribution, b_distribution, use_continuity=True):
     """Returns (u, p_value)"""
     MINIMUM_VALUES = 20
 
-    all_values = sorted(set(a_distribution.keys() + b_distribution.keys()))
+    all_values = sorted(set(a_distribution) | set(b_distribution))
 
     count_so_far = 0
     a_rank_sum = 0
@@ -61,24 +61,24 @@ def mann_whitney(a_distribution, b_distribution, use_continuity=True):
 def chi_square_p_value(matrix):
     """
     Accepts a matrix (an array of arrays, where each child array represents a row)
-    
+
     Example from http://math.hws.edu/javamath/ryan/ChiSquare.html:
-    
+
     Suppose you conducted a drug trial on a group of animals and you
     hypothesized that the animals receiving the drug would survive better than
     those that did not receive the drug. You conduct the study and collect the
     following data:
-    
+
     Ho: The survival of the animals is independent of drug treatment.
-    
+
     Ha: The survival of the animals is associated with drug treatment.
-    
+
     In that case, your matrix should be:
     [
      [ Survivors in Test, Dead in Test ],
      [ Survivors in Control, Dead in Control ]
     ]
-    
+
     Code adapted from http://codecomments.wordpress.com/2008/02/13/computing-chi-squared-p-value-from-contingency-table-in-python/
     """
     try:

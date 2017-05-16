@@ -44,7 +44,7 @@ class AdminTestCase(TestCase):
                 'experiment': experiment.name,
                 'alternative': alternative,
             })
-            self.assertDictEqual(json.loads(response.content), {
+            self.assertDictEqual(json.loads(response.content.decode('utf-8')), {
                 'success': True,
                 'alternative': alternative,
             })
