@@ -216,7 +216,7 @@ specify them in the EXPERIMENTS\_GOALS tuple in your settings. Given the
 example above, we would want a goal to be triggered once the user has
 completed the registration process.
 
-Add the goal to our EXPERIMENT_GOALS tuple in setting.py:
+Add the goal to our EXPERIMENT_GOALS tuple in settings.py:
 
 ::
 
