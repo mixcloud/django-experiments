@@ -298,6 +298,7 @@ Confirming Human
 The framework can distinguish between humans and bots. By including
 
 ::
+
     {% load experiments %}
 
     {% experiments_confirm_human %}
