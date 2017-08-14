@@ -193,13 +193,11 @@ control group - there is no way to differentiate between these cases.
 You can also weight the experiments using the following techniques
 
 ::
-alternative = participant(request).enroll('example_test', {'control': 99, 'v2': 1})
-::
+   alternative = participant(request).enroll('example_test', {'control': 99, 'v2': 1})
 
 ::
-{% experiment example_test control 99 %}v2{% endexperiment %}
-{% experiment example_test v2 1 %}v2{% endexperiment %}
-::
+   {% experiment example_test control 99 %}v2{% endexperiment %}
+   {% experiment example_test v2 1 %}v2{% endexperiment %}
 
 By default the participant function expects a HttpRequest object, but you can
 alternatively pass a user or session as a keyword argument
