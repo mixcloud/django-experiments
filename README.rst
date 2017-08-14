@@ -190,6 +190,15 @@ control group - there is no way to differentiate between these cases.
     elif alternative == 'control':
         header_text = get_normal_text_summary()
 
+You can also weight the experiments using the following techniques
+
+::
+alternative = participant(request).enroll('example_test', {'control': 99, 'v2': 1})
+
+{% experiment example_test control 99 %}v2{% endexperiment %}
+{% experiment example_test v2 1 %}v2{% endexperiment %}
+
+
 By default the participant function expects a HttpRequest object, but you can
 alternatively pass a user or session as a keyword argument
 
@@ -206,6 +215,7 @@ settings.*
 After creating an experiment either using the Django admin, or through
 template tags or code, you must enable the experiment in the Django
 admin or manually for it to work.
+
 
 
 Goals
