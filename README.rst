@@ -383,7 +383,10 @@ See conf.py for other settings
 Changelog
 ---------
 1.3.0 (unreleased)
+ - added unittests for Jinja2 extension
 ~~~~~~~~~~~~~~~~~~
+1.3.0 (withdrawn)
+~~~~~~~~~~~~~~~~~
  - fork to ConsumerAffairs
  - added jinja2 support
  - removed some older python version from Tox
