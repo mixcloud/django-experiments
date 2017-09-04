@@ -387,6 +387,7 @@ Changelog
  - fork to ConsumerAffairs
  - added jinja2 support
  - removed some older python version from Tox
+ - removed dependency on jQuery, dropped support for IE8
 
 pre-1.3.0 (unreleased)
 ~~~~~~~~~~~~~~~~~~~~~~
