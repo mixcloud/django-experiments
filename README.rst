@@ -107,6 +107,26 @@ If you want to use the built in retention goals you will need to include the ret
 *Note, more configuration options are detailed below.*
 
 
+Jinja2:
+
+If using Jinja2 template engine (tested with ``django_jinja``), add the extension to enable template tags:
+
+::
+
+    TEMPLATES = [
+        {
+            'BACKEND': 'django_jinja.backend.Jinja2',
+            'OPTIONS': {
+                'extensions': [
+                    ...
+                    'experiments.templatetags.experiments.ExperimentsExtension',
+                ],
+                ...
+            },
+        },
+    ]
+
+
 Experiments and Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -115,7 +135,7 @@ The experiment can be manually created in your Django admin. Adding alternatives
 An experiment allows you to test the effect of various design
 alternatives on user interaction. Django-Experiments is designed to work
 from within django templates, to make it easier for designers. We begin
-by loading our module:
+by loading our module (unless using Jinja2):
 
 ::
 
@@ -365,6 +385,7 @@ Changelog
 1.3.0 (unreleased)
 ~~~~~~~~~~~~~~~~~~
  - fork to ConsumerAffairs
+ - added jinja2 support
  - removed some older python version from Tox
 
 pre-1.3.0 (unreleased)
