@@ -382,9 +382,12 @@ See conf.py for other settings
 
 Changelog
 ---------
-1.3.0 (unreleased)
+
+1.3.1
+~~~~~
  - added unittests for Jinja2 extension
-~~~~~~~~~~~~~~~~~~
+ - updated user enrolment tag to only enrol in specified alternatives (plus the control)
+
 1.3.0 (withdrawn)
 ~~~~~~~~~~~~~~~~~
  - fork to ConsumerAffairs
