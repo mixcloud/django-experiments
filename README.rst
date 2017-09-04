@@ -12,6 +12,15 @@ Through the Django admin you can monitor and control experiment progress.
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
 
+This Fork
+---------
+
+See Changelog from ``1.3.0`` onwards.
+
+
+Forked from: https://github.com/mixcloud/django-experiments
+
+
 Installation
 ------------
 
@@ -19,7 +28,7 @@ Django-Experiments is best installed via pip:
 
 ::
 
-    pip install django-experiments
+    pip install consumeraffairs-django-experiments
 
 This should download django-experiments and any dependencies. If downloading from the repo,
 pip is still the recommended way to install dependencies:
@@ -32,7 +41,7 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Redis <http://redis.io/>`_
-- `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
+- `django-jsonfield <https://github.com/dmkoch/django-jsonfield/>`_
 - `django-modeldict <https://github.com/disqus/django-modeldict>`_
 
 (Detailed list in setup.py)
@@ -353,8 +362,13 @@ See conf.py for other settings
 
 Changelog
 ---------
-UNRELEASED
-~~~~~~~~~~
+1.3.0 (unreleased)
+~~~~~~~~~~~~~~~~~~
+ - fork to ConsumerAffairs
+ - removed some older python version from Tox
+
+pre-1.3.0 (unreleased)
+~~~~~~~~~~~~~~~~~~~~~~
  - Conform to common expectations in `setup.py`:
     - Separate `install_requires` and `tests_require` (not reading from `requirements.txt`)
     - Add trove classifiers including Python and Django supported versions
