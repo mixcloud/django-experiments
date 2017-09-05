@@ -1,3 +1,5 @@
+import random
+
 from django.db import IntegrityError
 
 from experiments.models import Enrollment
@@ -75,13 +77,14 @@ class WebUser(object):
 
         if experiment:
             if experiment.is_displaying_alternatives():
+                alternatives_including_control = list(set(
+                    alternatives + [conf.CONTROL_GROUP]))
                 if isinstance(alternatives, collections.Mapping):
                     if conf.CONTROL_GROUP not in alternatives:
                         experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
                     for alternative, weight in alternatives.items():
                         experiment.ensure_alternative_exists(alternative, weight)
                 else:
-                    alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
                     for alternative in alternatives_including_control:
                         experiment.ensure_alternative_exists(alternative)
 
@@ -92,7 +95,8 @@ class WebUser(object):
                     if force_alternative:
                         chosen_alternative = force_alternative
                     else:
-                        chosen_alternative = experiment.random_alternative()
+                        chosen_alternative = random.choice(
+                            alternatives_including_control)
                     self._set_enrollment(experiment, chosen_alternative)
             else:
                 chosen_alternative = experiment.default_alternative
