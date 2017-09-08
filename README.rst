@@ -355,54 +355,54 @@ Changelog
 ---------
 UNRELEASED
 ~~~~~~~~~~
- - Conform to common expectations in `setup.py`:
+- Conform to common expectations in `setup.py`:
     - Separate `install_requires` and `tests_require` (not reading from `requirements.txt`)
     - Add trove classifiers including Python and Django supported versions
     - Fix license name (from "MIT license, see LICENSE file" to "MIT")
     - Make `setup.py` ready for Python 3 (read `README.rst` using codecs module)
     - Dropped an irrelevant workaround for ancient Python bugs
- - Add `setup.cfg` to support building of universal wheels (preparing for Python 3)
- - Tox runs `python setup.py test` (honouring both `install_requires` and `tests_require`)
- - Prepared `tox.ini` for Python 3 and Django 1.11 compatibility
+- Add `setup.cfg` to support building of universal wheels (preparing for Python 3)
+- Tox runs `python setup.py test` (honouring both `install_requires` and `tests_require`)
+- Prepared `tox.ini` for Python 3 and Django 1.11 compatibility
 
 1.2.0
 ~~~~~
- - Add support for Django 1.10 (Thanks to @Kobold)
- - Make requirements.txt more flexible
- - Tox support added for testing on multiple Django Versions (Thanks to @Kobold again!)
+- Add support for Django 1.10 (Thanks to @Kobold)
+- Make requirements.txt more flexible
+- Tox support added for testing on multiple Django Versions (Thanks to @Kobold again!)
 
 1.1.6
 ~~~~~
- - Change to use django-modeldict-yplan as its maintained
- - Change to use pythons inbuilt unittest and not Django's as its Deprecated)
+- Change to use django-modeldict-yplan as its maintained
+- Change to use pythons inbuilt unittest and not Django's as its Deprecated)
 
 1.1.5
 ~~~~~
- - Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
+- Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
 
 1.1.4
 ~~~~~
 
- - Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
+- Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
 
 1.1.2
 ~~~~~
 
- - Updating migrations
- - Documentation improvements
- - Updating example app
+- Updating migrations
+- Documentation improvements
+- Updating example app
 
 1.1.1
 ~~~~~
 
- - Fixing EXPERIMENTS_AUTO_CREATE flag (previously setting it to True did nothing)
+- Fixing EXPERIMENTS_AUTO_CREATE flag (previously setting it to True did nothing)
 
 1.1.0
 ~~~~~
 
- - Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
- - Promote an experiment to a particular alternative (other than Control) through the admin
- - New experiment_enroll assignment tag (see below)
+- Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
+- Promote an experiment to a particular alternative (other than Control) through the admin
+- New experiment_enroll assignment tag (see below)
 
 1.0.0
 ~~~~~
@@ -410,14 +410,14 @@ UNRELEASED
 Bumping version to 1.0.0 because django-experiments is definitely production
 ready but also due to backwards incompatible changes that have been merged in.
 
- - Django 1.7 and 1.8 support (including custom user models)
- - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
- - Fixed bug caused by the participant cache on request
- - Fixed bugs related to confirm human and made the functionality pluggable
- - Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
- - Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
- - ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
- - More tests and logging added
+- Django 1.7 and 1.8 support (including custom user models)
+- Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
+- Fixed bug caused by the participant cache on request
+- Fixed bugs related to confirm human and made the functionality pluggable
+- Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
+- Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
+- ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
+- More tests and logging added
 
 0.3.5
 ~~~~~
