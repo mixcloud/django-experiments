@@ -12,6 +12,15 @@ Through the Django admin you can monitor and control experiment progress.
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
 
+This Fork
+---------
+
+See Changelog from ``1.3.0`` onwards.
+
+
+Forked from: https://github.com/mixcloud/django-experiments
+
+
 Installation
 ------------
 
@@ -19,7 +28,7 @@ Django-Experiments is best installed via pip:
 
 ::
 
-    pip install django-experiments
+    pip install consumeraffairs-django-experiments
 
 This should download django-experiments and any dependencies. If downloading from the repo,
 pip is still the recommended way to install dependencies:
@@ -32,7 +41,7 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Redis <http://redis.io/>`_
-- `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
+- `django-jsonfield <https://github.com/dmkoch/django-jsonfield/>`_
 - `django-modeldict <https://github.com/disqus/django-modeldict>`_
 
 (Detailed list in setup.py)
@@ -92,10 +101,40 @@ If you want to use the built in retention goals you will need to include the ret
 
     MIDDLEWARE_CLASSES [
         ...
+        'experiments.middleware.ConfirmHumanMiddleware',
         'experiments.middleware.ExperimentsRetentionMiddleware',
     ]
 
 *Note, more configuration options are detailed below.*
+
+
+Note: `ConfirmHumanMiddleware` is optional, not needed it you plan on running only template-based tests.
+If used, it should come after these classes:
+
+::
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+
+
+
+Jinja2:
+
+If using Jinja2 template engine (tested with ``django_jinja``), add the extension to enable template tags:
+
+::
+
+    TEMPLATES = [
+        {
+            'BACKEND': 'django_jinja.backend.Jinja2',
+            'OPTIONS': {
+                'extensions': [
+                    ...
+                    'experiments.templatetags.experiments.ExperimentsExtension',
+                ],
+                ...
+            },
+        },
+    ]
 
 
 Experiments and Alternatives
@@ -106,7 +145,7 @@ The experiment can be manually created in your Django admin. Adding alternatives
 An experiment allows you to test the effect of various design
 alternatives on user interaction. Django-Experiments is designed to work
 from within django templates, to make it easier for designers. We begin
-by loading our module:
+by loading our module (unless using Jinja2):
 
 ::
 
@@ -353,8 +392,25 @@ See conf.py for other settings
 
 Changelog
 ---------
-UNRELEASED
-~~~~~~~~~~
+
+1.3.2
+~~~~~
+ - added confirm_human middleware
+
+1.3.1
+~~~~~
+ - added unittests for Jinja2 extension
+ - updated user enrolment tag to only enrol in specified alternatives (plus the control)
+
+1.3.0 (withdrawn)
+~~~~~~~~~~~~~~~~~
+ - fork to ConsumerAffairs
+ - added jinja2 support
+ - removed some older python version from Tox
+ - removed dependency on jQuery, dropped support for IE8
+
+pre-1.3.0 (unreleased)
+~~~~~~~~~~~~~~~~~~~~~~
  - Conform to common expectations in `setup.py`:
     - Separate `install_requires` and `tests_require` (not reading from `requirements.txt`)
     - Add trove classifiers including Python and Django supported versions

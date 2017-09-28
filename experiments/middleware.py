@@ -9,6 +9,7 @@ except ImportError:
 
 
 class ExperimentsRetentionMiddleware(MiddlewareMixin):
+
     def process_response(self, request, response):
         # Don't track, failed pages, ajax requests, logged out users or widget impressions.
         # We detect widgets by relying on the fact that they are flagged as being embedable
@@ -19,3 +20,9 @@ class ExperimentsRetentionMiddleware(MiddlewareMixin):
         experiment_user.visit()
 
         return response
+
+
+class ConfirmHumanMiddleware(MiddlewareMixin):
+
+    def process_request(self, request):
+        participant(request).confirm_human()
