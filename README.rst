@@ -393,6 +393,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.3.2
+~~~~~
+ - added confirm_human middleware
+
 1.3.1
 ~~~~~
  - added unittests for Jinja2 extension
