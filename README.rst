@@ -101,10 +101,20 @@ If you want to use the built in retention goals you will need to include the ret
 
     MIDDLEWARE_CLASSES [
         ...
+        'experiments.middleware.ConfirmHumanMiddleware',
         'experiments.middleware.ExperimentsRetentionMiddleware',
     ]
 
 *Note, more configuration options are detailed below.*
+
+
+Note: `ConfirmHumanMiddleware` is optional, not needed it you plan on running only template-based tests.
+If used, it should come after these classes:
+
+::
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+
 
 
 Jinja2:
@@ -382,6 +392,10 @@ See conf.py for other settings
 
 Changelog
 ---------
+
+1.3.2
+~~~~~
+ - added confirm_human middleware
 
 1.3.1
 ~~~~~

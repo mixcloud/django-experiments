@@ -109,6 +109,8 @@ class ExperimentsJinjaExtensionTests(TestCase):
     def setUp(self):
         self.env = MagicMock()
         self.parser = MagicMock()
+        self.parser.stream.__iter__ = MagicMock()
+        self.parser.stream.__next__ = MagicMock()
         self.extension = ExperimentsExtension(self.env)
 
     def test_parse(self):

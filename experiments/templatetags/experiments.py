@@ -11,10 +11,22 @@ from jinja2 import (
     nodes,
     TemplateSyntaxError,
 )
+import six
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
 from experiments import conf
+
+
+if six.PY2:
+    # Python 2's next() can't handle a non-iterator with a __next__ method.
+    _next = next
+    def next(obj, _next=_next):
+        if getattr(obj, '__next__', None):
+            return obj.__next__()
+        return _next(obj)
+
+    del _next
 
 
 register = template.Library()
