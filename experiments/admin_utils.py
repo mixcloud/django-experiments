@@ -130,9 +130,9 @@ def get_result_context(request, experiment):
     results = {}
 
     for goal in conf.ALL_GOALS:
+        alternatives_conversions = {}
         show_mwu = goal in mwu_goals
 
-        alternatives_conversions = {}
         control_conversions = experiment_counter.goal_count(experiment, conf.CONTROL_GROUP, goal)
         control_conversion_rate = rate(control_conversions, control_participants)
 

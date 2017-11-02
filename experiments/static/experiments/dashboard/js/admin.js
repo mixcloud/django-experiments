@@ -47,8 +47,8 @@ google.load('visualization', '1.0', {'packages':['corechart']});
 
         $('[data-set-state]').click(function() {
             var $this = $(this),
-                $stateSelect = $('#id_state');
-
+                $stateLabel = $('.form-row.state .grp-readonly');
+                $prevStateButton = $('[data-set-state].experiment-state-selected');
             $('[data-set-state]').removeClass('experiment-state-selected');
 
             $.ajax({
@@ -60,10 +60,10 @@ google.load('visualization', '1.0', {'packages':['corechart']});
                 type: 'POST',
                 success: function() {
                     $this.addClass('experiment-state-selected');
-                    $stateSelect.val($this.data('set-state'));
+                    $stateLabel.html($this.html());
                 },
                 error: function() {
-                    $('[data-set-state="' + $stateSelect.val() + '"]').addClass('experiment-state-selected');
+                    $('[data-set-state="' + $prevStateButton.data('set-state') + '"]').addClass('experiment-state-selected');
                 }
             });
 
