@@ -8,7 +8,8 @@ class AdminConditional(models.Model):
     to decide whether an experiment should be enrolled in at a giver request.
     """
     experiment = models.ForeignKey(
-        'Experiment', on_delete=models.CASCADE,
+        'Experiment',
+        on_delete=models.CASCADE,
         related_name='admin_conditionals',
     )
     description = models.CharField(max_length=254, blank=False, null=False)
