@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
+
 from functools import wraps
 import logging
 
@@ -12,15 +13,14 @@ class Experiments(object):
     Initialised by ExperimentsMixin().
     Separate from the mixin to avoid polluting the view class namespace.
     """
-    context = {}
-    instances = ()
-    report = {
-        'auto_enroll': {}
-    }
 
     def __init__(self, request, view):
         from ..models import Experiment
         self.request, self.view = request, view
+        self.report = {
+            'auto_enroll': {},
+        }
+        self.context = {}
         self._build_context()
         self.instances = Experiment.objects.filter(auto_enroll=True)
 
@@ -106,7 +106,6 @@ class Experiments(object):
 
 class ExperimentsMixin(object):
     """Mixin for View classes (class based views)"""
-    experiments = None
 
     def dispatch(self, request, *args, **kwargs):
         """Instantiates the Experiments object for the current request"""
