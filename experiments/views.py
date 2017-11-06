@@ -74,25 +74,22 @@ def decorate(decorators, patterns_rslt):
     ]
 
 def _wrap_instance__resolve(wrapping_functions, instance):
-    if not hasattr(instance,'resolve'): return instance
-    resolve = getattr(instance,'resolve')
-
+    if not hasattr(instance, 'resolve'):
+        return instance
+    
+    resolve = getattr(instance, 'resolve')
     def _wrap_func_in_returned_resolver_match(*args,**kwargs):
         rslt = resolve(*args,**kwargs)
-
-        if not hasattr(rslt,'func'):return rslt
-        f = getattr(rslt,'func')
-
-
-
+        if not hasattr(rslt, 'func'):
+            return rslt
+        
+        f = getattr(rslt, 'func')
         for _f in reversed(wrapping_functions):
             # @decorate the function from inner to outter
             f = _f(f)
 
-        setattr(rslt,'func',f)
-
+        setattr(rslt, 'func', f)
         return rslt
 
     setattr(instance,'resolve',_wrap_func_in_returned_resolver_match)
-
     return instance
