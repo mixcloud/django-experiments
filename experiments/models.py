@@ -1,16 +1,14 @@
 # coding=utf-8
-from django.db import models
-from django.core.serializers.json import DjangoJSONEncoder
-from django.conf import settings
-
-from jsonfield import JSONField
-
 import random
 import json
 
+from django.db import models
+from django.core.serializers.json import DjangoJSONEncoder
+from django.conf import settings
 from experiments import conf
 from experiments.dateutils import now
 from experiments.conditional.models import ConditionalMixin
+from jsonfield import JSONField
 
 
 CONTROL_STATE = 0
