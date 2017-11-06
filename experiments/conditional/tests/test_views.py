@@ -3,86 +3,152 @@ from __future__ import absolute_import
 
 from unittest import TestCase
 
+
 try:
     from unittest import mock
 except ImportError:
     import mock
 
-from ..models import AdminConditional
+from ..views import (
+    Experiments,
+    ExperimentsMixin,
+)
 from ...models import (
-    ENABLED_STATE,
-    Experiment,
     CONTROL_STATE,
+    Experiment,
+    ENABLED_STATE,
 )
 
+class MockBaseView(mock.MagicMock):
 
-class ConditionalEnrollmentTestCase(TestCase):
+    def dispatch(self, request, *args, **kwargs):
+        pass
+
+
+class ExperimentsMixinTestCase(TestCase):
 
     def setUp(self):
-        self.conditional_true = AdminConditional(
-            template='true',
+
+        class MockView(ExperimentsMixin, MockBaseView):
+            pass
+
+        self.view = MockView()
+        self.request = mock.MagicMock()
+        self.response = mock.MagicMock()
+
+    def test_initialize_experiments_mixin(self):
+        with mock.patch.object(MockBaseView, 'dispatch') as super_dispatch:
+            super_dispatch.return_value = self.response
+            response = self.view.dispatch(self.request)
+            self.assertIs(response, self.response)
+            super_dispatch.assert_called_once_with(self.request)
+
+
+class ExperimentsTestCase(TestCase):
+
+    def setUp(self):
+
+        class MockView(ExperimentsMixin, MockBaseView):
+            pass
+
+        self.view = MockView()
+        self.request = mock.MagicMock()
+        self.response = mock.MagicMock()
+
+    def tearDown(self):
+        Experiment.objects.all().delete()
+
+    def test_no_experiments(self):
+        instance = Experiments(self.request, self.view)
+        with mock.patch('experiments.models'
+                        '.Experiment.should_auto_enroll') as sae:
+            instance.conditionally_enroll()
+            sae.assert_not_called()
+
+    def test_wo_auto_enrollable_experiments(self):
+        Experiment.objects.create(
+            name="some_experiment",
+            state=ENABLED_STATE,
+            auto_enroll=False,
         )
-        self.conditional_false = AdminConditional(
-            template='no no no',
-        )
-        self.experiment = Experiment.objects.create(
-            name='automatic_experiment',
-            alternatives={
-                'control': 'stuff',
-                'variant_1': 'stuff',
-            },
+        instance = Experiments(self.request, self.view)
+        with mock.patch('experiments.models'
+                        '.Experiment.should_auto_enroll') as sae:
+            instance.conditionally_enroll()
+            sae.assert_not_called()
+
+    @mock.patch('experiments.utils.participant')
+    def test_w_auto_enrollable_experiment(self, participant):
+        Experiment.objects.create(
+            name="some_experiment",
             state=ENABLED_STATE,
             auto_enroll=True,
         )
+        instance = Experiments(self.request, self.view)
+        with mock.patch(
+                'experiments.models.Experiment.should_auto_enroll') as sae:
+            sae.return_value = False
+            instance.conditionally_enroll()
+            sae.assert_called_once_with(self.request)
+        participant.assert_called_once_with(self.request)
+
+    @mock.patch('experiments.utils.participant')
+    def test_w_auto_enrollable_inactive_experiment(self, participant):
+        Experiment.objects.create(
+            name="some_experiment",
+            state=CONTROL_STATE,
+            auto_enroll=True,
+        )
+        instance = Experiments(self.request, self.view)
+        with mock.patch(
+                'experiments.models.Experiment.should_auto_enroll') as sae:
+            sae.return_value = True
+            instance.conditionally_enroll()
+            sae.assert_called_once_with(self.request)
+        participant.assert_called_once_with(self.request)
+
+
+class ExperimentsContextTestCase(TestCase):
+
+    def setUp(self):
+        self.view = mock.MagicMock()
         self.request = mock.MagicMock()
+        self.instance = Experiments(self.request, self.view)
 
-    def tearDown(self):
-        if self.conditional_false.id:
-            self.conditional_false.delete()
-        if self.conditional_true.id:
-            self.conditional_true.delete()
-        self.experiment.delete()
+        class A(object):
+            b = "B"
+            def foo(self):
+                return 'bar'
+            @property
+            def prop(self):
+                return 123
 
-    def test_should_ot_enroll_set_to_false(self):
-        self.experiment.auto_enroll = False
-        self.experiment.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
+        self.a = A()
 
-    def test_should_enroll_single_condition(self):
-        self.conditional_true.experiment = self.experiment
-        self.conditional_true.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertTrue(value)
+    def test_add_method_to_context(self):
+        self.instance._add_to_context(self.a, 'foo')
+        self.assertNotIn('foo', self.instance.context)
+        value = self.a.foo()
+        self.assertEqual(value, 'bar')
+        self.assertEqual(self.instance.context['foo'], 'bar')
 
-    def test_should_not_enroll_single_condition(self):
-        self.conditional_false.experiment = self.experiment
-        self.conditional_false.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
+    def test_add_unknown_method_to_context(self):
+        self.instance._add_to_context(self.a, 'bar')
+        self.assertNotIn('foo', self.instance.context)
+        with self.assertRaises(AttributeError):
+            self.a.bar()
+        self.assertNotIn('foo', self.instance.context)
 
-    def test_should_enroll_multiple_conditions(self):
-        self.conditional_false.experiment = self.experiment
-        self.conditional_false.save()
-        self.conditional_true.experiment = self.experiment
-        self.conditional_true.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertTrue(value)
+    def test_add_attribute_to_context(self):
+        self.instance._add_to_context(self.a, 'b')
+        self.assertIn('b', self.instance.context)
+        self.assertEqual(self.instance.context['b'], 'B')
+        value = self.a.b
+        self.assertEqual(value, 'B')
 
-    def test_should_not_enroll_no_alternatives(self):
-        self.conditional_true.experiment = self.experiment
-        self.conditional_true.save()
-        self.experiment.alternatives = {}
-        self.experiment.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
-
-    def test_should_not_enroll_no_conditionals(self):
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
-
-    def test_should_not_enroll_disabled(self):
-        self.experiment.state = CONTROL_STATE
-        self.experiment.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
+    def test_add_property_to_context(self):
+        self.instance._add_to_context(self.a, 'prop')
+        self.assertIn('prop', self.instance.context)
+        self.assertEqual(self.instance.context['prop'], 123)
+        value = self.a.prop
+        self.assertEqual(value, 123)

@@ -101,7 +101,7 @@ class Experiments(object):
         except AttributeError:
             pass  # MagicMock has no __name__
         else:
-            setattr(self.view, name, add_to_context(method))
+            setattr(obj, name, add_to_context(method))
 
 
 class ExperimentsMixin(object):
