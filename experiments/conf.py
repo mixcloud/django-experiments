@@ -28,5 +28,4 @@ BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|li
 
 CONTEXT_VARS = {
     'user': 'user',
-
 }
