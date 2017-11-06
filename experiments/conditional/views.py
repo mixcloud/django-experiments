@@ -20,12 +20,9 @@ class Experiments(object):
 
     def __init__(self, request, view):
         from ..models import Experiment
-
         self.request, self.view = request, view
         self._build_context()
-        self.instances = Experiment.objects.filter(
-            auto_enroll=True,
-        )
+        self.instances = Experiment.objects.filter(auto_enroll=True)
 
     def _build_context(self):
         self.context.update(request=self.request)
@@ -40,7 +37,6 @@ class Experiments(object):
         Cached on the request.
         """
         from ..utils import participant
-
         return participant(self.request)
 
     def conditionally_enroll(self):
