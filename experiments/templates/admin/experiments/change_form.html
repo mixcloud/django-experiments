@@ -1,6 +1,7 @@
 {% extends "admin/change_form.html" %}
 
-{% block extrastyle %}{{ block.super }}
+{% block extrastyle %}
+    {{ block.super }}
     <style type="text/css">
         .grp-object-tools a.experiment-state-toggle {
             background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #4fb2d3),color-stop(100%, #309bbf));
@@ -14,13 +15,22 @@
     </style>
 {% endblock extrastyle %}
 
-{% block content_title %}{% if original %}<h1>{{ original.name }}</h1>{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block content_title %}
+    {% if original %}
+        <h1>{{ original.name }}</h1>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
 
 {% block object-tools %}
     {{ block.super }}
 
     {% if original %}
-        <h5 class="experiment-dates">{{ original.start_date }} &dash; {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}</h5>
+        <h5 class="experiment-dates">
+            {{ original.start_date }} &dash;
+            {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}
+        </h5>
 
         <div class="module experiment-results-container">
             {% include "admin/experiments/results_table.html" %}
