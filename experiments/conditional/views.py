@@ -1,8 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
-
-import logging
 from functools import wraps
+import logging
 
 logger = logging.getLogger(__name__)
 
