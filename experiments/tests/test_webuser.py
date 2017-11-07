@@ -18,7 +18,10 @@ from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_
 from experiments.signal_handlers import transfer_enrollments_to_user
 from experiments.utils import participant
 
-from mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 import random
 

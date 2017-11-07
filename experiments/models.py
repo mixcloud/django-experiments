@@ -1,14 +1,14 @@
-from django.db import models
-from django.core.serializers.json import DjangoJSONEncoder
-from django.conf import settings
-
-from jsonfield import JSONField
-
+# coding=utf-8
 import random
 import json
 
-from experiments.dateutils import now
+from django.db import models
+from django.core.serializers.json import DjangoJSONEncoder
+from django.conf import settings
 from experiments import conf
+from experiments.dateutils import now
+from experiments.conditional.models import ConditionalMixin
+from jsonfield import JSONField
 
 
 CONTROL_STATE = 0
@@ -22,16 +22,15 @@ STATES = (
 )
 
 
-class Experiment(models.Model):
+class Experiment(ConditionalMixin, models.Model):
     name = models.CharField(primary_key=True, max_length=128)
     description = models.TextField(default="", blank=True, null=True)
     alternatives = JSONField(default={}, blank=True)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
-
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
-
-    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(
+        default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
     def is_displaying_alternatives(self):
@@ -83,6 +82,21 @@ class Experiment(models.Model):
         else:
             return random.choice(list(self.alternatives))
 
+    @property
+    def alternative_keys(self):
+        return list(self.alternatives.keys())
+
+    @property
+    def has_alternatives(self):
+        """
+        When an experiment is created it only has 'control' alternative,
+        until an `enroll` command (template tag or WebUser.enroll() method)
+        is first called.
+
+        Note: PUMA-83 will need to introduce some changes to this behaviour
+        """
+        return len(self.alternative_keys) > 1
+
     def __unicode__(self):
         return self.name
 
@@ -92,11 +106,12 @@ class Experiment(models.Model):
             'start_date': self.start_date,
             'end_date': self.end_date,
             'state': self.state,
+            'auto_enroll': self.auto_enroll,
             'description': self.description,
             'relevant_chi2_goals': self.relevant_chi2_goals,
             'relevant_mwu_goals': self.relevant_mwu_goals,
             'default_alternative': self.default_alternative,
-            'alternatives': ','.join(self.alternatives.keys()),
+            'alternatives': ','.join(self.alternative_keys),
         }
         return data
 
@@ -127,5 +142,3 @@ def weighted_choice(choices):
         upto += w
         if upto >= r:
             return c
-
-

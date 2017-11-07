@@ -1,13 +1,22 @@
+# coding=utf-8
 from django.contrib.auth.models import User
 from django.template import Template, Context
 from django.test import TestCase, override_settings, RequestFactory
 from jinja2 import TemplateSyntaxError
-from mock import (
-    ANY,
-    call,
-    MagicMock,
-    patch,
-)
+try:
+    from unittest.mock import (
+        ANY,
+        call,
+        MagicMock,
+        patch,
+    )
+except ImportError:
+    from mock import (
+        ANY,
+        call,
+        MagicMock,
+        patch,
+    )
 
 from experiments.models import Experiment
 from experiments.templatetags.experiments import (

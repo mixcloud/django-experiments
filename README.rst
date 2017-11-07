@@ -393,6 +393,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.3.3
+~~~~~
+ - added experiment conditionals and auto-enrollment
+
 1.3.2
 ~~~~~
  - added confirm_human middleware

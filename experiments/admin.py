@@ -1,22 +1,31 @@
+# coding=utf-8
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django import forms
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    JsonResponse,
+)
 from django.utils import timezone
 from experiments.admin_utils import get_result_context
 from experiments.models import Experiment
 from experiments import conf
 from django.conf.urls import url
 from experiments.utils import participant
+from experiments.conditional.admin import AdminConditionalInline
 
 
+@admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'end_date', 'state')
-    list_filter = ('state', 'start_date', 'end_date')
+    list_display = ('name', 'start_date', 'end_date', 'state', 'auto_enroll')
+    list_filter = ('state', 'start_date', 'end_date', 'auto_enroll')
     ordering = ('-start_date',)
     search_fields = ('=name',)
     actions = None
-    readonly_fields = ['start_date', 'end_date']
+    readonly_fields = ('start_date', 'end_date', 'state')
+    inlines = (AdminConditionalInline,)
 
     def get_fieldsets(self, request, obj=None):
         """
@@ -24,7 +33,7 @@ class ExperimentAdmin(admin.ModelAdmin):
          - default_alternative can only be changed
          - name can only be set on Add
         """
-        main_fields = ('description', 'start_date', 'end_date', 'state')
+        main_fields = ('description', 'start_date', 'end_date', 'state',)
 
         if obj:
             main_fields += ('default_alternative',)
@@ -35,13 +44,14 @@ class ExperimentAdmin(admin.ModelAdmin):
             (None, {
                 'fields': main_fields,
             }),
+            ('Auto-enrollment', {
+                'fields': ('auto_enroll',),
+            }),
             ('Relevant Goals', {
                 'classes': ('collapse', 'hidden-relevant-goals'),
                 'fields': ('relevant_chi2_goals', 'relevant_mwu_goals'),
-            })
+            }),
         )
-
-    # --------------------------------------- Default alternative
 
     def get_form(self, request, obj=None, **kwargs):
         """
@@ -154,6 +164,3 @@ class ExperimentAdmin(admin.ModelAdmin):
         experiment.save()
 
         return HttpResponse()
-
-admin.site.register(Experiment, ExperimentAdmin)
-
