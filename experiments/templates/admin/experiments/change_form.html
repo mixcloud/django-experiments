@@ -1,20 +1,5 @@
 {% extends "admin/change_form.html" %}
 
-{% block extrastyle %}
-    {{ block.super }}
-    <style type="text/css">
-        .grp-object-tools a.experiment-state-toggle {
-            background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #4fb2d3),color-stop(100%, #309bbf));
-            background: -moz-linear-gradient(#4fb2d3,#309bbf);
-            background: -webkit-linear-gradient(#4fb2d3,#309bbf);
-            background: linear-gradient(#4fb2d3,#309bbf);
-        }
-        table.relevant-goals {
-            margin-bottom: 1em;
-        }
-    </style>
-{% endblock extrastyle %}
-
 {% block content_title %}
     {% if original %}
         <h1>{{ original.name }}</h1>

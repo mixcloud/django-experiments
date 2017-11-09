@@ -47,7 +47,7 @@ google.load('visualization', '1.0', {'packages':['corechart']});
 
         $('[data-set-state]').click(function() {
             var $this = $(this),
-                $stateLabel = $('.form-row.state .grp-readonly');
+                $stateLabel = $('.form-row.state .grp-readonly, .form-row.field-state .readonly');
                 $prevStateButton = $('[data-set-state].experiment-state-selected');
             $('[data-set-state]').removeClass('experiment-state-selected');
 
@@ -157,6 +157,10 @@ google.load('visualization', '1.0', {'packages':['corechart']});
                 setGoalList(goalType, goalList);
             }
         });
+
+        // Tweak appearance of Alternatives inline
+        $('.js-alternatives').prependTo('#experimentalternative_set-group');
+
     });
 
 })(django.jQuery);

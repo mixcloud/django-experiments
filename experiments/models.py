@@ -1,14 +1,21 @@
 # coding=utf-8
 import random
 import json
+import logging
 
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
+from django.utils.encoding import python_2_unicode_compatible
+
 from experiments import conf
 from experiments.dateutils import now
 from experiments.conditional.models import ConditionalMixin
 from jsonfield import JSONField
+
+
+logger = logging.getLogger(__file__)
 
 
 CONTROL_STATE = 0
@@ -23,7 +30,12 @@ STATES = (
 
 
 class Experiment(ConditionalMixin, models.Model):
-    name = models.CharField(primary_key=True, max_length=128)
+    name = models.CharField(
+        primary_key=True,
+        max_length=128,
+        help_text='This field is the primary key and is only editable'
+                  ' when creating the experiment',
+    )
     description = models.TextField(default="", blank=True, null=True)
     alternatives = JSONField(default={}, blank=True)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
@@ -80,6 +92,12 @@ class Experiment(ConditionalMixin, models.Model):
         if all('weight' in alt for alt in self.alternatives.values()):
             return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
         else:
+            if any('weight' in alt for alt in self.alternatives.values()):
+                logger.warning(
+                    'Ignoring weights for experiment {}, all alternatives'
+                    ' need to have specified weights.'.format(
+                        self.name,
+                    ))
             return random.choice(list(self.alternatives))
 
     @property
@@ -97,7 +115,8 @@ class Experiment(ConditionalMixin, models.Model):
         """
         return len(self.alternative_keys) > 1
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
     def to_dict(self):
@@ -119,6 +138,35 @@ class Experiment(ConditionalMixin, models.Model):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
 
+class ExperimentAlternative(models.Model):
+    experiment = models.ForeignKey(Experiment)
+    name = models.CharField(max_length=254, blank=False, null=False)
+    weight = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)],
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+    class Meta:
+        ordering = ('name',)
+
+    @python_2_unicode_compatible
+    def __str__(self):
+        if self.weight:
+            return '{} ({})'.format(self.name, self.weight)
+        return self.name
+
+    def to_dict(self):
+        representation = {
+            'name': self.name,
+            'enabled': True,
+        }
+        if self.weight is not None:
+            representation.update(weight=self.weight)
+        return representation
+
+
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
     user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
@@ -130,7 +178,8 @@ class Enrollment(models.Model):
     class Meta:
         unique_together = ('user', 'experiment')
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return u'%s - %s' % (self.user, self.experiment)
 
 

@@ -1,6 +1,5 @@
 # coding=utf-8
-import random
-
+from __future__ import division
 from django.db import IntegrityError
 
 from experiments.models import Enrollment
@@ -77,30 +76,47 @@ class WebUser(object):
         experiment = experiment_manager.get_experiment(experiment_name)
 
         if experiment:
-            if experiment.is_displaying_alternatives():
-                alternatives_including_control = list(set(
-                    alternatives + [conf.CONTROL_GROUP]))
-                if isinstance(alternatives, collections.Mapping):
-                    if conf.CONTROL_GROUP not in alternatives:
-                        experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
-                    for alternative, weight in alternatives.items():
-                        experiment.ensure_alternative_exists(alternative, weight)
-                else:
-                    for alternative in alternatives_including_control:
-                        experiment.ensure_alternative_exists(alternative)
 
-                assigned_alternative = self._get_enrollment(experiment)
-                if assigned_alternative:
-                    chosen_alternative = assigned_alternative
-                elif experiment.is_accepting_new_users():
-                    if force_alternative:
-                        chosen_alternative = force_alternative
-                    else:
-                        chosen_alternative = random.choice(
-                            alternatives_including_control)
-                    self._set_enrollment(experiment, chosen_alternative)
+            if not experiment.is_displaying_alternatives():
+                return experiment.default_alternative
+
+            if not isinstance(alternatives, collections.Mapping):
+                if any(':' in alt for alt in alternatives):
+                    parsed_alternatives = {}
+                    for alt in alternatives:
+                        try:
+                            name, weight = alt.split(':', 1)
+                        except ValueError:
+                            name, weight = alt, None
+                        else:
+                            weight = int(weight)
+                        parsed_alternatives[name] = weight
+                    alternatives = parsed_alternatives
+
+            if isinstance(alternatives, collections.Mapping):
+                if conf.CONTROL_GROUP not in alternatives:
+                    total_weight = sum(filter(
+                        alt.get('weight') for alt in alternatives.values()))
+                    average_weight = round(total_weight / len(alternatives))
+                    experiment.ensure_alternative_exists(
+                        conf.CONTROL_GROUP, average_weight)
+                for alternative, weight in alternatives.items():
+                    experiment.ensure_alternative_exists(alternative, weight)
+
             else:
-                chosen_alternative = experiment.default_alternative
+                alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
+                for alternative in alternatives_including_control:
+                    experiment.ensure_alternative_exists(alternative)
+
+            assigned_alternative = self._get_enrollment(experiment)
+            if assigned_alternative:
+                chosen_alternative = assigned_alternative
+            elif experiment.is_accepting_new_users():
+                if force_alternative:
+                    chosen_alternative = force_alternative
+                else:
+                    chosen_alternative = experiment.random_alternative()
+                self._set_enrollment(experiment, chosen_alternative)
 
         return chosen_alternative
 

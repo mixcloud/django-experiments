@@ -1,5 +1,7 @@
 # coding=utf-8
 from django.db import models
+from django.template import Template, Context
+from django.utils.encoding import python_2_unicode_compatible
 
 
 class AdminConditional(models.Model):
@@ -18,13 +20,19 @@ class AdminConditional(models.Model):
     class Meta:
         verbose_name = 'conditional'
 
+    @python_2_unicode_compatible
+    def __str__(self):
+        return self.description
+
     def evaluate(self, request):
         context = request.experiments.context
         return self._parse_template(context)
 
     def _parse_template(self, context):
         # TODO actually implement
-        return 'true' in self.template
+        django_template = Template(self.template)
+        rendered_template = django_template.render(Context(context))
+        return 'true' in rendered_template
 
 
 class ConditionalMixin(models.Model):
@@ -34,8 +42,9 @@ class ConditionalMixin(models.Model):
     """
     auto_enroll = models.BooleanField(
         default=False, null=False, blank=True,
-        help_text='Automatically enroll visitors in this experiment if at'
-                  ' least one of Conditionals (below) evaluates positively.',
+        help_text='Only experiments created via the admin are auto-enrollable.'
+                  ' At least on of the conditionals below need to evaluate'
+                  ' positively in order for the experiment to be enrollable.',
     )
 
     class Meta:

@@ -176,7 +176,7 @@ class ExperimentsExtension(ext.Extension):
     def parse(self, parser):
         """
         Read the first token of a tag (i.e. the tag name)
-        and call apropriate parser method.
+        and call appropriate parser method.
 
         Parse methods are executed only once per process, when templates
         compile for the first time.
