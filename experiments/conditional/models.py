@@ -1,9 +1,12 @@
 # coding=utf-8
 import re
+
 from django.db import models
 from django.template import Template, Context
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
+
+from .utils import xml_bool
 
 
 class AdminConditional(models.Model):
@@ -47,10 +50,9 @@ class AdminConditional(models.Model):
 
         # render with Django engine
         django_template = Template(template)
-        rendered_template = django_template.render(Context(context))
-
-        # TODO parse as XML
-        return 'true' in rendered_template
+        rendered_template = '<any_of>{}</any_of>'.format(
+            django_template.render(Context(context)))
+        return xml_bool(rendered_template)
 
     def get_variables(self):
         return self.variable_pattern.findall(self.template)
