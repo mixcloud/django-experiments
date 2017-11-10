@@ -16,35 +16,41 @@ class AdminConditionalForm(forms.ModelForm):
         super(AdminConditionalForm, self).__init__(*args, **kwargs)
         if not self.instance.pk:
             self.fields['copy_from'].required = True
+            self.fields['copy_from'].label = 'Template'
+            self.fields['copy_from'].help_text = (
+                'Save the experiment to be able to configure new conditionals')
         else:
             self.fields['description'].required = True
             self.fields['template'].required = True
 
     def save(self, commit=True):
         if not self.instance.pk:
-            template_pk = self.cleaned_data['copy_from']
-            conditional_template = AdminConditionalTemplate.objects.get(
-                pk=template_pk)
+            conditional_template = self.cleaned_data['copy_from']
             self.instance.description = conditional_template.description
             self.instance.template = conditional_template.template
         return super(AdminConditionalForm, self).save(commit)
 
     class Meta:
         model = AdminConditional
+        fields = (
+            'copy_from',
+            'description',
+            'template',
+            'template_values',
+        )
 
 
 class AdminConditionalInline(admin.StackedInline):
     model = AdminConditional
-    #form = AdminConditionalForm
+    form = AdminConditionalForm
     extra = 0
-    fields = (
-        'copy_from',
-        'description',
-        'template',
-        'template_values',
-    )
+    fields = AdminConditionalForm.Meta.fields
 
 
 @admin.register(AdminConditionalTemplate)
 class AdminConditionalTemplateAdmin(admin.ModelAdmin):
-    pass
+    fields = (
+        'description',
+        'template',
+        'template_values',
+    )

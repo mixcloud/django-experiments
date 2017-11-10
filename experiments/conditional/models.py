@@ -5,11 +5,66 @@ from django.db import models
 from django.template import Template, Context
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
+from django.utils.safestring import mark_safe
 
 from .utils import xml_bool
 
 
-class AdminConditional(models.Model):
+class VariableMixin(models.Model):
+    template = models.TextField(
+        default='', blank=True, help_text=mark_safe(
+            '<strong>Available XML tags:</strong><br /><code>'
+            '&lt;true /&gt;<br />\n'
+            '&lt;false /&gt;<br />\n'
+            '&lt;all_of&gt;...&lt;/all_of&gt;<br />\n'
+            '&lt;any_of&gt;...&lt;/any_of&gt;\n'
+            '</code><br />'
+            '<strong>Available template context:</strong><br />'
+            'same as the template where {% experiments_auto_enroll %} is'
+            ' being rendered'
+        ))
+    template_values = models.TextField(
+        default='', blank=True, help_text=mark_safe(
+            '<strong>Keys and values</strong> separated by colon ("<strong>:</strong>")<br />'
+            '<strong>Spaces</strong> are trimmed.<br />'
+            '<strong>Quotes</strong> not needed (but they are probably needed in "Template"'
+            ' field).'))
+
+    variable_pattern = re.compile('<<([^<>]+)>>')
+
+    class Meta:
+        abstract = True
+
+    def get_variables(self):
+        return self.variable_pattern.findall(self.template)
+
+    @cached_property
+    def variable_values(self):
+        lines = self.template_values.split('\n')
+        lines = filter(None, map(str.strip, lines))
+        for line in lines:
+            key, value = line.split(':', 1)
+            yield key.strip(), value.strip()
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        self._update_template_varialbes()
+        super(VariableMixin, self).save(
+            force_insert, force_update, using, update_fields)
+
+    def _update_template_varialbes(self):
+        missing_variables = set()
+        defined_variables = [k for k, _ in self.variable_values]
+        for variable in self.get_variables():
+            if variable not in defined_variables:
+                missing_variables.add(variable)
+        if self.template_values and not self.template_values.endswith('\n'):
+            self.template_values += '\n'
+        for missing_variable in missing_variables:
+            self.template_values += '{}: \n'.format(missing_variable)
+
+
+class AdminConditional(VariableMixin, models.Model):
     """
     This model that evaluates a Django template (editable in the admin)
     to decide whether an experiment should be enrolled in at a giver request.
@@ -20,12 +75,8 @@ class AdminConditional(models.Model):
         related_name='admin_conditionals',
     )
     description = models.CharField(max_length=254, blank=True, null=False)
-    template = models.TextField(default='', blank=True)
     copy_from = models.ForeignKey(
         'AdminConditionalTemplate', null=True, blank=True)
-    template_values = models.TextField(default='', blank=True)
-
-    variable_pattern = re.compile('<<([^<>]+)>>')
 
     class Meta:
         verbose_name = 'conditional'
@@ -55,41 +106,12 @@ class AdminConditional(models.Model):
             django_template.render(Context(context)))
         return xml_bool(rendered_template)
 
-    def get_variables(self):
-        return self.variable_pattern.findall(self.template)
 
-    @cached_property
-    def variable_values(self):
-        lines = self.template_values.split('\n')
-        lines = filter(None, map(str.strip, lines))
-        for line in lines:
-            key, value = line.split(':', 1)
-            yield key.strip(), value.strip()
-
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
-        self._update_template_varialbes()
-        super(AdminConditional, self).save(
-            force_insert, force_update, using, update_fields)
-
-    def _update_template_varialbes(self):
-        missing_variables = set()
-        defined_variables = [k for k, _ in self.variable_values]
-        for variable in self.get_variables():
-            if variable not in defined_variables:
-                missing_variables.add(variable)
-        if self.template_values and not self.template_values.endswith('\n'):
-            self.template_values += '\n'
-        for missing_variable in missing_variables:
-            self.template_values += '{}: \n'.format(missing_variable)
-
-
-class AdminConditionalTemplate(models.Model):
+class AdminConditionalTemplate(VariableMixin, models.Model):
     """
 
     """
     description = models.CharField(max_length=254, blank=False, null=False)
-    template = models.TextField(default='', blank=True)
 
     class Meta:
         verbose_name = 'conditional template'
