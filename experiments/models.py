@@ -159,7 +159,6 @@ class ExperimentAlternative(models.Model):
 
     def to_dict(self):
         representation = {
-            'name': self.name,
             'enabled': True,
         }
         if self.weight is not None:

@@ -162,6 +162,16 @@ def _experiment_enroll(context, experiment_name, *alternatives, **kwargs):
     return user.enroll(experiment_name, list(alternatives))
 
 
+@register.assignment_tag(takes_context=True)
+def experiment_enrolled_alternative(context, experiment_name):
+    return _experiment_enroll(context, experiment_name)
+
+
+def _experiment_enrolled_alternative(context, experiment_name):
+    user = participant(request=context.get('request', None))
+    return user.get_alternative(experiment_name)
+
+
 class ExperimentsExtension(ext.Extension):
     """Jinja2 Extension for django-experiments"""
 
@@ -170,6 +180,7 @@ class ExperimentsExtension(ext.Extension):
         'experiment',
         'experiments_confirm_human',
         'experiment_enroll',
+        'experiment_enrolled_alternative',
         'experiment_goal',
     }
 
@@ -350,6 +361,56 @@ class ExperimentsExtension(ext.Extension):
         Result gets added ("assigned") back into template context.
         """
         return _experiment_enroll(context, experiment_name, *alternatives)
+
+    def parse_experiment_enrolled_alternative(self, parser):
+        """
+        Parse {% experiment_enrolled_alternative <experiment_name> %} tags
+        """
+
+        lineno = parser.stream.current.lineno
+
+        # list of nodes that will be used when calling the callback:
+        args = []
+
+        # get experiment name from token
+        experiment_name = parser.stream.current
+        args.append(self._name_or_const(experiment_name))
+        next(parser.stream)
+
+        # we will also need the context in the callback:
+        args.append(nodes.ContextReference())
+
+        # expecting `as` after the alternatives:
+        if not self._token_as(parser):
+            raise TemplateSyntaxError(
+                'Syntax should be like: '
+                '{% experiment_enrolled_alternative "experiment_name"'
+                ' as some_variable %}',
+                lineno,
+            )
+        next(parser.stream)
+
+        # parse what comes after `as`:
+        target = parser.parse_assign_target()
+
+        # create a callback node that will be executed on render:
+        call_node = self.call_method(
+            'render_experiment_enrolled_alternative', args, lineno=lineno)
+
+        # return an assignment node that will trigger the callback:
+        return nodes.Assign(target, call_node, lineno=lineno)
+
+    def render_experiment_enrolled_alternative(self, experiment_name, context):
+        """
+        Callback to render {% experiment_enrolled_alternative ... %} tags.
+
+        This method does not actually render anything, but is called at
+        render time so keeping the name for consistency.
+        Result gets added ("assigned") back into template context.
+        """
+        alternative = _experiment_enrolled_alternative(
+            context, experiment_name)
+        return alternative
 
     # helpers #
 

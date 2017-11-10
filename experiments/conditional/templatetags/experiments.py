@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+import json
 from django import template
 from jinja2 import (
     ext,
@@ -17,12 +18,18 @@ def _auto_enroll(context):
     request = context['request']
     request.experiments = Experiments(context)
     request.experiments.conditionally_enroll()
-
+    if request.user.is_staff:
+        report = json.dumps(request.experiments.report)
+        script = '<script>window.ca_experiments = {};</script>'.format(
+            report,
+        )
+        return script
+    return ''
 
 @register.simple_tag(takes_context=True)
 def experiments_auto_enroll(context):
     """Template tag for regular Django templates"""
-    _auto_enroll(context)
+    return _auto_enroll(context)
 
 
 class AutoEnrollExperimentsExtension(ext.Extension):
@@ -60,5 +67,4 @@ class AutoEnrollExperimentsExtension(ext.Extension):
 
     def render_experiments_auto_enroll(self, context, caller):
         """Callback that renders {% experiments_auto_enroll %} tag"""
-        _auto_enroll(context)
-        return nodes.Markup()  # empty node
+        return nodes.Markup(_auto_enroll(context))
