@@ -119,6 +119,20 @@ body.model-experiment .js-alternatives {
     margin-bottom: 5px;
 }
 
+/* conditionals inline */
+#admin_conditionals-group .inline-related .form-row {
+    display: none;
+}
+#admin_conditionals-group .inline-related .form-row.copy_from {
+    display: block;
+}
+#admin_conditionals-group .inline-related.has_original .form-row {
+    display: block;
+}
+#admin_conditionals-group .inline-related.has_original .form-row.copy_from {
+    display: none;
+}
+
 /* misc */
 body.experiments-experiment table.relevant-goals,
 body.model-experiment table.relevant-goals {

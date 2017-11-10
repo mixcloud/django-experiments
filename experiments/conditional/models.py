@@ -19,9 +19,10 @@ class AdminConditional(models.Model):
         on_delete=models.CASCADE,
         related_name='admin_conditionals',
     )
-    description = models.CharField(max_length=254, blank=False, null=False)
-    template = models.TextField(default='')
-    copy_from = models.ForeignKey('AdminConditionalTemplate', null=True)
+    description = models.CharField(max_length=254, blank=True, null=False)
+    template = models.TextField(default='', blank=True)
+    copy_from = models.ForeignKey(
+        'AdminConditionalTemplate', null=True, blank=True)
     template_values = models.TextField(default='', blank=True)
 
     variable_pattern = re.compile('<<([^<>]+)>>')
