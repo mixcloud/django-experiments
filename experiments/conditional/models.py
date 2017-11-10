@@ -1,7 +1,9 @@
 # coding=utf-8
+import re
 from django.db import models
 from django.template import Template, Context
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.functional import cached_property
 
 
 class AdminConditional(models.Model):
@@ -16,6 +18,10 @@ class AdminConditional(models.Model):
     )
     description = models.CharField(max_length=254, blank=False, null=False)
     template = models.TextField(default='')
+    copy_from = models.ForeignKey('AdminConditionalTemplate', null=True)
+    template_values = models.TextField(default='', blank=True)
+
+    variable_pattern = re.compile('<<([^<>]+)>>')
 
     class Meta:
         verbose_name = 'conditional'
@@ -29,10 +35,66 @@ class AdminConditional(models.Model):
         return self._parse_template(context)
 
     def _parse_template(self, context):
-        # TODO actually implement
-        django_template = Template(self.template)
+        # substitute variables
+        template = self.template
+        for variable, value in self.variable_values:
+            template = re.sub(
+                '<<{}>>'.format(variable),
+                value,
+                template,
+            )
+        template = self.variable_pattern.sub('', template)
+
+        # render with Django engine
+        django_template = Template(template)
         rendered_template = django_template.render(Context(context))
+
+        # TODO parse as XML
         return 'true' in rendered_template
+
+    def get_variables(self):
+        return self.variable_pattern.findall(self.template)
+
+    @cached_property
+    def variable_values(self):
+        lines = self.template_values.split('\n')
+        lines = filter(None, map(str.strip, lines))
+        for line in lines:
+            key, value = line.split(':', 1)
+            yield key.strip(), value.strip()
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        self._update_template_varialbes()
+        super(AdminConditional, self).save(
+            force_insert, force_update, using, update_fields)
+
+    def _update_template_varialbes(self):
+        missing_variables = set()
+        defined_variables = [k for k, _ in self.variable_values]
+        for variable in self.get_variables():
+            if variable not in defined_variables:
+                missing_variables.add(variable)
+        if self.template_values and not self.template_values.endswith('\n'):
+            self.template_values += '\n'
+        for missing_variable in missing_variables:
+            self.template_values += '{}: \n'.format(missing_variable)
+
+
+class AdminConditionalTemplate(models.Model):
+    """
+
+    """
+    description = models.CharField(max_length=254, blank=False, null=False)
+    template = models.TextField(default='', blank=True)
+
+    class Meta:
+        verbose_name = 'conditional template'
+        ordering = ('description',)
+
+    @python_2_unicode_compatible
+    def __str__(self):
+        return self.description
 
 
 class ConditionalMixin(models.Model):

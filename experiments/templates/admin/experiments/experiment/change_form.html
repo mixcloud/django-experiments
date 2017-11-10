@@ -18,7 +18,7 @@
         </h5>
 
         <div class="module experiment-results-container">
-            {% include "admin/experiments/results_table.html" %}
+            {% include "admin/experiments/experiment/results_table.html" %}
         </div>
     {% endif %}
 {% endblock object-tools %}
@@ -27,9 +27,9 @@
     {{ block.super }}
     {% if original %}
         {# These have to be links to get the correct admin styling #}
-        <li><a href="." data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %} experiment-state-toggle">Default/Control</a></li>
-        <li><a href="." data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %} experiment-state-toggle">Track</a></li>
-        <li><a href="." data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %} experiment-state-toggle">Enabled</a></li>
+        <li><a href="../" data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %} experiment-state-toggle">Default/Control</a></li>
+        <li><a href="../" data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %} experiment-state-toggle">Track</a></li>
+        <li><a href="../" data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %} experiment-state-toggle">Enabled</a></li>
     {% endif %}
 {% endblock object-tools-items %}
 
