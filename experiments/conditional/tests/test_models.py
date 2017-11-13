@@ -8,19 +8,19 @@ try:
 except ImportError:
     import mock
 
-from ..models import AdminConditional
-from ...models import (
+from experiments.models import (
     ENABLED_STATE,
     Experiment,
     CONTROL_STATE,
 )
+from experiments.conditional.models import AdminConditional
 
 
 class ConditionalEnrollmentTestCase(TestCase):
 
     def setUp(self):
         self.conditional_true = AdminConditional(
-            template='true',
+            template='<true />',
         )
         self.conditional_false = AdminConditional(
             template='no no no',

@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='adminconditionaltemplate',
-            name='template_values',
+            name='context_code',
             field=models.TextField(blank=True, default='', help_text='Keys and values separated by colon("<strong>:</strong>")<br />Spaces are trimmed.<br />Quotes not needed (but they are probably needed in "Template" field.'),
         ),
         migrations.AlterField(
@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='adminconditional',
-            name='template_values',
+            name='context_code',
             field=models.TextField(blank=True, default=''),
         ),
         migrations.AlterField(

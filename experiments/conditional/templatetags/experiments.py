@@ -26,6 +26,7 @@ def _auto_enroll(context):
         return script
     return ''
 
+
 @register.simple_tag(takes_context=True)
 def experiments_auto_enroll(context):
     """Template tag for regular Django templates"""

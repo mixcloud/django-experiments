@@ -1,13 +1,16 @@
 # coding=utf-8
 import re
+import logging
 
 from django.db import models
 from django.template import Template, Context
 from django.utils.encoding import python_2_unicode_compatible
-from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 
 from .utils import xml_bool
+
+
+logger = logging.getLogger(__file__)
 
 
 class VariableMixin(models.Model):
@@ -21,14 +24,15 @@ class VariableMixin(models.Model):
             '</code><br />'
             '<strong>Available template context:</strong><br />'
             'same as the template where {% experiments_auto_enroll %} is'
-            ' being rendered'
+            ' being rendered.<br />'
+            'Additional context injected from \'Context code\' field below.'
         ))
-    template_values = models.TextField(
-        default='', blank=True, help_text=mark_safe(
-            '<strong>Keys and values</strong> separated by colon ("<strong>:</strong>")<br />'
-            '<strong>Spaces</strong> are trimmed.<br />'
-            '<strong>Quotes</strong> not needed (but they are probably needed in "Template"'
-            ' field).'))
+    context_code = models.TextField(
+        default='', blank=True, null=False, help_text=mark_safe(
+            'Python code that adds additional context to the conditional at '
+            'run time. For extra safety, only names found in '
+            '&lt;&lt;double angle braces&gt;&gt; will be injected into the '
+            'context.'))
 
     variable_pattern = re.compile('<<([^<>]+)>>')
 
@@ -36,38 +40,67 @@ class VariableMixin(models.Model):
         abstract = True
 
     def get_variables(self):
+        """Extract <<varaible_names>> from template as a list of strings"""
         return self.variable_pattern.findall(self.template)
 
-    @cached_property
-    def variable_values(self):
-        lines = self.template_values.split('\n')
-        lines = filter(None, map(str.strip, lines))
-        for line in lines:
-            key, value = line.split(':', 1)
-            yield key.strip(), value.strip()
+    @property
+    def evaled_dict(self):
+        return self._eval_context_code(self.context_code, fail_silently=True)
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
-        self._update_template_varialbes()
+        self._update_template_variables()
         super(VariableMixin, self).save(
             force_insert, force_update, using, update_fields)
 
-    def _update_template_varialbes(self):
-        missing_variables = set()
-        defined_variables = [k for k, _ in self.variable_values]
+    def _update_template_variables(self):
+        """
+        Looks for any <<variable>> (in double brackets) in self.template
+        and makes sure they are defined in self.context_code as well/
+        If missing, appends "variable = None" to context_code.
+        """
+        if self.context_code is None:
+            self.context_code = ''
+        self.context_code.strip()
+        if self.context_code:
+            self.context_code += '\n'
+
+        exec_context = self._eval_context_code(
+            self.context_code, fail_silently=True)
+
         for variable in self.get_variables():
-            if variable not in defined_variables:
-                missing_variables.add(variable)
-        if self.template_values and not self.template_values.endswith('\n'):
-            self.template_values += '\n'
-        for missing_variable in missing_variables:
-            self.template_values += '{}: \n'.format(missing_variable)
+            if variable not in exec_context:
+                self.context_code += '{} = None\n'.format(variable)
+
+    @staticmethod
+    def _eval_context_code(context_code, fail_silently=False):
+        """
+        Produce a Python dict from self.context_code
+
+        Uses `exec` which is EVIL (eval)!
+        `self.context_code` must be trusted at all times.
+        """
+        exec_context = {}
+        try:
+            exec(context_code, exec_context)
+        except Exception as e:
+            if not fail_silently:
+                raise
+            logger.warning(VariableMixin._syntax_error_msg(e))
+            return {}
+        else:
+            del exec_context['__builtins__']
+            return exec_context
+
+    @staticmethod
+    def _syntax_error_msg(exc):
+        return '{}, line {}: "{}"'.format(exc.msg, exc.lineno, exc.text)
 
 
 class AdminConditional(VariableMixin, models.Model):
     """
     This model that evaluates a Django template (editable in the admin)
-    to decide whether an experiment should be enrolled in at a giver request.
+    to decide whether an experiment should be enrolled in at a given request.
     """
     experiment = models.ForeignKey(
         'Experiment',
@@ -86,25 +119,49 @@ class AdminConditional(VariableMixin, models.Model):
         return self.description
 
     def evaluate(self, request):
+        """Produces a boolean value for this conditional + request pair"""
         context = request.experiments.context
-        return self._parse_template(context)
+        # eval from admin:
+        template, approved_context = self._prepare_for_render()
+        # add values from regular template context:
+        complete_context = approved_context.copy()
+        complete_context.update(context)
+        # render the template:
+        rendered_xml = self._render(template, complete_context)
+        # parse the resulting domain-specific XML to get a boolean value:
+        return xml_bool(rendered_xml)
 
-    def _parse_template(self, context):
-        # substitute variables
+    def _prepare_for_render(self):
+        """
+        Prepares context dict to be used when rendering (`exec`)
+        self.template
+
+        Only names found in the template surrounded by double angle
+        brackets (e.g. <<like_this>>) are allowed to enter the context.
+        Just being paranoid.
+
+        Returns template string with brackets stripped and the context.
+        """
         template = self.template
-        for variable, value in self.variable_values:
+        approved_context = {}
+        for variable, value in self.evaled_dict.items():
             template = re.sub(
                 '<<{}>>'.format(variable),
-                value,
+                str(variable),
                 template,
             )
-        template = self.variable_pattern.sub('', template)
+            approved_context.update({variable: value})
+        return template, approved_context
 
-        # render with Django engine
+    @staticmethod
+    def _render(template, context):
+        """
+        Renders the template using context. Wraps result in <any_of> tag
+        """
         django_template = Template(template)
         rendered_template = '<any_of>{}</any_of>'.format(
             django_template.render(Context(context)))
-        return xml_bool(rendered_template)
+        return rendered_template
 
 
 class AdminConditionalTemplate(VariableMixin, models.Model):

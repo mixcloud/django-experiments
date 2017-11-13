@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='adminconditional',
-            name='template_values',
+            name='context_code',
             field=models.TextField(default=''),
         ),
         migrations.AddField(

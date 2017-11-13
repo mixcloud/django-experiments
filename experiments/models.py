@@ -37,7 +37,7 @@ class Experiment(ConditionalMixin, models.Model):
                   ' when creating the experiment',
     )
     description = models.TextField(default="", blank=True, null=True)
-    alternatives = JSONField(default={}, blank=True)
+    alternatives = JSONField(default={}, blank=True, null=False)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
