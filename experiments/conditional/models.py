@@ -65,7 +65,7 @@ class ContextTemplateMixin(models.Model):
         """
         if self.context_code is None:
             self.context_code = ''
-        self.context_code.strip()
+        self.context_code = self.context_code.strip()
         if self.context_code:
             self.context_code += '\n'
 

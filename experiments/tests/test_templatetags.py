@@ -110,6 +110,19 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.parser.stream.__next__ = mock.MagicMock()
         self.extension = ExperimentsExtension(self.env)
 
+    def test_attributes(self):
+        expected_tags = {
+            'experiment',
+            'experiments_confirm_human',
+            'experiment_enroll',
+            'experiment_enrolled_alternative',
+            'experiment_goal',
+        }
+        self.assertEqual(expected_tags, self.extension.tags)
+        for tag in expected_tags:
+            self.assertTrue(hasattr(self.extension, 'parse_{}'.format(tag)))
+            self.assertTrue(hasattr(self.extension, 'render_{}'.format(tag)))
+
     def test_parse(self):
         self.parser.stream.current.value = 'some_tag'
         self.extension.parse_some_tag = mock.MagicMock()

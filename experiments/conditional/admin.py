@@ -41,7 +41,7 @@ class AdminConditionalForm(forms.ModelForm):
             self.instance.description = conditional_template.description
             self.instance.template = conditional_template.template
             self.instance.context_code = conditional_template.context_code
-        return super(AdminConditionalForm, self).save(commit)
+        return super(AdminConditionalForm, self).save(commit=commit)
 
     class Meta:
         model = AdminConditional
