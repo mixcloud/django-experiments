@@ -8,7 +8,7 @@ from jinja2 import (
     nodes,
 )
 
-from ..views import Experiments
+from ..utils import Experiments
 
 
 register = template.Library()

@@ -29,6 +29,7 @@ STATES = (
 )
 
 
+@python_2_unicode_compatible
 class Experiment(ConditionalMixin, models.Model):
     name = models.CharField(
         primary_key=True,
@@ -115,7 +116,6 @@ class Experiment(ConditionalMixin, models.Model):
         """
         return len(self.alternative_keys) > 1
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
@@ -138,6 +138,7 @@ class Experiment(ConditionalMixin, models.Model):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
 
+@python_2_unicode_compatible
 class ExperimentAlternative(models.Model):
     experiment = models.ForeignKey(Experiment)
     name = models.CharField(max_length=254, blank=False, null=False)
@@ -151,7 +152,6 @@ class ExperimentAlternative(models.Model):
     class Meta:
         ordering = ('name',)
 
-    @python_2_unicode_compatible
     def __str__(self):
         if self.weight:
             return '{} ({})'.format(self.name, self.weight)
@@ -166,6 +166,7 @@ class ExperimentAlternative(models.Model):
         return representation
 
 
+@python_2_unicode_compatible
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
     user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
@@ -177,7 +178,6 @@ class Enrollment(models.Model):
     class Meta:
         unique_together = ('user', 'experiment')
 
-    @python_2_unicode_compatible
     def __str__(self):
         return u'%s - %s' % (self.user, self.experiment)
 

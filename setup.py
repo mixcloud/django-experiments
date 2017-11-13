@@ -27,6 +27,7 @@ setup(
         'redis>=2.4.9',
         'django-jinja>=2.3.1',
         'six>=1.10.0',
+        'lxml>=4.1.1,<5',
     ],
     tests_require=[
         'mock>=1.0.1',

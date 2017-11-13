@@ -13,7 +13,11 @@ from .utils import xml_bool
 logger = logging.getLogger(__file__)
 
 
-class VariableMixin(models.Model):
+class ContextTemplateMixin(models.Model):
+    """
+    Mixing for models. Contains common fields and methods related to
+    rendering the conditional template.
+    """
     template = models.TextField(
         default='', blank=True, help_text=mark_safe(
             '<strong>Available XML tags:</strong><br /><code>'
@@ -50,13 +54,13 @@ class VariableMixin(models.Model):
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
         self._update_template_variables()
-        super(VariableMixin, self).save(
+        super(ContextTemplateMixin, self).save(
             force_insert, force_update, using, update_fields)
 
     def _update_template_variables(self):
         """
-        Looks for any <<variable>> (in double brackets) in self.template
-        and makes sure they are defined in self.context_code as well/
+        Looks for any <<variable>> (with double brackets) in self.template
+        and makes sure they are defined in self.context_code as well.
         If missing, appends "variable = None" to context_code.
         """
         if self.context_code is None:
@@ -86,7 +90,7 @@ class VariableMixin(models.Model):
         except Exception as e:
             if not fail_silently:
                 raise
-            logger.warning(VariableMixin._syntax_error_msg(e))
+            logger.warning(ContextTemplateMixin._syntax_error_msg(e))
             return {}
         else:
             del exec_context['__builtins__']
@@ -97,7 +101,7 @@ class VariableMixin(models.Model):
         return '{}, line {}: "{}"'.format(exc.msg, exc.lineno, exc.text)
 
 
-class AdminConditional(VariableMixin, models.Model):
+class AdminConditional(ContextTemplateMixin, models.Model):
     """
     This model that evaluates a Django template (editable in the admin)
     to decide whether an experiment should be enrolled in at a given request.
@@ -114,12 +118,11 @@ class AdminConditional(VariableMixin, models.Model):
     class Meta:
         verbose_name = 'conditional'
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.description
 
     def evaluate(self, request):
-        """Produces a boolean value for this conditional + request pair"""
+        """Produces a boolean value for this conditional+request pair"""
         context = request.experiments.context
         # eval from admin:
         template, approved_context = self._prepare_for_render()
@@ -164,9 +167,12 @@ class AdminConditional(VariableMixin, models.Model):
         return rendered_template
 
 
-class AdminConditionalTemplate(VariableMixin, models.Model):
+@python_2_unicode_compatible
+class AdminConditionalTemplate(ContextTemplateMixin, models.Model):
     """
-
+    Used to create new AdminConditional instances.
+    After creation, the new instances are not connected to this model,
+    to allow free editing.
     """
     description = models.CharField(max_length=254, blank=False, null=False)
 
@@ -174,14 +180,13 @@ class AdminConditionalTemplate(VariableMixin, models.Model):
         verbose_name = 'conditional template'
         ordering = ('description',)
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.description
 
 
 class ConditionalMixin(models.Model):
     """
-    Mixin for Experiment models.
+    Mixin for Experiment model.
     Adds features related to conditional experiments.
     """
     auto_enroll = models.BooleanField(

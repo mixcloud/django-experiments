@@ -3,20 +3,8 @@ from django.contrib.auth.models import User
 from django.template import Template, Context
 from django.test import TestCase, override_settings, RequestFactory
 from jinja2 import TemplateSyntaxError
-try:
-    from unittest.mock import (
-        ANY,
-        call,
-        MagicMock,
-        patch,
-    )
-except ImportError:
-    from mock import (
-        ANY,
-        call,
-        MagicMock,
-        patch,
-    )
+
+from experiments.tests.testing_2_3 import mock
 
 from experiments.models import Experiment
 from experiments.templatetags.experiments import (
@@ -99,7 +87,7 @@ class MockTokenStream:
 
     def _generator_foo(self):
         for token in self._tokens:
-            self.current = MagicMock(**token)
+            self.current = mock.MagicMock(**token)
             yield self.current
         raise StopIteration
 
@@ -116,15 +104,15 @@ class MockTokenStream:
 
 class ExperimentsJinjaExtensionTests(TestCase):
     def setUp(self):
-        self.env = MagicMock()
-        self.parser = MagicMock()
-        self.parser.stream.__iter__ = MagicMock()
-        self.parser.stream.__next__ = MagicMock()
+        self.env = mock.MagicMock()
+        self.parser = mock.MagicMock()
+        self.parser.stream.__iter__ = mock.MagicMock()
+        self.parser.stream.__next__ = mock.MagicMock()
         self.extension = ExperimentsExtension(self.env)
 
     def test_parse(self):
         self.parser.stream.current.value = 'some_tag'
-        self.extension.parse_some_tag = MagicMock()
+        self.extension.parse_some_tag = mock.MagicMock()
         self.extension.parse(parser=self.parser)
         self.extension.parse_some_tag.assert_called_once_with(self.parser)
 
@@ -137,11 +125,11 @@ class ExperimentsJinjaExtensionTests(TestCase):
             {'type': 'block_end'},
         ])
         self.parser.stream = mock_stream
-        self.extension.call_method = MagicMock()
+        self.extension.call_method = mock.MagicMock()
         self.extension.parse_experiment(self.parser)
 
         self.extension.call_method.assert_called_once_with(
-            'render_experiment', ANY, lineno=123)
+            'render_experiment', mock.ANY, lineno=123)
 
     def test_parse_experiment_too_few_args(self):
 
@@ -150,17 +138,17 @@ class ExperimentsJinjaExtensionTests(TestCase):
             {'type': 'block_end'},
         ])
         self.parser.stream = mock_stream
-        self.extension.call_method = MagicMock()
+        self.extension.call_method = mock.MagicMock()
         with self.assertRaises(TemplateSyntaxError):
             self.extension.parse_experiment(self.parser)
         self.extension.call_method.assert_not_called()
 
-    @patch('experiments.templatetags.experiments.participant')
-    @patch('experiments.templatetags.experiments.experiment_manager')
+    @mock.patch('experiments.templatetags.experiments.participant')
+    @mock.patch('experiments.templatetags.experiments.experiment_manager')
     def test_render_experiment(self, experiment_manager, participant):
-        request = MagicMock()
-        user = MagicMock(
-            is_enrolled=MagicMock(return_value=True),
+        request = mock.MagicMock()
+        user = mock.MagicMock(
+            is_enrolled=mock.MagicMock(return_value=True),
         )
         experiment_name = 'some_experiment'
         alternative = 'some_alternative'
@@ -169,8 +157,8 @@ class ExperimentsJinjaExtensionTests(TestCase):
         context = {
             'request': request,
         }
-        caller = MagicMock()
-        experiment = MagicMock()
+        caller = mock.MagicMock()
+        experiment = mock.MagicMock()
         experiment_manager.get_experiment.return_value = experiment
         participant.return_value = user
 
@@ -186,12 +174,12 @@ class ExperimentsJinjaExtensionTests(TestCase):
         user.is_enrolled.assert_called_once_with(experiment_name, alternative)
         self.assertEqual(retval, caller.return_value)
 
-    @patch('experiments.templatetags.experiments.participant')
-    @patch('experiments.templatetags.experiments.experiment_manager')
+    @mock.patch('experiments.templatetags.experiments.participant')
+    @mock.patch('experiments.templatetags.experiments.experiment_manager')
     def test_render_experiment_specific_user(
             self, experiment_manager, participant):
-        user = MagicMock(
-            is_enrolled=MagicMock(return_value=False),
+        user = mock.MagicMock(
+            is_enrolled=mock.MagicMock(return_value=False),
         )
         experiment_name = 'some_experiment'
         alternative = 'some_alternative'
@@ -200,8 +188,8 @@ class ExperimentsJinjaExtensionTests(TestCase):
         context = {
             'user': user,
         }
-        caller = MagicMock()
-        experiment = MagicMock()
+        caller = mock.MagicMock()
+        experiment = mock.MagicMock()
         experiment_manager.get_experiment.return_value = experiment
         participant.return_value = user
 
@@ -218,13 +206,13 @@ class ExperimentsJinjaExtensionTests(TestCase):
         caller.assert_not_called()
         self.assertEqual(str(retval), '')
 
-    @patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments.nodes')
     def test_parse_experiments_confirm_human(self, nodes):
         mock_stream = MockTokenStream([
             {'type': 'block_end', 'lineno': 123},
         ])
         self.parser.stream = mock_stream
-        self.extension.call_method = MagicMock()
+        self.extension.call_method = mock.MagicMock()
 
         self.extension.parse_experiments_confirm_human(self.parser)
 
@@ -233,11 +221,11 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.extension.call_method.assert_called_once_with(
             'render_experiments_confirm_human', args, lineno=123)
 
-    @patch('experiments.templatetags.experiments._experiments_confirm_human')
-    @patch('experiments.templatetags.experiments.template.loader.get_template')
+    @mock.patch('experiments.templatetags.experiments._experiments_confirm_human')
+    @mock.patch('experiments.templatetags.experiments.template.loader.get_template')
     def test_render_experiments_confirm_human(
             self, get_template, _experiments_confirm_human):
-        caller = MagicMock()
+        caller = mock.MagicMock()
         context = {'some': 'vars'}
         tmplt = get_template.return_value
         _experiments_confirm_human.return_value = {'moar': 'vars'}
@@ -253,14 +241,14 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.assertEqual(retval, tmplt.render.return_value)
         tmplt.render.assert_called_once_with(context2)
 
-    @patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments.nodes')
     def test_parse_experiment_goal(self, nodes):
         mock_stream = MockTokenStream([
             {'type': 'string', 'value': 'some_goal', 'lineno': 123},
             {'type': 'block_end'},
         ])
         self.parser.stream = mock_stream
-        self.extension.call_method = MagicMock()
+        self.extension.call_method = mock.MagicMock()
 
         self.extension.parse_experiment_goal(self.parser)
 
@@ -271,11 +259,11 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.extension.call_method.assert_called_once_with(
             'render_experiment_goal', args, lineno=123)
 
-    @patch('experiments.templatetags.experiments._experiment_goal')
-    @patch('experiments.templatetags.experiments.template.loader.get_template')
+    @mock.patch('experiments.templatetags.experiments._experiment_goal')
+    @mock.patch('experiments.templatetags.experiments.template.loader.get_template')
     def test_render_experiment_goal(
             self, get_template, _experiment_goal):
-        caller = MagicMock()
+        caller = mock.MagicMock()
         context = {'some': 'vars'}
         goal_name = 'some_goal'
         tmplt = get_template.return_value
@@ -292,7 +280,7 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.assertEqual(retval, tmplt.render.return_value)
         tmplt.render.assert_called_once_with(context2)
 
-    @patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments.nodes')
     def test_parse_experiment_enroll_strings_only(self, nodes):
         mock_stream = MockTokenStream([
             {'type': 'string', 'value': 'some_experiment', 'lineno': 123},
@@ -303,11 +291,11 @@ class ExperimentsJinjaExtensionTests(TestCase):
             {'type': 'block_end'},
         ])
         self.parser.stream = mock_stream
-        self.extension.call_method = MagicMock()
+        self.extension.call_method = mock.MagicMock()
         target = self.parser.parse_assign_target.return_value
-        experiment_name_node = MagicMock()
-        alternative1_node = MagicMock()
-        alternative2_node = MagicMock()
+        experiment_name_node = mock.MagicMock()
+        alternative1_node = mock.MagicMock()
+        alternative2_node = mock.MagicMock()
         nodes.Const.side_effect = [
             experiment_name_node,
             alternative1_node,
@@ -318,9 +306,9 @@ class ExperimentsJinjaExtensionTests(TestCase):
         retval = self.extension.parse_experiment_enroll(self.parser)
 
         nodes.Const.assert_has_calls([
-            call('some_experiment'),
-            call('alternative1'),
-            call('alternative2'),
+            mock.call('some_experiment'),
+            mock.call('alternative1'),
+            mock.call('alternative2'),
         ])
         nodes.List.assert_called_once_with(
             [alternative1_node, alternative2_node])
@@ -336,7 +324,7 @@ class ExperimentsJinjaExtensionTests(TestCase):
         nodes.Assign.assert_called_once_with(target, call_node, lineno=123)
         self.assertEqual(retval, assignment_node)
 
-    @patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments.nodes')
     def test_parse_experiment_enroll_wrong_syntax(self, nodes):
         mock_stream = MockTokenStream([
             {'type': 'string', 'value': 'some_experiment', 'lineno': 123},
@@ -351,7 +339,7 @@ class ExperimentsJinjaExtensionTests(TestCase):
 
         nodes.Assign.assert_not_called()
 
-    @patch('experiments.templatetags.experiments._experiment_enroll')
+    @mock.patch('experiments.templatetags.experiments._experiment_enroll')
     def test_render_experiment_enroll(self, _experiment_enroll):
         context = {'some': 'vars'}
         experiment_name = 'some_experiment'
@@ -363,18 +351,18 @@ class ExperimentsJinjaExtensionTests(TestCase):
 
         self.assertEqual(retval, enrolled)
 
-    @patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments.nodes')
     def test_name_or_const_with_name(self, nodes):
-        token = MagicMock(type='name', value='some_name')
+        token = mock.MagicMock(type='name', value='some_name')
 
         retval = self.extension._name_or_const(token)
 
         self.assertEqual(retval, nodes.Name.return_value)
         nodes.Name.assert_called_once_with('some_name', 'load')
 
-    @patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments.nodes')
     def test_name_or_const_with_string(self, nodes):
-        token = MagicMock(type='string', value='some_value')
+        token = mock.MagicMock(type='string', value='some_value')
 
         retval = self.extension._name_or_const(token)
 
@@ -382,7 +370,7 @@ class ExperimentsJinjaExtensionTests(TestCase):
         nodes.Const.assert_called_once_with('some_value')
 
     def test_name_or_const_with_other(self):
-        token = MagicMock(type='other')
+        token = mock.MagicMock(type='other')
 
         with self.assertRaises(ValueError):
             self.extension._name_or_const(token)
