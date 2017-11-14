@@ -57,6 +57,7 @@ class ExperimentAutoCreateTestCase(TestCase):
         Template("{% load experiments %}{% experiment test_experiment control %}{% endexperiment %}").render(Context({'request': request}))
         self.assertFalse(Experiment.objects.filter(name="test_experiment").exists())
 
+    @override_settings(EXPERIMENTS_AUTO_CREATE=True)
     def test_template_auto_create_on(self):
         request = RequestFactory().get('/')
         request.user = User.objects.create(username='test')
@@ -69,6 +70,7 @@ class ExperimentAutoCreateTestCase(TestCase):
         participant(user=user).enroll('test_experiment_y', alternatives=['other'])
         self.assertFalse(Experiment.objects.filter(name="test_experiment_y").exists())
 
+    @override_settings(EXPERIMENTS_AUTO_CREATE=True)
     def test_view_auto_create_on(self):
         user = User.objects.create(username='test')
         participant(user=user).enroll('test_experiment_x', alternatives=['other'])
