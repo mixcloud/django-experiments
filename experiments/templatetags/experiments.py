@@ -164,7 +164,7 @@ def _experiment_enroll(context, experiment_name, *alternatives, **kwargs):
 
 @register.assignment_tag(takes_context=True)
 def experiment_enrolled_alternative(context, experiment_name):
-    return _experiment_enroll(context, experiment_name)
+    return _experiment_enrolled_alternative(context, experiment_name)
 
 
 def _experiment_enrolled_alternative(context, experiment_name):

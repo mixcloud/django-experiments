@@ -11,7 +11,7 @@ class LazyAutoCreate(object):
         return self.__bool__()
 
     def __bool__(self):
-        return getattr(settings, 'EXPERIMENTS_AUTO_CREATE', True)
+        return getattr(settings, 'EXPERIMENTS_AUTO_CREATE', False)
 
 
 class ExperimentManager(ModelDict):
