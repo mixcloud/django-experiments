@@ -172,7 +172,41 @@ def _experiment_enrolled_alternative(context, experiment_name):
     return user.get_alternative(experiment_name)
 
 
-class ExperimentsExtension(ext.Extension):
+class ExtensionHelpers(object):
+
+    def _name_or_const(self, token):
+        """
+        Depending on what was provided in a tag as an argument, we need
+        either `nodes.Const` (if a string was provided), or `nodes.Name`
+        (if a variable name was provided).
+
+        Not tested with integers etc.
+
+        Maybe there exists a `stream.parse_something()` method that
+        should we used instead?
+        """
+        if token.type == 'name':
+            return nodes.Name(token.value, 'load')
+        if token.type == 'string':
+            return nodes.Const(token.value)
+        raise ValueError('Expected name or string, got {}'.format(token))
+
+    def _token_as(self, parser):
+        """
+        Return True if current token is an `as`.
+
+        `token.type` will be `as` if there are no names used in the tag.
+        If there are names (i.e. variables) used, then `as` will also be
+        considered a "name", hence the extended check.
+        """
+        current_token = parser.stream.current
+        return (
+            current_token.type == 'as' or
+            (current_token.type == 'name' and current_token.value == 'as')
+        )
+
+
+class ExperimentsExtension(ExtensionHelpers, ext.Extension):
     """Jinja2 Extension for django-experiments"""
 
     # tags that will be handled by this class:
@@ -411,36 +445,3 @@ class ExperimentsExtension(ext.Extension):
         alternative = _experiment_enrolled_alternative(
             context, experiment_name)
         return alternative
-
-    # helpers #
-
-    def _name_or_const(self, token):
-        """
-        Depending on what was provided in a tag as an argument, we need
-        either `nodes.Const` (if a string was provided), or `nodes.Name`
-        (if a variable name was provided).
-
-        Not tested with integers etc.
-
-        Maybe there exists a `stream.parse_something()` method that
-        should we used instead?
-        """
-        if token.type == 'name':
-            return nodes.Name(token.value, 'load')
-        if token.type == 'string':
-            return nodes.Const(token.value)
-        raise ValueError('Expected name or string, got {}'.format(token))
-
-    def _token_as(self, parser):
-        """
-        Return True if current token is an `as`.
-
-        `token.type` will be `as` if there are no names used in the tag.
-        If there are names (i.e. variables) used, then `as` will also be
-        considered a "name", hence the extended check.
-        """
-        current_token = parser.stream.current
-        return (
-            current_token.type == 'as' or
-            (current_token.type == 'name' and current_token.value == 'as')
-        )

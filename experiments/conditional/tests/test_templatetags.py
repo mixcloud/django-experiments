@@ -3,8 +3,12 @@ from __future__ import absolute_import
 
 from unittest import TestCase
 
-from experiments.conditional.templatetags.experiments import _auto_enroll, \
-    experiments_auto_enroll, AutoEnrollExperimentsExtension
+from experiments.conditional.enrollment import Experiments
+from experiments.conditional.templatetags.experiments import (
+    _auto_enroll,
+    experiments_auto_enroll,
+    AutoEnrollExperimentsExtension,
+)
 from experiments.tests.testing_2_3 import mock
 
 
@@ -14,29 +18,26 @@ class DjangoTemplateTagTestCase(TestCase):
         self.request = mock.MagicMock()
         self.context = {'request': self.request}
 
-    @mock.patch('experiments.conditional.templatetags.experiments.Experiments',
-                autospec=True)
-    def test_auto_enroll_anonymous(self, Experiments):
+    @mock.patch('experiments.conditional.enrollment.experiment_manager')
+    @mock.patch('experiments.models.Experiment.objects')
+    def test_auto_enroll_anonymous(self, objects, experiment_manager):
         self.request.user.is_staff = False
-        instance = Experiments.return_value
+        objects.filter.return_value.values_list.return_value = []
         value = _auto_enroll(self.context)
         expected_value = ''
         self.assertEqual(expected_value, value)
-        Experiments.assert_called_once_with(self.context)
-        instance.conditionally_enroll.assert_called_once_with()
+        experiment_manager.assert_not_called()
 
-    @mock.patch('experiments.conditional.templatetags.experiments.Experiments',
-                autospec=True)
-    def test_auto_enroll_staff(self, Experiments):
+    @mock.patch('experiments.conditional.enrollment.experiment_manager')
+    @mock.patch('experiments.models.Experiment.objects')
+    def test_auto_enroll_staff(self, objects, experiment_manager):
         self.request.user.is_staff = True
-        instance = Experiments.return_value
-        instance.report = {'mock': 'report'}
+        objects.filter.return_value.values_list.return_value = []
         value = _auto_enroll(self.context)
         expected_value = (
-            '<script>window.ca_experiments = {"mock": "report"};</script>')
+            '<script>window.ca_experiments = {"auto_enroll": {}};</script>')
         self.assertEqual(expected_value, value)
-        Experiments.assert_called_once_with(self.context)
-        Experiments.return_value.conditionally_enroll.assert_called_once_with()
+        experiment_manager.assert_not_called()
 
     @mock.patch(
         'experiments.conditional.templatetags.experiments._auto_enroll')
@@ -82,7 +83,10 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.extension = AutoEnrollExperimentsExtension(self.env)
 
     def test_attributes(self):
-        expected_tags = {'experiments_auto_enroll',}
+        expected_tags = {
+            'experiments_auto_enroll',
+            'experiment_conditional_alternative',
+        }
         self.assertEqual(expected_tags, self.extension.tags)
         for tag in expected_tags:
             self.assertTrue(hasattr(self.extension, 'parse_{}'.format(tag)))

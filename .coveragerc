@@ -1,2 +1,13 @@
+[run]
+branch = True
+include = ./*
+omit =
+    */migrations/*
+    */*test*.py
+
 [report]
 show_missing = True
+
+omit =
+    */migrations/*
+    */*test*.py
