@@ -31,12 +31,12 @@ class ExperimentAlternativeInline(admin.TabularInline):
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'end_date', 'state', 'auto_enroll')
-    list_filter = ('state', 'start_date', 'end_date', 'auto_enroll')
+    list_display = ('name', 'start_date', 'end_date', 'state',)
+    list_filter = ('state', 'start_date', 'end_date',)
     ordering = ('-start_date',)
     search_fields = ('=name',)
     actions = None
-    readonly_fields = ('start_date', 'end_date', 'state', 'auto_enroll',)
+    readonly_fields = ('start_date', 'end_date', 'state',)
     inlines = (ExperimentAlternativeInline, AdminConditionalInline,)
 
     def get_fieldsets(self, request, obj=None):
@@ -46,7 +46,7 @@ class ExperimentAdmin(admin.ModelAdmin):
          - name can only be set on Add
         """
         main_fields = (
-            'description', 'start_date', 'end_date', 'auto_enroll', 'state',)
+            'description', 'start_date', 'end_date', 'state',)
 
         if obj:
             main_fields += ('default_alternative',)
@@ -74,13 +74,6 @@ class ExperimentAdmin(admin.ModelAdmin):
             }),
         )
 
-    def get_inline_instances(self, request, obj=None):
-        inlines = list(super(ExperimentAdmin, self).get_inline_instances(
-            request, obj))
-        if obj and obj.pk and not obj.auto_enroll:
-            inlines = []
-        return inlines
-
     def get_form(self, request, obj=None, **kwargs):
         """
         Add the default alternative dropdown with appropriate choices
@@ -89,7 +82,7 @@ class ExperimentAdmin(admin.ModelAdmin):
         class NewExperimentModelForm(forms.ModelForm):
             def __init__(self, *args, **kwargs):
                 super(NewExperimentModelForm, self).__init__(*args, **kwargs)
-                self.instance.auto_enroll = True
+                1-2
 
         if obj:
             if obj.alternatives:
@@ -103,6 +96,9 @@ class ExperimentAdmin(admin.ModelAdmin):
                     initial=obj.default_alternative,
                     required=False,
                 )
+                def __init__(self, *args, **kwargs):
+                    super(ExperimentModelForm, self).__init__(*args, **kwargs)
+                    1-2
 
             kwargs['form'] = ExperimentModelForm
         else:
@@ -121,11 +117,7 @@ class ExperimentAdmin(admin.ModelAdmin):
     def _update_obj_alternatives_dict(self, obj):
         """
         Read ExperimentAlternative inlines and update obj.alternatives.
-        Only operated if obj.auto_enroll == True
         """
-
-        if not obj.auto_enroll:
-            return
 
         def update_obj():
             Experiment.objects.filter(pk=obj.pk).update(
@@ -167,6 +159,39 @@ class ExperimentAdmin(admin.ModelAdmin):
         obj.alternatives[default]['default'] = True
         update_obj()
 
+    def _update_alternative_inlines(self, obj):
+        """
+        Reads self.alternatives JSON field and re-creates related
+        ExperimentAlternative objects if needed
+        """
+
+        def recreate_all():
+            obj.experimentalternative_set.all().delete()
+            for name, data in obj.alternatives.items():
+                alt_obj = ExperimentAlternative(
+                    experiment=obj,
+                    name=name
+                )
+                if 'weight' in data:
+                    alt_obj.weight = data['weight']
+                alt_obj.save()
+
+        def generate_json_from_related_objects():
+            alternatives = {}
+            default = obj.default_alternative
+            for alt_obj in obj.experimentalternative_set.all():
+                alternatives[alt_obj.name] = {
+                    'enabled': True,
+                }
+                if alt_obj.weight is not None:
+                    alternatives[alt_obj.name]['weight'] = alt_obj.weight
+                if alt_obj.name == default:
+                    alternatives[alt_obj.name]['default'] = True
+            return alternatives
+
+        if generate_json_from_related_objects() != obj.alternatives:
+            recreate_all()
+
     # --------------------------------------- Overriding admin views
 
     class Media:
@@ -200,6 +225,9 @@ class ExperimentAdmin(admin.ModelAdmin):
         experiment = self.get_object(request, unquote(object_id))
         context = self._admin_view_context(extra_context=extra_context)
         context.update(get_result_context(request, experiment))
+        if request.method == 'GET':
+            # for POST see `_save_related()`
+            self._update_alternative_inlines(experiment)
         return super(ExperimentAdmin, self).change_view(request, object_id, form_url=form_url, extra_context=context)
 
     # --------------------------------------- Views for ajax functionality

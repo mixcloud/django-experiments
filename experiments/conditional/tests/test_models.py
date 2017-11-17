@@ -32,7 +32,6 @@ class ConditionalEnrollmentTestCase(TestCase):
                 'variant_1': 'stuff',
             },
             state=ENABLED_STATE,
-            auto_enroll=True,
         )
         self.request = mock.MagicMock()
 
@@ -43,48 +42,42 @@ class ConditionalEnrollmentTestCase(TestCase):
             self.conditional_true.delete()
         self.experiment.delete()
 
-    def test_should_ot_enroll_set_to_false(self):
-        self.experiment.auto_enroll = False
-        self.experiment.save()
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
-
-    def test_should_enroll_single_condition(self):
+    def test_is_enabled_by_conditionals_single_condition(self):
         self.conditional_true.experiment = self.experiment
         self.conditional_true.save()
-        value = self.experiment.should_auto_enroll(self.request)
+        value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertTrue(value)
 
-    def test_should_not_enroll_single_condition(self):
+    def test_is_enabled_by_conditionals_single_condition(self):
         self.conditional_false.experiment = self.experiment
         self.conditional_false.save()
-        value = self.experiment.should_auto_enroll(self.request)
+        value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertFalse(value)
 
-    def test_should_enroll_multiple_conditions(self):
+    def test_is_enabled_by_conditionals_multiple_conditions(self):
         self.conditional_false.experiment = self.experiment
         self.conditional_false.save()
         self.conditional_true.experiment = self.experiment
         self.conditional_true.save()
-        value = self.experiment.should_auto_enroll(self.request)
+        value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertTrue(value)
 
-    def test_should_not_enroll_no_alternatives(self):
+    def test_is_enabled_by_conditionals_no_alternatives(self):
         self.conditional_true.experiment = self.experiment
         self.conditional_true.save()
         self.experiment.alternatives = {}
         self.experiment.save()
-        value = self.experiment.should_auto_enroll(self.request)
+        value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertFalse(value)
 
-    def test_should_not_enroll_no_conditionals(self):
-        value = self.experiment.should_auto_enroll(self.request)
-        self.assertFalse(value)
+    def test_is_enabled_by_conditionals_no_conditionals(self):
+        value = self.experiment.is_enabled_by_conditionals(self.request)
+        self.assertTrue(value)
 
-    def test_should_not_enroll_disabled(self):
+    def test_is_enabled_by_conditionals_disabled(self):
         self.experiment.state = CONTROL_STATE
         self.experiment.save()
-        value = self.experiment.should_auto_enroll(self.request)
+        value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertFalse(value)
 
 

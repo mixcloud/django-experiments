@@ -27,8 +27,8 @@ class ContextTemplateMixin(models.Model):
             '&lt;any_of&gt;...&lt;/any_of&gt;\n'
             '</code><br />'
             '<strong>Available template context:</strong><br />'
-            'same as the template where {% experiments_auto_enroll %} is'
-            ' being rendered.<br />'
+            'same as the template where '
+            '{% experiments_prepare_conditionals %} is being rendered.<br />'
             'Additional context injected from \'Context code\' field below.'
         ))
     context_code = models.TextField(
@@ -182,31 +182,3 @@ class AdminConditionalTemplate(ContextTemplateMixin, models.Model):
 
     def __str__(self):
         return self.description
-
-
-class ConditionalMixin(models.Model):
-    """
-    Mixin for Experiment model.
-    Adds features related to conditional experiments.
-    """
-    auto_enroll = models.BooleanField(
-        default=False, null=False, blank=True,
-        help_text='Only experiments created via the admin are auto-enrollable.'
-                  ' At least on of the conditionals below need to evaluate'
-                  ' positively in order for the experiment to be enrollable.',
-    )
-
-    class Meta:
-        abstract = True
-
-    def should_auto_enroll(self, request):
-        if not self.auto_enroll:
-            return False
-        if not self.is_accepting_new_users():
-            return False
-        if not self.has_alternatives:
-            return False
-        for conditional in self.admin_conditionals.all():
-            if conditional.evaluate(request):
-                return True
-        return False

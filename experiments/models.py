@@ -11,7 +11,6 @@ from django.utils.encoding import python_2_unicode_compatible
 
 from experiments import conf
 from experiments.dateutils import now
-from experiments.conditional.models import ConditionalMixin
 from jsonfield import JSONField
 
 
@@ -30,7 +29,7 @@ STATES = (
 
 
 @python_2_unicode_compatible
-class Experiment(ConditionalMixin, models.Model):
+class Experiment(models.Model):
     name = models.CharField(
         primary_key=True,
         max_length=128,
@@ -65,6 +64,14 @@ class Experiment(ConditionalMixin, models.Model):
             return False
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
+
+    def is_enabled_by_conditionals(self, request):
+        if not self.admin_conditionals.exists():
+            return True
+        for conditional in self.admin_conditionals.all():
+            if conditional.evaluate(request):
+                return True
+        return False
 
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
@@ -125,7 +132,6 @@ class Experiment(ConditionalMixin, models.Model):
             'start_date': self.start_date,
             'end_date': self.end_date,
             'state': self.state,
-            'auto_enroll': self.auto_enroll,
             'description': self.description,
             'relevant_chi2_goals': self.relevant_chi2_goals,
             'relevant_mwu_goals': self.relevant_mwu_goals,
@@ -140,6 +146,10 @@ class Experiment(ConditionalMixin, models.Model):
 
 @python_2_unicode_compatible
 class ExperimentAlternative(models.Model):
+    """
+    This model is only ever used in the admin, and should never
+    be accessed outside it. Use `experiment.alternatives` instead.
+    """
     experiment = models.ForeignKey(Experiment)
     name = models.CharField(max_length=254, blank=False, null=False)
     weight = models.PositiveSmallIntegerField(
@@ -174,6 +184,7 @@ class Enrollment(models.Model):
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
+    disabled = models.BooleanField(default=False, null=False, blank=True)
 
     class Meta:
         unique_together = ('user', 'experiment')

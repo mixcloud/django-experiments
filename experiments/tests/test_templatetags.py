@@ -10,7 +10,7 @@ from experiments.models import Experiment
 from experiments.templatetags.experiments import (
     ExperimentsExtension,
     _parse_token_contents,
-)
+    _experiments_prepare_conditionals)
 from experiments.utils import participant
 
 
@@ -114,6 +114,7 @@ class ExperimentsJinjaExtensionTests(TestCase):
 
     def test_attributes(self):
         expected_tags = {
+            'experiments_prepare_conditionals',
             'experiment',
             'experiments_confirm_human',
             'experiment_enroll',
@@ -130,6 +131,33 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.extension.parse_some_tag = mock.MagicMock()
         self.extension.parse(parser=self.parser)
         self.extension.parse_some_tag.assert_called_once_with(self.parser)
+
+    def test_parse_experiments_prepare_conditionals(self):
+        mock_stream = MockTokenStream([
+            {'type': 'string', 'value': 'some_experiment', 'lineno': 123},
+            {'type': 'block_end'},
+        ])
+        self.parser.stream = mock_stream
+        self.extension.call_method = mock.MagicMock()
+        self.extension.parse_experiments_prepare_conditionals(self.parser)
+        self.extension.call_method.assert_called_once_with(
+            'render_experiments_prepare_conditionals', mock.ANY, lineno=123)
+
+    @mock.patch('experiments.templatetags.experiments.nodes')
+    @mock.patch('experiments.templatetags.experiments'
+                '._experiments_prepare_conditionals')
+    def test_render_experiments_prepare_conditionals(
+            self, _auto_enroll, nodes):
+        caller = mock.MagicMock()
+        context = {'some': 'vars'}
+        _auto_enroll.return_value = 'mock script'
+
+        value = self.extension.render_experiments_prepare_conditionals(
+            context, caller)
+
+        _auto_enroll.assert_called_once_with({'some': 'vars'})
+        nodes.Markup.assert_called_once_with('mock script')
+        self.assertEqual(value, nodes.Markup.return_value)
 
     def test_parse_experiment(self):
 
@@ -413,3 +441,38 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.parser.stream = mock_stream
         retval = self.extension._token_as(self.parser)
         self.assertFalse(retval)
+
+
+class PrepareTemplateTagTestCase(TestCase):
+
+    def setUp(self):
+        self.request = mock.MagicMock()
+        self.context = {'request': self.request}
+
+    @mock.patch('experiments.conditional.enrollment.experiment_manager')
+    @mock.patch('experiments.models.Experiment.objects')
+    def test_auto_enroll_anonymous(self, objects, experiment_manager):
+        self.request.user.is_staff = False
+        objects.filter.return_value.values_list.return_value = []
+        value = _experiments_prepare_conditionals(self.context)
+        expected_value = ''
+        self.assertEqual(expected_value, value)
+        experiment_manager.assert_not_called()
+
+    @mock.patch('experiments.conditional.enrollment.experiment_manager')
+    @mock.patch('experiments.models.Experiment.objects')
+    def test_auto_enroll_staff(self, objects, experiment_manager):
+        self.request.user.is_staff = True
+        objects.filter.return_value.values_list.return_value = []
+        value = _experiments_prepare_conditionals(self.context)
+        expected_value = (
+            '<script>window.ca_experiments = {"conditional": {}};</script>')
+        self.assertEqual(expected_value, value)
+        experiment_manager.assert_not_called()
+
+    @mock.patch('experiments.templatetags.experiments'
+                '._experiments_prepare_conditionals')
+    def test_template_tag(self, _auto_enroll):
+        rendered_value = experiments_prepare_conditionals(self.context)
+        _auto_enroll.assert_called_once_with(self.context)
+        self.assertEqual(rendered_value, _auto_enroll.return_value)

@@ -19,7 +19,7 @@ class ExperimentsRetentionMiddleware(MiddlewareMixin):
             return response
 
         experiment_user = participant(request)
-        #experiment_user.visit()
+        experiment_user.visit()
 
         return response
 
@@ -29,4 +29,4 @@ class ConfirmHumanMiddleware(MiddlewareMixin):
     def process_request(self, request):
         from experiments.utils import participant
 
-        #participant(request).confirm_human()
+        participant(request).confirm_human()

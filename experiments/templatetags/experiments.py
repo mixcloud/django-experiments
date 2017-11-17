@@ -4,8 +4,10 @@ from __future__ import absolute_import
 from operator import attrgetter
 from uuid import uuid4
 
+import json
 from django import template
 from django.core.urlresolvers import reverse
+from experiments.conditional.enrollment import Experiments
 from jinja2 import (
     ext,
     nodes,
@@ -54,6 +56,24 @@ def experiments_confirm_human(context):
 def _experiments_confirm_human(context):
     request = context['request']
     return {'confirmed_human': request.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)}
+
+
+@register.simple_tag(takes_context=True)
+def experiments_experiments_prepare_conditionals(context):
+    """Template tag for regular Django templates"""
+    return _experiments_prepare_conditionals(context)
+
+
+def _experiments_prepare_conditionals(context):
+    Experiments(context)
+    request = context['request']
+    if request.user.is_staff:
+        report = json.dumps(request.experiments.report)
+        script = '<script>window.ca_experiments = {};</script>'.format(
+            report,
+        )
+        return script
+    return ''
 
 
 class ExperimentNode(template.Node):
@@ -211,6 +231,7 @@ class ExperimentsExtension(ExtensionHelpers, ext.Extension):
 
     # tags that will be handled by this class:
     tags = {
+        'experiments_prepare_conditionals',
         'experiment',
         'experiments_confirm_human',
         'experiment_enroll',
@@ -233,6 +254,21 @@ class ExperimentsExtension(ExtensionHelpers, ext.Extension):
         tag = parser.stream.current.value
         next(parser.stream)
         return getattr(self, 'parse_{}'.format(tag))(parser)
+
+    def parse_experiments_prepare_conditionals(self, parser):
+        """Parse {% experiments_prepare_conditionals %} tags"""
+        lineno = parser.stream.current.lineno
+        # list of nodes that will be used when calling the callback:
+        args = []
+        args.append(nodes.ContextReference())
+        # Jinja2 callbacky nodey magic:
+        call_node = self.call_method(
+            'render_experiments_prepare_conditionals', args, lineno=lineno)
+        return nodes.CallBlock(call_node, [], [], []).set_lineno(lineno)
+
+    def render_experiments_prepare_conditionals(self, context, caller):
+        """Callback that renders {% experiments_auto_enroll %} tag"""
+        return nodes.Markup(_experiments_prepare_conditionals(context))
 
     def parse_experiment(self, parser):
         """Parse {% experiment ... %} tags"""
