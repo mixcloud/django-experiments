@@ -10,7 +10,9 @@ from experiments.models import Experiment
 from experiments.templatetags.experiments import (
     ExperimentsExtension,
     _parse_token_contents,
-    _experiments_prepare_conditionals)
+    _experiments_prepare_conditionals,
+    experiments_prepare_conditionals,
+)
 from experiments.utils import participant
 
 

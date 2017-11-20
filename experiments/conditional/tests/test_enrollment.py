@@ -15,12 +15,6 @@ class ConditionalEnrollmentTestCase(TestCase):
         self.context = {'request': self.request}
         self.experiments = Experiments(self.context)
 
-    @mock.patch('experiments.conditional.participant.participant')
-    def test_get_participant(self, participant):
-        value = self.experiments.get_participant()
-        participant.assert_called_once_with(self.request)
-        self.assertEqual(value, participant.return_value)
-
     def test_report(self):
         instance = mock.MagicMock()
         instance.name = "mock_experiment"
@@ -48,24 +42,17 @@ class ConditionalEnrollmentTestCase(TestCase):
         self.assertEqual(expected_report, self.experiments.report)
 
     @mock.patch('experiments.conditional.enrollment.experiment_manager')
-    @mock.patch('experiments.models.Experiment.is_enabled_by_conditionals')
-    def test_evaluate_conditionals_w_instances(
-            self, is_enabled_by_conditionals, experiment_manager):
+    def test_evaluate_conditionals_w_instances(self, experiment_manager):
         i1, i2 = mock.MagicMock(), mock.MagicMock()
         i1.name = 'mock_exp_1'
         i1.default_alternative = 'variate_for_exp_1'
         i2.name = 'mock_exp_2'
-        is_enabled_by_conditionals.side_effect = [False, True]
+        i1.is_enabled_by_conditionals.return_value = False
+        i2.is_enabled_by_conditionals.return_value = True
         self.experiments.experiment_names = [i1.name, i2.name]
         self.experiments.report = {'conditional': {}}
         experiment_manager.get_experiment.side_effect = [i1, i2]
-        participant = mock.MagicMock()
-        participant.enroll.return_value = 'variate_for_exp_2'
-        with mock.patch.object(self.experiments, 'get_participant'):
-            self.experiments.get_participant.return_value = participant
-            self.experiments._evaluate_conditionals()
-            self.assertEquals(self.experiments.get_participant.call_count, 1)
-
+        self.experiments._evaluate_conditionals()
         expected_report = {
             'conditional': {
                 'mock_exp_1': {
@@ -74,8 +61,10 @@ class ConditionalEnrollmentTestCase(TestCase):
                 },
                 'mock_exp_2': {
                     'auto-enrolling': True,
-                    'enrolled_alternative': 'variate_for_exp_2',
+                    'enrolled_alternative': None,
                 },
             },
         }
         self.assertEqual(expected_report, self.experiments.report)
+        expected_list = ['mock_exp_1',]
+        self.assertEqual(expected_list, self.experiments.disabled_experiments)

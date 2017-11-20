@@ -59,7 +59,7 @@ def _experiments_confirm_human(context):
 
 
 @register.simple_tag(takes_context=True)
-def experiments_experiments_prepare_conditionals(context):
+def experiments_prepare_conditionals(context):
     """Template tag for regular Django templates"""
     return _experiments_prepare_conditionals(context)
 

@@ -62,23 +62,9 @@ class ConditionalEnrollmentTestCase(TestCase):
         value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertTrue(value)
 
-    def test_is_enabled_by_conditionals_no_alternatives(self):
-        self.conditional_true.experiment = self.experiment
-        self.conditional_true.save()
-        self.experiment.alternatives = {}
-        self.experiment.save()
-        value = self.experiment.is_enabled_by_conditionals(self.request)
-        self.assertFalse(value)
-
     def test_is_enabled_by_conditionals_no_conditionals(self):
         value = self.experiment.is_enabled_by_conditionals(self.request)
         self.assertTrue(value)
-
-    def test_is_enabled_by_conditionals_disabled(self):
-        self.experiment.state = CONTROL_STATE
-        self.experiment.save()
-        value = self.experiment.is_enabled_by_conditionals(self.request)
-        self.assertFalse(value)
 
 
 class ConditionalTemplatesCodeTestCase(TestCase):
