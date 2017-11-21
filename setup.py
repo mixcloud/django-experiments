@@ -12,7 +12,7 @@ with codecs.open(path.join(PATH, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='consumeraf'
          'fairs-django-experiments',
-    version='1.3.3b5',
+    version='1.3.3rc1',
     description='Python Django AB Testing Framework',
     long_description=LONG_DESCRIPTION,
     author='ConsumerAffairs',
