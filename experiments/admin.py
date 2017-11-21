@@ -79,11 +79,6 @@ class ExperimentAdmin(admin.ModelAdmin):
         Add the default alternative dropdown with appropriate choices
         """
 
-        class NewExperimentModelForm(forms.ModelForm):
-            def __init__(self, *args, **kwargs):
-                super(NewExperimentModelForm, self).__init__(*args, **kwargs)
-                1-2
-
         if obj:
             if obj.alternatives:
                 choices = [(alternative, alternative) for alternative in obj.alternatives.keys()]
@@ -96,13 +91,8 @@ class ExperimentAdmin(admin.ModelAdmin):
                     initial=obj.default_alternative,
                     required=False,
                 )
-                def __init__(self, *args, **kwargs):
-                    super(ExperimentModelForm, self).__init__(*args, **kwargs)
-                    1-2
 
             kwargs['form'] = ExperimentModelForm
-        else:
-            kwargs['form'] = NewExperimentModelForm
         return super(ExperimentAdmin, self).get_form(request, obj=obj, **kwargs)
 
     def save_model(self, request, obj, form, change):
@@ -217,9 +207,9 @@ class ExperimentAdmin(admin.ModelAdmin):
         return context
 
     def add_view(self, request, form_url='', extra_context=None):
-        return super(ExperimentAdmin, self).add_view(request,
-                                                     form_url=form_url,
-                                                     extra_context=self._admin_view_context(extra_context=extra_context))
+        view_context = self._admin_view_context(extra_context=extra_context)
+        return super(ExperimentAdmin, self).add_view(
+            request, form_url=form_url, extra_context=view_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         experiment = self.get_object(request, unquote(object_id))
@@ -228,14 +218,19 @@ class ExperimentAdmin(admin.ModelAdmin):
         if request.method == 'GET':
             # for POST see `_save_related()`
             self._update_alternative_inlines(experiment)
-        return super(ExperimentAdmin, self).change_view(request, object_id, form_url=form_url, extra_context=context)
+        return super(ExperimentAdmin, self).change_view(
+            request, object_id, form_url=form_url, extra_context=context)
 
     # --------------------------------------- Views for ajax functionality
 
     def get_urls(self):
         experiment_urls = [
-            url(r'^set-alternative/$', self.admin_site.admin_view(self.set_alternative_view), name='experiment_admin_set_alternative'),
-            url(r'^set-state/$', self.admin_site.admin_view(self.set_state_view), name='experiment_admin_set_state'),
+            url(r'^set-alternative/$',
+                self.admin_site.admin_view(self.set_alternative_view),
+                name='experiment_admin_set_alternative'),
+            url(r'^set-state/$',
+                self.admin_site.admin_view(self.set_state_view),
+                name='experiment_admin_set_state'),
         ]
         return experiment_urls + super(ExperimentAdmin, self).get_urls()
 

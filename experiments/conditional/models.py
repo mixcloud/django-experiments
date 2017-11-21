@@ -10,6 +10,12 @@ from django.utils.safestring import mark_safe
 from .utils import xml_bool
 
 
+__all__ = [
+    'AdminConditional',
+    'AdminConditionalTemplate',
+]
+
+
 logger = logging.getLogger(__file__)
 
 
