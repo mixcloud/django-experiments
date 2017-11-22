@@ -42,6 +42,10 @@ def runtests():
                 },
             },
         ],
+        EXPERIMENTS_API={
+            'api_mode': 'both',
+            'local': {'name': 'Test site'},
+        },
     )
     django.setup()
 
