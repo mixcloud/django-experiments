@@ -1,17 +1,18 @@
 # coding=utf-8
 from rest_framework import serializers
-from rest_framework.fields import empty
-from rest_framework.relations import HyperlinkedIdentityField
 from rest_framework.reverse import reverse
 
 from ... import conf
 from ...models import Experiment
 
 
-class RemoteAdminUrl(serializers.URLField):
+class ReadOnlyMixin(object):
     def __init__(self, **kwargs):
         kwargs['read_only'] = True
-        super(RemoteAdminUrl, self).__init__(**kwargs)
+        super(ReadOnlyMixin, self).__init__(**kwargs)
+
+
+class RemoteAdminUrl(ReadOnlyMixin, serializers.URLField):
 
     def to_representation(self, value):
         request = self.context.get('request', None)
@@ -22,10 +23,20 @@ class RemoteAdminUrl(serializers.URLField):
         return url
 
 
-class SiteSerializer(serializers.Serializer):
-    def __init__(self, instance=None, data=empty, **kwargs):
-        kwargs['read_only'] = True
-        super(SiteSerializer, self).__init__(instance, data, **kwargs)
+class ExperimentUrlField(ReadOnlyMixin, serializers.URLField):
+    def __init__(self, **kwargs):
+        kwargs['source'] = 'name'
+        super(ExperimentUrlField, self).__init__(**kwargs)
+
+    def to_representation(self, value):
+        request = self.context.get('request', None)
+        return reverse(
+            'experiments_api:v1:experiment',
+            request=request,
+            kwargs={'name': value})
+
+
+class SiteSerializer(ReadOnlyMixin, serializers.Serializer):
 
     def to_representation(self, instance):
         return self.get_initial()
@@ -35,10 +46,7 @@ class SiteSerializer(serializers.Serializer):
 
 
 class ExperimentSerializer(serializers.ModelSerializer):
-    url = HyperlinkedIdentityField(
-        view_name='experiments_api:v1:experiment',
-        lookup_field='name',
-    )
+    url = ExperimentUrlField()
     admin_url = RemoteAdminUrl(source='*')
     site = SiteSerializer(source='*')
 

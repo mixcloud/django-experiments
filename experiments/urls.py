@@ -18,5 +18,5 @@ urlpatterns = [
 
 if conf.API['api_mode'] in {'server', 'both'}:
     urlpatterns += [
-        url(r'^api/', include(api_urls)),
+        url(r'^api/', include(api_urls, namespace='experiments_api')),
     ]

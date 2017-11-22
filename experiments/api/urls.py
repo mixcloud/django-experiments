@@ -7,5 +7,5 @@ from .v1 import urls as v1_users
 app_name = 'experiments_api'
 urlpatterns = [
     url(r'^$', APIVersionsView.as_view(), name='versions'),
-    url(r'^v1/', include(v1_users)),
+    url(r'^v1/', include(v1_users, namespace='v1')),
 ]
