@@ -1,3 +1,4 @@
+# coding=utf-8
 from django.conf import settings
 from itertools import chain
 import re
@@ -31,3 +32,17 @@ BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|li
 CONTEXT_VARS = {
     'user': 'user',
 }
+
+
+API = {
+    'api_mode': None,
+    'remote': [],
+    'local': {
+        'name': '',
+        'page_size': 100,
+    }
+}
+project_settings = getattr(settings, 'EXPERIMENTS_API', {'local': {}})
+API['local'].update(project_settings['local'])
+project_settings['local'] = API['local']
+API.update(project_settings)
