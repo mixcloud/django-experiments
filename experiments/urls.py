@@ -16,7 +16,7 @@ urlpatterns = [
     url(r'^change_alternative/(?P<experiment_name>[a-zA-Z0-9-_]+)/(?P<alternative_name>[a-zA-Z0-9-_]+)/$', views.change_alternative, name="experiment_change_alternative"),
 ]
 
-if conf.API['api_mode'] in {'server', 'both'}:
+if 'server' in conf.API['api_mode']:
     urlpatterns += [
         url(r'^api/', include(api_urls, namespace='experiments_api')),
     ]

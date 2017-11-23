@@ -1,4 +1,5 @@
 # coding=utf-8
+from django.contrib.admin.utils import quote
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -18,7 +19,7 @@ class RemoteAdminUrl(ReadOnlyMixin, serializers.URLField):
         request = self.context.get('request', None)
         url = reverse(
             'admin:experiments_experiment_change',
-            args=(value.name,),
+            args=(quote(value.name),),
             request=request)
         return url
 

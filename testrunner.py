@@ -43,7 +43,7 @@ def runtests():
             },
         ],
         EXPERIMENTS_API={
-            'api_mode': 'both',
+            'api_mode': 'client,server',
             'local': {'name': 'Test site'},
         },
     )

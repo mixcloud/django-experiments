@@ -29,7 +29,8 @@ setup(
         'django-jinja>=2.3.1',
         'six>=1.10.0',
         'lxml>=4.1.1,<5',
-        'djangorestframework==3.6.4'
+        'djangorestframework==3.6.4',
+        'requests>2.18,<2.19',
     ],
     tests_require=[
         'mock>=1.0.1',

@@ -8,11 +8,11 @@ from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
+from jsonfield import JSONField
 
 from experiments import conf
 from experiments.dateutils import now
-
-from jsonfield import JSONField
+from experiments.api.models import *  # noqa
 
 
 logger = logging.getLogger(__file__)
@@ -45,6 +45,9 @@ class Experiment(models.Model):
     start_date = models.DateTimeField(
         default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ('-start_date', 'name',)
 
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
