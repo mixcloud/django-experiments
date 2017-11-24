@@ -11,6 +11,12 @@ from django.utils.encoding import python_2_unicode_compatible
 from jsonfield import JSONField
 
 from experiments import conf
+from experiments.consts import (
+    CONTROL_STATE,
+    ENABLED_STATE,
+    STATES,
+    TRACK_STATE,
+)
 from experiments.dateutils import now
 from experiments.api.models import *  # noqa
 
@@ -18,15 +24,6 @@ from experiments.api.models import *  # noqa
 logger = logging.getLogger(__file__)
 
 
-CONTROL_STATE = 0
-ENABLED_STATE = 1
-TRACK_STATE = 3
-
-STATES = (
-    (CONTROL_STATE, 'Default/Control'),
-    (ENABLED_STATE, 'Enabled'),
-    (TRACK_STATE, 'Track'),
-)
 
 
 @python_2_unicode_compatible

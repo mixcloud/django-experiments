@@ -1,119 +1,21 @@
 # coding=utf-8
-from datetime import timedelta
 import logging
-import random
-from time import sleep
-import uuid
 
 from django.db import models
 from django.db.models import Max
-from django.db.utils import IntegrityError
-from django.utils.encoding import python_2_unicode_compatible
 import requests
 
-from experiments.dateutils import now
-
 from .. import conf
+from ..consts import STATES
+from ..lock import DbLock
 
 
 logger = logging.getLogger(__file__)
 
 
 __all__ = (
-    'DbLock',
     'RemoteExperiment',
 )
-
-
-CONTROL_STATE = 0
-ENABLED_STATE = 1
-TRACK_STATE = 3
-
-STATES = (
-    (CONTROL_STATE, 'Default/Control'),
-    (ENABLED_STATE, 'Enabled'),
-    (TRACK_STATE, 'Track'),
-)
-
-
-@python_2_unicode_compatible
-class DbLock(models.Model):
-    """Simple expirable lock, backed by database"""
-    DEFAULT_TIMEOUT = 120  # 2 minutes
-    RETRY_INTERVAL = 1  # 1 second
-    name = models.SlugField(primary_key=True)
-    uuid = models.CharField(
-        max_length=36, null=False, unique=True, db_index=True,
-        default=uuid.uuid4)
-    expire_at = models.DateTimeField(null=False, db_index=True)
-
-    def __str__(self):
-        return self.name
-
-    @classmethod
-    def cleanup(cls):
-        """Delete expired locks."""
-        cls.objects.filter(expire_at__lte=now()).delete()
-
-    def acquire(self, blocking=True, timeout=DEFAULT_TIMEOUT):
-        """
-        Acquire the lock.
-        If acquired, lock will be auto-release after <timeout> seconds.
-        If not acquired and <blocking>, will keep retrying every second
-        for <timeout> seconds.
-        """
-        self.cleanup()
-        expire_at = now() + timedelta(seconds=timeout)
-        acquired = self._acquire(blocking, expire_at)
-        if acquired:
-            self.expire_at = now() + timedelta(seconds=timeout)
-            self.save()
-        return acquired
-
-    def _acquire(self, blocking, expire_at):
-        try:
-            lock, acquired = DbLock.objects.get_or_create(
-                name=self.name,
-                defaults={'expire_at': expire_at},
-            )
-        except IntegrityError:
-            acquired = False
-            lock = None
-        if acquired:
-            self.uuid = lock.uuid
-            return True
-        if not blocking:
-            return False
-        while not acquired and now() < expire_at:
-            sleep(self.RETRY_INTERVAL * random.uniform(0.75, 1.25))
-            self.cleanup()
-            acquired = self._acquire(False, expire_at)
-        return acquired
-
-    @property
-    def _lock_query(self):
-        return DbLock.objects.filter(
-            name=self.name,
-            uuid=self.uuid,
-        )
-
-    def reacquire(self, timeout=DEFAULT_TIMEOUT):
-        """
-        Extend validity of the lock by <timeout> seconds.
-        Non-blocking.
-        """
-        self.cleanup()
-        if not self._lock_query.exists():
-            return False
-        self.expire_at = now() + timedelta(seconds=timeout)
-        self.save()
-        return True
-
-    def release(self):
-        """Release the lock so that it may be acquired again."""
-        count, _ = self._lock_query.delete()
-        self.uuid = None
-        return bool(count)
 
 
 class RemoteApiException(Exception):
