@@ -46,9 +46,9 @@ class Experiments(object):
 
     def _report(self, instance, active, variate):
         """
-        Populate self.report dict, used to set cookie with
-        experiments data. The cookie is useful for debugging
-        and verifying whether an experiment is running.
+        Populate self.report dict, used to set a JS variable with
+        experiments data, only for staff users. This can be useful
+        for debugging and verifying whether an experiment is running.
         """
         self.report['conditional'][instance.name] = {
             'auto-enrolling': active,

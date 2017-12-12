@@ -29,11 +29,6 @@ DISABLED_EXPERIMENTS_SESSION_KEY = getattr(settings, 'EXPERIMENTS_DISABLED_EXPER
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)
 
 
-CONTEXT_VARS = {
-    'user': 'user',
-}
-
-
 API = {
     'api_mode': None,
     'remote': [],

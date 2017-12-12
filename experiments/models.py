@@ -69,10 +69,7 @@ class Experiment(models.Model):
     def is_enabled_by_conditionals(self, request):
         if not self.admin_conditionals.exists():
             return True
-        for conditional in self.admin_conditionals.all():
-            if conditional.evaluate(request):
-                return True
-        return False
+        return any(c.evaluate(request) for c in self.admin_conditionals.all())
 
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:

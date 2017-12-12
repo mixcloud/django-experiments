@@ -10,8 +10,7 @@ with codecs.open(path.join(PATH, 'README.rst'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
 setup(
-    name='consumeraf'
-         'fairs-django-experiments',
+    name='consumeraffairs-django-experiments',
     version='1.3.3rc1',
     description='Python Django AB Testing Framework',
     long_description=LONG_DESCRIPTION,

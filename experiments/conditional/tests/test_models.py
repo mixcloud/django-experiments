@@ -3,12 +3,15 @@ from __future__ import absolute_import
 
 from unittest import TestCase
 
+from django.template import TemplateSyntaxError
+from django.test import override_settings
+from lxml.etree import XMLSyntaxError
+
 from experiments.tests.testing_2_3 import mock
 
 from experiments.models import (
     ENABLED_STATE,
     Experiment,
-    CONTROL_STATE,
 )
 from experiments.conditional.models import (
     AdminConditional,
@@ -157,8 +160,12 @@ class ConditionalTemplatesEvalTestCase(TestCase):
 class AdminConditionalTestCase(TestCase):
 
     def setUp(self):
+        self.experiment = Experiment(
+            name='mock_experiment'
+        )
         self.instance = AdminConditional(
             description='mock template',
+            experiment=self.experiment,
         )
         self.request = mock.MagicMock()
         self.context = {'request': self.request}
@@ -212,6 +219,62 @@ class AdminConditionalTestCase(TestCase):
         self.instance.context_code = 'a = 42'
         value = self.instance.evaluate(self.request)
         self.assertTrue(value)
+
+    @override_settings(DEBUG=False)
+    @mock.patch('experiments.conditional.models.logger')
+    def test_evaluate_false_because_xml_error(self, logger):
+        self.context['object'] = {'id': 888}
+        self.instance.template = (
+            '<any_offfff ff f f f ff'
+            '{% if <<a>> == 42 %}<true />{% else %}<false />{% endif %}'
+            '{% if object.id == 123 %}<true />{% else %}<false />{% endif %}'
+            '</any_of>')
+        self.instance.context_code = 'a = 42'
+        value = self.instance.evaluate(self.request)
+        self.assertFalse(value)
+        logger.exception.assert_called_once_with(
+            'Error rendering conditional "mock template" '
+            'for experiment "mock_experiment"')
+
+    @override_settings(DEBUG=True)
+    def test_evaluate_raises_because_xml_error(self):
+        self.context['object'] = {'id': 888}
+        self.instance.template = (
+            '<any_offfff ff f f f ff'
+            '{% if <<a>> == 42 %}<true />{% else %}<false />{% endif %}'
+            '{% if object.id == 123 %}<true />{% else %}<false />{% endif %}'
+            '</any_of>')
+        self.instance.context_code = 'a = 42'
+        with self.assertRaises(XMLSyntaxError):
+            self.instance.evaluate(self.request)
+
+    @override_settings(DEBUG=False)
+    @mock.patch('experiments.conditional.models.logger')
+    def test_evaluate_false_because_template_error(self, logger):
+        self.context['object'] = {'id': 888}
+        self.instance.template = (
+            '<any_of>'
+            '{% if <<a>> == 42 %%%%%%%}<true />{% else %}<false />{% endif %}'
+            '{% if object.id == 123 %}<true />{% else %}<false />{% endif %}'
+            '</any_of>')
+        self.instance.context_code = 'a = 42'
+        value = self.instance.evaluate(self.request)
+        self.assertFalse(value)
+        logger.exception.assert_called_once_with(
+            'Error rendering conditional "mock template" '
+            'for experiment "mock_experiment"')
+
+    @override_settings(DEBUG=True)
+    def test_evaluate_raises_because_template_error(self):
+        self.context['object'] = {'id': 888}
+        self.instance.template = (
+            '<any_of>'
+            '{% if <<a>> == 42 %%%%%%%}<true />{% else %}<false />{% endif %}'
+            '{% if object.id == 123 %}<true />{% else %}<false />{% endif %}'
+            '</any_of>')
+        self.instance.context_code = 'a = 42'
+        with self.assertRaises(TemplateSyntaxError):
+            self.instance.evaluate(self.request)
 
 
 class AdminConditionalTemplateTestCase(TestCase):

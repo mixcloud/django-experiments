@@ -18,11 +18,7 @@ from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_
 from experiments.signal_handlers import transfer_enrollments_to_user
 from experiments.utils import participant
 
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
-
+from experiments.tests.testing_2_3 import mock
 import random
 
 request_factory = RequestFactory()
@@ -81,7 +77,7 @@ class WebUserTests(object):
 
     def test_visit_increases_goal(self):
         thetime = timezone.now()
-        with patch('experiments.utils.now', return_value=thetime):
+        with mock.patch('experiments.utils.now', return_value=thetime):
             experiment_user = participant(self.request)
             experiment_user.confirm_human()
             experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
@@ -90,7 +86,7 @@ class WebUserTests(object):
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Not Present Visit was not correctly counted")
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
-        with patch('experiments.utils.now', return_value=thetime + timedelta(hours=7)):
+        with mock.patch('experiments.utils.now', return_value=thetime + timedelta(hours=7)):
             experiment_user.visit()
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {2: 1}, "No Present Visit was not correctly counted")
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {1: 1}, "Present Visit was not correctly counted")

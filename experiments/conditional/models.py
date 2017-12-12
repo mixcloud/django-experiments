@@ -2,6 +2,7 @@
 import re
 import logging
 
+from django.conf import settings
 from django.db import models
 from django.template import Template, Context
 from django.utils.encoding import python_2_unicode_compatible
@@ -129,16 +130,25 @@ class AdminConditional(ContextTemplateMixin, models.Model):
 
     def evaluate(self, request):
         """Produces a boolean value for this conditional+request pair"""
-        context = request.experiments.context
-        # eval from admin:
-        template, approved_context = self._prepare_for_render()
-        # add values from regular template context:
-        complete_context = approved_context.copy()
-        complete_context.update(context)
-        # render the template:
-        rendered_xml = self._render(template, complete_context)
-        # parse the resulting domain-specific XML to get a boolean value:
-        return xml_bool(rendered_xml)
+        try:
+            context = request.experiments.context
+            # eval from admin:
+            template, approved_context = self._prepare_for_render()
+            # add values from regular template context:
+            approved_context.update(context)
+            # render the template:
+            rendered_xml = self._render(template, approved_context)
+            # parse the resulting domain-specific XML to get a boolean value:
+            return xml_bool(rendered_xml)
+        except Exception:
+            if settings.DEBUG:
+                raise
+            else:
+                logger.exception(
+                    'Error rendering conditional "{}" for experiment "{}"'
+                    .format(self, self.experiment)
+                )
+            return False
 
     def _prepare_for_render(self):
         """
