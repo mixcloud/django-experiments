@@ -395,7 +395,10 @@ Changelog
 
 1.3.3
 ~~~~~
- - added experiment conditionals and auto-enrollment
+ - experiment conditionals
+ - ability to create experiments from the admin (though without code ATM)
+ - removed South migrations
+ - new template tab {% experiment_enrolled_alternative %}
 
 1.3.2
 ~~~~~
