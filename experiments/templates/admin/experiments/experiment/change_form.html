@@ -1,25 +1,35 @@
 {% extends "admin/change_form.html" %}
 
-{% block content_title %}{% if original %}<h1>{{ original.name }}</h1>{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block content_title %}
+    {% if original %}
+        <h1>{{ original.name }}</h1>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
 
 {% block object-tools %}
     {{ block.super }}
 
     {% if original %}
-        <h5 class="experiment-dates">{{ original.start_date }} &dash; {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}</h5>
+        <h5 class="experiment-dates">
+            {{ original.start_date }} &dash;
+            {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}
+        </h5>
 
         <div class="module experiment-results-container">
-            {% include "admin/experiments/results_table.html" %}
+            {% include "admin/experiments/experiment/results_table.html" %}
         </div>
     {% endif %}
 {% endblock object-tools %}
 
 {% block object-tools-items %}
+    {{ block.super }}
     {% if original %}
         {# These have to be links to get the correct admin styling #}
-        <li><a href="." data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %}">{% if experiment.default_alternative != control_group %}Default: {% endif %}{{ experiment.default_alternative }}</a></li>
-        <li><a href="." data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %}">Track</a></li>
-        <li><a href="." data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %}">Enabled</a></li>
+        <li><a href="../" data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %} experiment-state-toggle">Default/Control</a></li>
+        <li><a href="../" data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %} experiment-state-toggle">Track</a></li>
+        <li><a href="../" data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %} experiment-state-toggle">Enabled</a></li>
     {% endif %}
 {% endblock object-tools-items %}
 
@@ -29,12 +39,12 @@
     </div>
 {% endblock field_sets %}
 
-{% block after_field_sets %}
+{% block after_related_objects %}
     <div>
         <fieldset class="module aligned collapse">
             <h2>Relevant Goals</h2>
 
-            <table>
+            <table class="relevant-goals">
                 <thead>
                     <tr>
                         <th>Goal</th>
@@ -54,4 +64,4 @@
             </table>
         </fieldset>
     </div>
-{% endblock after_field_sets %}
+{% endblock after_related_objects %}

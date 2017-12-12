@@ -16,11 +16,6 @@ h5.experiment-dates {
     margin: 0;
 }
 
-.form-row.field-state {
-    /* This is hidden so the controls at the top of the page can be used instead */
-    display: none;
-}
-
 .experiment-results-container {
     max-width: 1000px;
     margin: 30px auto;
@@ -84,4 +79,62 @@ thead th.experiment-toggle-goals {
 .experiment-mwu-goal {
     cursor: pointer;
     text-decoration: underline;
+}
+
+/* tool buttons */
+body.experiments-experiment .grp-object-tools a.experiment-state-toggle,
+body.model-experiment .object-tools a.experiment-state-toggle {
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #4fb2d3),color-stop(100%, #309bbf));
+    background: -moz-linear-gradient(#4fb2d3,#309bbf);
+    background: -webkit-linear-gradient(#4fb2d3,#309bbf);
+    background: linear-gradient(#4fb2d3,#309bbf);
+}
+body.experiments-experiment .grp-object-tools a.experiment-state-toggle:hover {
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff),color-stop(100%, #eeeeee));
+    background: -moz-linear-gradient(#ffffff,#eeeeee);
+    background: -webkit-linear-gradient(#ffffff,#eeeeee);
+    background: linear-gradient(#ffffff,#eeeeee);
+    border-color: #777;
+    color: #444;
+}
+body.model-experiment .object-tools a.experiment-state-toggle:hover {
+    background: #417690;
+}
+
+/* alternatives inline */
+body.experiments-experiment #experimentalternative_set-group h2,
+body.model-experiment #experimentalternative_set-group h2 {
+    display: none;
+}
+body.experiments-experiment #experimentalternative_set-group .js-alternatives h2,
+body.model-experiment #experimentalternative_set-group .js-alternatives h2 {
+    display: block;
+}
+body.experiments-experiment #experimentalternative_set-group > .grp-tools,
+body.model-experiment #experimentalternative_set-group > .grp-tools {
+    display: none;
+}
+body.experiments-experiment .js-alternatives,
+body.model-experiment .js-alternatives {
+    margin-bottom: 5px;
+}
+
+/* conditionals inline */
+#admin_conditionals-group .inline-related .form-row {
+    display: none;
+}
+#admin_conditionals-group .inline-related .form-row.copy_from {
+    display: block;
+}
+#admin_conditionals-group .inline-related.has_original .form-row {
+    display: block;
+}
+#admin_conditionals-group .inline-related.has_original .form-row.copy_from {
+    display: none;
+}
+
+/* misc */
+body.experiments-experiment table.relevant-goals,
+body.model-experiment table.relevant-goals {
+    margin-bottom: 1em;
 }
