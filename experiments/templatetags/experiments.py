@@ -4,8 +4,10 @@ from __future__ import absolute_import
 from operator import attrgetter
 from uuid import uuid4
 
+import json
 from django import template
 from django.core.urlresolvers import reverse
+from experiments.conditional.enrollment import Experiments
 from jinja2 import (
     ext,
     nodes,
@@ -54,6 +56,24 @@ def experiments_confirm_human(context):
 def _experiments_confirm_human(context):
     request = context['request']
     return {'confirmed_human': request.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)}
+
+
+@register.simple_tag(takes_context=True)
+def experiments_prepare_conditionals(context):
+    """Template tag for regular Django templates"""
+    return _experiments_prepare_conditionals(context)
+
+
+def _experiments_prepare_conditionals(context):
+    Experiments(context)
+    request = context['request']
+    if request.user.is_staff:
+        report = json.dumps(request.experiments.report)
+        script = '<script>window.ca_experiments = {};</script>'.format(
+            report,
+        )
+        return script
+    return ''
 
 
 class ExperimentNode(template.Node):
@@ -162,21 +182,67 @@ def _experiment_enroll(context, experiment_name, *alternatives, **kwargs):
     return user.enroll(experiment_name, list(alternatives))
 
 
-class ExperimentsExtension(ext.Extension):
+@register.assignment_tag(takes_context=True)
+def experiment_enrolled_alternative(context, experiment_name):
+    return _experiment_enrolled_alternative(context, experiment_name)
+
+
+def _experiment_enrolled_alternative(context, experiment_name):
+    user = participant(request=context.get('request', None))
+    return user.get_alternative(experiment_name)
+
+
+class ExtensionHelpers(object):
+
+    def _name_or_const(self, token):
+        """
+        Depending on what was provided in a tag as an argument, we need
+        either `nodes.Const` (if a string was provided), or `nodes.Name`
+        (if a variable name was provided).
+
+        Not tested with integers etc.
+
+        Maybe there exists a `stream.parse_something()` method that
+        should we used instead?
+        """
+        if token.type == 'name':
+            return nodes.Name(token.value, 'load')
+        if token.type == 'string':
+            return nodes.Const(token.value)
+        raise ValueError('Expected name or string, got {}'.format(token))
+
+    def _token_as(self, parser):
+        """
+        Return True if current token is an `as`.
+
+        `token.type` will be `as` if there are no names used in the tag.
+        If there are names (i.e. variables) used, then `as` will also be
+        considered a "name", hence the extended check.
+        """
+        current_token = parser.stream.current
+        return (
+            current_token.type == 'as' or
+            (current_token.type == 'name' and current_token.value == 'as')
+        )
+
+
+class ExperimentsExtension(ExtensionHelpers, ext.Extension):
     """Jinja2 Extension for django-experiments"""
 
     # tags that will be handled by this class:
     tags = {
+        'experiments_prepare_conditionals',
         'experiment',
         'experiments_confirm_human',
         'experiment_enroll',
+        'experiment_enrolled_alternative',
         'experiment_goal',
     }
 
     def parse(self, parser):
         """
         Read the first token of a tag (i.e. the tag name)
-        and call apropriate parser method.
+        and call appropriate parser method.
 
         Parse methods are executed only once per process, when templates
         compile for the first time.
@@ -188,6 +254,21 @@ class ExperimentsExtension(ext.Extension):
         tag = parser.stream.current.value
         next(parser.stream)
         return getattr(self, 'parse_{}'.format(tag))(parser)
+
+    def parse_experiments_prepare_conditionals(self, parser):
+        """Parse {% experiments_prepare_conditionals %} tags"""
+        lineno = parser.stream.current.lineno
+        # list of nodes that will be used when calling the callback:
+        args = []
+        args.append(nodes.ContextReference())
+        # Jinja2 callbacky nodey magic:
+        call_node = self.call_method(
+            'render_experiments_prepare_conditionals', args, lineno=lineno)
+        return nodes.CallBlock(call_node, [], [], []).set_lineno(lineno)
+
+    def render_experiments_prepare_conditionals(self, context, caller):
+        """Callback that renders {% experiments_auto_enroll %} tag"""
+        return nodes.Markup(_experiments_prepare_conditionals(context))
 
     def parse_experiment(self, parser):
         """Parse {% experiment ... %} tags"""
@@ -351,35 +432,52 @@ class ExperimentsExtension(ext.Extension):
         """
         return _experiment_enroll(context, experiment_name, *alternatives)
 
-    # helpers #
-
-    def _name_or_const(self, token):
+    def parse_experiment_enrolled_alternative(self, parser):
         """
-        Depending on what was provided in a tag as an argument, we need
-        either `nodes.Const` (if a string was provided), or `nodes.Name`
-        (if a variable name was provided).
-
-        Not tested with integers etc.
-
-        Maybe there exists a `stream.parse_something()` method that
-        should we used instead?
+        Parse {% experiment_enrolled_alternative <experiment_name> %} tags
         """
-        if token.type == 'name':
-            return nodes.Name(token.value, 'load')
-        if token.type == 'string':
-            return nodes.Const(token.value)
-        raise ValueError('Expected name or string, got {}'.format(token))
 
-    def _token_as(self, parser):
-        """
-        Return True if current token is an `as`.
+        lineno = parser.stream.current.lineno
 
-        `token.type` will be `as` if there are no names used in the tag.
-        If there are names (i.e. variables) used, then `as` will also be
-        considered a "name", hence the extended check.
+        # list of nodes that will be used when calling the callback:
+        args = []
+
+        # get experiment name from token
+        experiment_name = parser.stream.current
+        args.append(self._name_or_const(experiment_name))
+        next(parser.stream)
+
+        # we will also need the context in the callback:
+        args.append(nodes.ContextReference())
+
+        # expecting `as` after the alternatives:
+        if not self._token_as(parser):
+            raise TemplateSyntaxError(
+                'Syntax should be like: '
+                '{% experiment_enrolled_alternative "experiment_name"'
+                ' as some_variable %}',
+                lineno,
+            )
+        next(parser.stream)
+
+        # parse what comes after `as`:
+        target = parser.parse_assign_target()
+
+        # create a callback node that will be executed on render:
+        call_node = self.call_method(
+            'render_experiment_enrolled_alternative', args, lineno=lineno)
+
+        # return an assignment node that will trigger the callback:
+        return nodes.Assign(target, call_node, lineno=lineno)
+
+    def render_experiment_enrolled_alternative(self, experiment_name, context):
         """
-        current_token = parser.stream.current
-        return (
-            current_token.type == 'as' or
-            (current_token.type == 'name' and current_token.value == 'as')
-        )
+        Callback to render {% experiment_enrolled_alternative ... %} tags.
+
+        This method does not actually render anything, but is called at
+        render time so keeping the name for consistency.
+        Result gets added ("assigned") back into template context.
+        """
+        alternative = _experiment_enrolled_alternative(
+            context, experiment_name)
+        return alternative

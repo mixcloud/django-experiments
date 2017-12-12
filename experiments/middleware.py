@@ -1,4 +1,4 @@
-from experiments.utils import participant
+# coding=utf-8
 
 try:
     # for Django >= 1.10
@@ -13,6 +13,8 @@ class ExperimentsRetentionMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         # Don't track, failed pages, ajax requests, logged out users or widget impressions.
         # We detect widgets by relying on the fact that they are flagged as being embedable
+        from experiments.utils import participant
+
         if response.status_code != 200 or request.is_ajax() or getattr(response, 'xframe_options_exempt', False):
             return response
 
@@ -25,4 +27,6 @@ class ExperimentsRetentionMiddleware(MiddlewareMixin):
 class ConfirmHumanMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
+        from experiments.utils import participant
+
         participant(request).confirm_human()

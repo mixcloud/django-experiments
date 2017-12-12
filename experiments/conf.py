@@ -23,4 +23,6 @@ CONFIRM_HUMAN = getattr(settings, 'EXPERIMENTS_CONFIRM_HUMAN', True)
 
 CONFIRM_HUMAN_SESSION_KEY = getattr(settings, 'EXPERIMENTS_CONFIRM_HUMAN_SESSION_KEY', 'experiments_verified_human')
 
+DISABLED_EXPERIMENTS_SESSION_KEY = getattr(settings, 'EXPERIMENTS_DISABLED_EXPERIMENTS_SESSION_KEY', 'experiments_disabled')
+
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)
