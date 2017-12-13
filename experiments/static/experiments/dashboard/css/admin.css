@@ -41,8 +41,22 @@ thead th.experiment-toggle-goals {
     display: none;
 }
 
+.experiment-results-table tbody tr .primary_goal {
+    font-weight: bold;
+}
 .experiment-alternative-enrolled {
     display: none;
+}
+table.relevant-goals tbody th {
+    font-size: 11px;
+    font-weight: normal;
+}
+table.relevant-goals td {
+    padding: 0;
+}
+table.relevant-goals td label {
+    display: block;
+    padding: 10px;
 }
 
 .experiment-selected-alternative .experiment-alternative-join {
@@ -131,6 +145,16 @@ body.model-experiment .js-alternatives {
 }
 #admin_conditionals-group .inline-related.has_original .form-row.copy_from {
     display: none;
+}
+
+/* remote experiments stats mini table */
+.field-confidences > table {
+    border: none;
+}
+.field-confidences > table.ministats th,
+.field-confidences > table.ministats td {
+    padding: 0 8px 3px 0;
+    border: none;
 }
 
 /* misc */

@@ -16,7 +16,11 @@ def runtests():
         DATABASES={
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-            }
+                'NAME': ':memory:',
+            },
+            'OPTIONS': {
+                'timeout': 20,
+            },
         },
         INSTALLED_APPS=('django.contrib.auth',
                         'django.contrib.contenttypes',
@@ -51,7 +55,7 @@ def runtests():
 
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
-    test_runner = TestRunner(verbosity=1, failfast=False)
+    test_runner = TestRunner(verbosity=3, failfast=False)
     failures = test_runner.run_tests(['experiments', ])
     sys.exit(bool(failures))
 

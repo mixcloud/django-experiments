@@ -1,5 +1,6 @@
 # coding=utf-8
 import logging
+from collections import OrderedDict
 
 from django.contrib import admin
 
@@ -22,6 +23,8 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
         'state',
         'start_date',
         'end_date',
+        'participants',
+        'confidences',
     )
     list_display_links = None
     list_filter = (
@@ -40,6 +43,89 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
     admin_link.short_description = 'name'
     admin_link.allow_tags = True
     admin_link.admin_order_field = 'name'
+
+    def participants(self, obj):
+
+        def _td(data):
+            confidence = data['confidence']
+            value = '{0:.2f}%'.format(confidence) if confidence else 'N/A'
+            return '<td>{}</td>'.format(value)
+
+        def _goal(name, data):
+            data_dict = dict(data['alternatives'])
+            data_html = ''.join(
+                _td(data_dict[alternative])
+                for alternative in obj.alternatives_list
+                if alternative != 'control')
+            return '<tr><th scope="row">{goal}</th>{data_html}</tr>'.format(
+                goal=name,
+                data_html=data_html,
+            )
+
+        alterantives_header_html = ''.join(
+            '<th>{}</th>'.format(alternative)
+            for alternative in obj.alternatives_list
+            if alternative != 'control'
+        )
+        table_html = (
+            '<table class="ministats">'
+            '<tr><td></td>{alterantives_header_html}</tr>'
+            '{goals}'
+            '</table>')
+        goals_html = '\n'.join(
+            _goal(goal, data)
+            for goal, data in obj.statistics['results'].items()
+        )
+        return table_html.format(
+            alterantives_header_html=alterantives_header_html,
+            goals=goals_html,
+        )
+    participants.allow_tags = True
+
+    def confidences(self, obj):
+        if not obj.alternatives_list:
+            return 'no alternatives'
+        if not obj.statistics['results']:
+            return 'no primary goals'
+
+        def _td(data):
+            confidence = data['confidence']
+            value = '{0:.2f}%'.format(confidence) if confidence else 'N/A'
+            return '<td>{}</td>'.format(value)
+
+        def _goal(name, data):
+            data_dict = dict(data['alternatives'])
+            data_html = ''.join(
+                _td(data_dict[alternative])
+                for alternative in obj.alternatives_list
+                if alternative != 'control')
+            return '<tr><th scope="row">{goal}</th>{data_html}</tr>'.format(
+                goal=name,
+                data_html=data_html,
+            )
+
+        alterantives_header_html = ''.join(
+            '<th>{}</th>'.format(alternative)
+            for alternative in obj.alternatives_list
+            if alternative != 'control'
+        )
+        table_html = (
+            '<table class="ministats">'
+            '<tr><td></td>{alterantives_header_html}</tr>'
+            '{goals}'
+            '</table>')
+        results = obj.statistics['results']
+        goals_html = '\n'.join(
+            _goal(goal, results[goal])
+            for goal in sorted(results)
+            if results[goal]['is_primary']
+        )
+        return table_html.format(
+            alterantives_header_html=alterantives_header_html,
+            goals=goals_html,
+        )
+    confidences.allow_tags = True
+    confidences.short_description = 'confidence intervals'
 
     def has_delete_permission(self, request, obj=None):
         return False

@@ -3,6 +3,7 @@ import logging
 
 from django.db import models
 from django.db.models import Max
+from jsonfield import JSONField
 import requests
 
 from .. import conf
@@ -36,6 +37,8 @@ class RemoteExperiment(models.Model):
     state = models.IntegerField(choices=STATES)
     start_date = models.DateTimeField(null=True, editable=False)
     end_date = models.DateTimeField(null=True, editable=False)
+    alternatives_list = JSONField(default={}, null=False, editable=False)
+    statistics = JSONField(default={}, null=False, editable=False)
     batch = models.PositiveIntegerField(
         default=0, null=False, editable=False)
 
@@ -63,7 +66,7 @@ class RemoteExperiment(models.Model):
         batch += 1
         for server in conf.API['remotes']:
             try:
-                relocked = lock.reacquire(timeout=60)
+                relocked = lock.extend(timeout=60)
                 if not relocked:
                     logger.warning(
                         'Server too slow or lock to short! {}'.format(server))
@@ -106,6 +109,8 @@ class RemoteExperiment(models.Model):
                 'start_date': remote_instance['start_date'],
                 'end_date': remote_instance['end_date'],
                 'state': remote_instance['state'],
+                'statistics': remote_instance['statistics'],
+                'alternatives_list': remote_instance['alternatives_list'],
                 'batch': batch,
             }
         )

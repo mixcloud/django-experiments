@@ -2,10 +2,10 @@
 from datetime import timedelta
 import logging
 import random
-from threading import TIMEOUT_MAX
 from time import sleep
 import uuid
 
+import django
 from django.db import models
 from django.db.utils import IntegrityError, OperationalError
 from django.utils.encoding import python_2_unicode_compatible
@@ -14,6 +14,7 @@ from experiments.dateutils import now
 
 
 logger = logging.getLogger(__file__)
+TIMEOUT_MAX = 9223372036.0
 
 
 @python_2_unicode_compatible
@@ -91,7 +92,7 @@ class DbLock(models.Model):
             uuid=self.uuid,
         )
 
-    def reacquire(self, timeout=DEFAULT_TIMEOUT):
+    def extend(self, timeout=DEFAULT_TIMEOUT):
         """
         Extend validity of the lock by <timeout> seconds.
         Non-blocking.
@@ -108,7 +109,17 @@ class DbLock(models.Model):
 
     def release(self):
         """Release the lock so that it may be acquired again."""
-        count, _ = self._lock_query.delete()
+        try:
+            return self._release()
+        except OperationalError:
+            return self._release()
+
+    def _release(self):
+        if django.VERSION < (1, 9):
+            count = self._lock_query.count()
+            self._lock_query.delete()
+        else:
+            count, _ = self._lock_query.delete()
         self.uuid = None
         return bool(count)
 

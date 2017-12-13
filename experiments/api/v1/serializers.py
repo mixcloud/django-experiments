@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.reverse import reverse
 
 from ... import conf
+from ...admin_utils import get_experiment_stats
 from ...models import Experiment
 
 
@@ -50,6 +51,7 @@ class ExperimentSerializer(serializers.ModelSerializer):
     url = ExperimentUrlField()
     admin_url = RemoteAdminUrl(source='*')
     site = SiteSerializer(source='*')
+    statistics = serializers.SerializerMethodField()
 
     lookup_field = 'name'
     lookup_url_kwarg = 'name'
@@ -65,6 +67,7 @@ class ExperimentSerializer(serializers.ModelSerializer):
             'state',
             'start_date',
             'end_date',
+            'statistics',
             'site',
         )
         read_only_fields = (
@@ -76,8 +79,18 @@ class ExperimentSerializer(serializers.ModelSerializer):
             'end_date',
         )
 
+    def get_statistics(self, obj):
+        stats = get_experiment_stats(obj)
+        stats['results'] = {
+            alternative: data
+            for alternative, data in stats['results'].items()
+            if data['relevant']
+        }
+        return stats
+
 
 class ExperimentNestedSerializer(ExperimentSerializer):
+    alternatives_list = serializers.SerializerMethodField()
 
     class Meta(ExperimentSerializer.Meta):
         fields = (
@@ -87,6 +100,8 @@ class ExperimentNestedSerializer(ExperimentSerializer):
             'state',
             'start_date',
             'end_date',
+            'alternatives_list',
+            'statistics',
         )
         read_only_fields = (
             'url',
@@ -95,3 +110,6 @@ class ExperimentNestedSerializer(ExperimentSerializer):
             'start_date',
             'end_date',
         )
+
+    def get_alternatives_list(self, obj):
+        return list(obj.alternatives.keys())

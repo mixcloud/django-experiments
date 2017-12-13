@@ -74,7 +74,11 @@ class ExperimentAdmin(admin.ModelAdmin):
             }),
             ('Relevant Goals', {
                 'classes': ('collapse', 'hidden-relevant-goals'),
-                'fields': ('relevant_chi2_goals', 'relevant_mwu_goals'),
+                'fields': (
+                    'relevant_chi2_goals',
+                    'relevant_mwu_goals',
+                    'primary_goals',
+                ),
             }),
         )
 

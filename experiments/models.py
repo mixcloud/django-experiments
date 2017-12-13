@@ -38,6 +38,7 @@ class Experiment(models.Model):
     alternatives = JSONField(default={}, blank=True, null=False)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
+    primary_goals = models.TextField(default="", null=False, blank=True)
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
     start_date = models.DateTimeField(
         default=now, blank=True, null=True, db_index=True)
@@ -133,6 +134,7 @@ class Experiment(models.Model):
             'description': self.description,
             'relevant_chi2_goals': self.relevant_chi2_goals,
             'relevant_mwu_goals': self.relevant_mwu_goals,
+            'primary_goals': self.primary_goals,
             'default_alternative': self.default_alternative,
             'alternatives': ','.join(self.alternative_keys),
         }

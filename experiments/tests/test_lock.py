@@ -9,17 +9,17 @@ class DbLockTestCase(lock_tests.LockTests):
     def locktype():
         return DbLock('foo')
 
-    def test_reacquire(self):
+    def test_extend(self):
         lock = self.locktype()
         lock.acquire()
-        self.assertTrue(lock.reacquire())
+        self.assertTrue(lock.extend())
         lock.release()
-        self.assertFalse(lock.reacquire())
+        self.assertFalse(lock.extend())
         del lock
 
-    def test_reacquire_expired(self):
+    def test_extend_expired(self):
         lock = self.locktype()
         lock.acquire()
-        self.assertTrue(lock.reacquire(0))
-        self.assertFalse(lock.reacquire())
+        self.assertTrue(lock.extend(0))
+        self.assertFalse(lock.extend())
         del lock
