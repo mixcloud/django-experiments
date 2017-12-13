@@ -393,6 +393,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.3.4
+~~~~~
+ - bugfix related to auto-create of experiments
+
 1.3.3
 ~~~~~
  - added experiment conditionals and auto-enrollment
