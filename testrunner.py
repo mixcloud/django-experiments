@@ -20,6 +20,7 @@ def runtests():
             },
             'OPTIONS': {
                 'timeout': 20,
+                'check_same_thread': False,
             },
         },
         INSTALLED_APPS=('django.contrib.auth',

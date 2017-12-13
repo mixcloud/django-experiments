@@ -45,47 +45,16 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
     admin_link.admin_order_field = 'name'
 
     def participants(self, obj):
-
-        def _td(data):
-            confidence = data['confidence']
-            value = '{0:.2f}%'.format(confidence) if confidence else 'N/A'
-            return '<td>{}</td>'.format(value)
-
-        def _goal(name, data):
-            data_dict = dict(data['alternatives'])
-            data_html = ''.join(
-                _td(data_dict[alternative])
-                for alternative in obj.alternatives_list
-                if alternative != 'control')
-            return '<tr><th scope="row">{goal}</th>{data_html}</tr>'.format(
-                goal=name,
-                data_html=data_html,
-            )
-
-        alterantives_header_html = ''.join(
-            '<th>{}</th>'.format(alternative)
-            for alternative in obj.alternatives_list
-            if alternative != 'control'
-        )
-        table_html = (
-            '<table class="ministats">'
-            '<tr><td></td>{alterantives_header_html}</tr>'
-            '{goals}'
-            '</table>')
-        goals_html = '\n'.join(
-            _goal(goal, data)
-            for goal, data in obj.statistics['results'].items()
-        )
-        return table_html.format(
-            alterantives_header_html=alterantives_header_html,
-            goals=goals_html,
-        )
-    participants.allow_tags = True
+        return sum(dict(obj.statistics['alternatives']).values())
 
     def confidences(self, obj):
         if not obj.alternatives_list:
             return 'no alternatives'
-        if not obj.statistics['results']:
+        primary_alternatives = list(filter(
+            lambda alt: alt['is_primary'],
+            obj.statistics['results'].values())
+        )
+        if not primary_alternatives:
             return 'no primary goals'
 
         def _td(data):
@@ -145,7 +114,7 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
             self.message_user(
                 request, 'Error updating from {site}: {e}'.format(
                     site=e.server['url'],
-                    e=e.original_exception,
+                    e=repr(e.original_exception),
                 ))
         return super(RemoteExperimentAdmin, self).changelist_view(
             request, extra_context)

@@ -19,6 +19,7 @@ from experiments.consts import (
 )
 from experiments.dateutils import now
 from experiments.api.models import *  # noqa
+from experiments.lock import DbLock  # noqa
 
 
 logger = logging.getLogger(__file__)

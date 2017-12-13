@@ -96,7 +96,10 @@ class RemoteExperiment(models.Model):
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache',
         }
-        return requests.get(url, headers=headers).json()
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+
 
     @classmethod
     def _update_or_create(cls, remote_instance, remote_site, batch):

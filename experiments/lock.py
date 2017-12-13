@@ -35,6 +35,13 @@ class DbLock(models.Model):
             uuid=self.uuid,
         )
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        if not self.uuid:
+            self.uuid = uuid.uuid4()
+        super(DbLock, self).save(
+            force_insert, force_update, using, update_fields)
+
     @classmethod
     def cleanup(cls):
         """Delete expired locks."""
@@ -109,10 +116,14 @@ class DbLock(models.Model):
 
     def release(self):
         """Release the lock so that it may be acquired again."""
-        try:
-            return self._release()
-        except OperationalError:
-            return self._release()
+        limit = 10
+        for i in range(limit):
+            try:
+                return self._release()
+            except OperationalError:
+                if i == limit-1:
+                    raise
+                sleep(0.01 * random.uniform(0.3, 1.6))
 
     def _release(self):
         if django.VERSION < (1, 9):
