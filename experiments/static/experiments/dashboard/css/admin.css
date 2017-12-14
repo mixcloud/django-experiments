@@ -120,18 +120,32 @@ body.model-experiment .js-alternatives {
 }
 
 /* conditionals inline */
-#admin_conditionals-group .inline-related .form-row {
-    display: none;
-}
-#admin_conditionals-group .inline-related .form-row.copy_from {
+body.grp-change-form #admin_conditionals-group .inline-related.has_original .form-row {
     display: block;
 }
-#admin_conditionals-group .inline-related.has_original .form-row {
-    display: block;
-}
-#admin_conditionals-group .inline-related.has_original .form-row.copy_from {
+body.grp-change-form #admin_conditionals-group .inline-related.has_original .form-row.copy_from {
     display: none;
 }
+body.grp-change-form #admin_conditionals-group .inline-related .form-row {
+    display: none;
+}
+body.grp-change-form #admin_conditionals-group .inline-related .form-row.copy_from {
+    display: block;
+}
+
+body.change-form #admin_conditionals-group .inline-related .form-row {
+    display: block;
+}
+body.change-form #admin_conditionals-group .inline-related .form-row.field-copy_from {
+    display: none;
+}
+body.change-form #admin_conditionals-group .inline-related.last-related .form-row {
+    display: none;
+}
+body.change-form #admin_conditionals-group .inline-related.last-related .form-row.field-copy_from {
+    display: block;
+}
+
 
 /* misc */
 body.experiments-experiment table.relevant-goals,
