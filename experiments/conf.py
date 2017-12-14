@@ -30,10 +30,10 @@ BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|li
 
 
 API = {
-    'api_mode': None,
-    'remote': [],
+    'api_mode': '',
+    'remotes': [],
     'local': {
-        'name': '',
+        'name': 'Local',
         'page_size': 100,
     }
 }
