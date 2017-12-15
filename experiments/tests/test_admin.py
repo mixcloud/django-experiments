@@ -75,7 +75,9 @@ class AdminAjaxTestCase(TestCase):
         self.assertEqual(403, self.client.post(reverse('admin:experiment_admin_set_state'), {}).status_code)
         self.assertEqual(403, self.client.post(reverse('admin:experiment_admin_set_alternative'), {}).status_code)
 
-        permission = Permission.objects.get(codename='change_experiment')
+        permission = Permission.objects.get(
+            codename='change_experiment',
+            content_type__app_label='experiments')
         user.user_permissions.add(permission)
 
         self.assertEqual(400, self.client.post(reverse('admin:experiment_admin_set_state'), {}).status_code)
