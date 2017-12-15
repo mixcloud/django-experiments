@@ -393,6 +393,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.3.6
+~~~~~
+ - compatibility improvements of unit tests
+
 1.3.5
 ~~~~~
  - bugfix for python2
