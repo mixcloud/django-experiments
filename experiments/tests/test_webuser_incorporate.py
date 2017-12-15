@@ -53,30 +53,77 @@ def authenticated(incorporating):
     User = get_user_model()
     return AuthenticatedUser(user=User.objects.create(username=['incorporating_user', 'incorporated_user'][incorporating]))
 
-user_factories = (dummy, anonymous, authenticated)
+
+class Dummy2DummyIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Dummy2DummyIncorporateTestCase, self).setUp()
+        self.incorporating = dummy(True)
+        self.incorporated = dummy(False)
 
 
-def load_tests(loader, standard_tests, _):
-    suite = TestSuite()
-    suite.addTests(standard_tests)
+class Dummy2AnonymousIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
 
-    for incorporating in user_factories:
-        for incorporated in user_factories:
-            test_case = build_test_case(incorporating, incorporated)
-            tests = loader.loadTestsFromTestCase(test_case)
-            suite.addTests(tests)
-    return suite
+    def setUp(self):
+        super(Dummy2AnonymousIncorporateTestCase, self).setUp()
+        self.incorporating = dummy(True)
+        self.incorporated = anonymous(False)
 
 
-def build_test_case(incorporating, incorporated):
-    class InstantiatedTestCase(WebUserIncorporateTestCase, TestCase):
+class Dummy2AuthenticatedIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
 
-        def setUp(self):
-            super(InstantiatedTestCase, self).setUp()
-            self.incorporating = incorporating(True)
-            self.incorporated = incorporated(False)
-    InstantiatedTestCase.__name__ = "WebUserIncorporateTestCase_into_%s_from_%s" % (incorporating.__name__, incorporated.__name__)
-    return InstantiatedTestCase
+    def setUp(self):
+        super(Dummy2AuthenticatedIncorporateTestCase, self).setUp()
+        self.incorporating = dummy(True)
+        self.incorporated = authenticated(False)
+
+
+class Anonymous2DummyIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Anonymous2DummyIncorporateTestCase, self).setUp()
+        self.incorporating = anonymous(True)
+        self.incorporated = dummy(False)
+
+
+class Anonymous2AnonymousIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Anonymous2AnonymousIncorporateTestCase, self).setUp()
+        self.incorporating = anonymous(True)
+        self.incorporated = anonymous(False)
+
+
+class Anonymous2AuthenticatedIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Anonymous2AuthenticatedIncorporateTestCase, self).setUp()
+        self.incorporating = anonymous(True)
+        self.incorporated = authenticated(False)
+
+
+class Authenticated2DummyIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Authenticated2DummyIncorporateTestCase, self).setUp()
+        self.incorporating = authenticated(True)
+        self.incorporated = dummy(False)
+
+
+class Authenticated2AnonymousIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Authenticated2AnonymousIncorporateTestCase, self).setUp()
+        self.incorporating = authenticated(True)
+        self.incorporated = anonymous(False)
+
+
+class Authenticated2AuthenticatedIncorporateTestCase(WebUserIncorporateTestCase, TestCase):
+
+    def setUp(self):
+        super(Authenticated2AuthenticatedIncorporateTestCase, self).setUp()
+        self.incorporating = authenticated(True)
+        self.incorporated = authenticated(False)
 
 
 class IncorporateTestCase(TestCase):
