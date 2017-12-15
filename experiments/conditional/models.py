@@ -107,7 +107,7 @@ class ContextTemplateMixin(models.Model):
     def _syntax_error_msg(exc):
         try:
             return '{}, line {}: "{}"'.format(exc.msg, exc.lineno, exc.text)
-        except:
+        except AttributeError:
             return repr(exc)
 
 
