@@ -105,7 +105,10 @@ class ContextTemplateMixin(models.Model):
 
     @staticmethod
     def _syntax_error_msg(exc):
-        return '{}, line {}: "{}"'.format(exc.msg, exc.lineno, exc.text)
+        try:
+            return '{}, line {}: "{}"'.format(exc.msg, exc.lineno, exc.text)
+        except AttributeError:
+            return repr(exc)
 
 
 class AdminConditional(ContextTemplateMixin, models.Model):

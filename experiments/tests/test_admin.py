@@ -1,15 +1,18 @@
+# coding=utf-8
 from __future__ import absolute_import
 import json
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from experiments.admin import ExperimentAdmin
 
 from experiments.models import Experiment, CONTROL_STATE, ENABLED_STATE
 from experiments.utils import participant
+from experiments.tests.testing_2_3 import mock
 
 
-class AdminTestCase(TestCase):
+class AdminAjaxTestCase(TestCase):
     def test_set_state(self):
         experiment = Experiment.objects.create(name='test_experiment', state=CONTROL_STATE)
         User.objects.create_superuser(username='user', email='deleted@mixcloud.com', password='pass')
@@ -72,8 +75,42 @@ class AdminTestCase(TestCase):
         self.assertEqual(403, self.client.post(reverse('admin:experiment_admin_set_state'), {}).status_code)
         self.assertEqual(403, self.client.post(reverse('admin:experiment_admin_set_alternative'), {}).status_code)
 
-        permission = Permission.objects.get(codename='change_experiment')
+        permission = Permission.objects.get(
+            codename='change_experiment',
+            content_type__app_label='experiments')
         user.user_permissions.add(permission)
 
         self.assertEqual(400, self.client.post(reverse('admin:experiment_admin_set_state'), {}).status_code)
         self.assertEqual(400, self.client.post(reverse('admin:experiment_admin_set_alternative'), {}).status_code)
+
+
+class AdminTestCase(TestCase):
+
+    def test_set_default_alternative_called_when_changed(self):
+        obj = mock.MagicMock()
+        request = mock.MagicMock()
+        form = mock.MagicMock()
+        changed = True
+        model = Experiment
+        admin_site = mock.MagicMock()
+        admin_site = ExperimentAdmin(model, admin_site)
+
+        admin_site.save_model(request, obj, form, changed)
+
+        obj.set_default_alternative.assert_called_once_with(
+            form.cleaned_data['default_alternative'])
+        obj.save()
+
+    def test_set_default_alternative_called_when_not_changed(self):
+        obj = mock.MagicMock()
+        request = mock.MagicMock()
+        form = mock.MagicMock()
+        changed = False
+        model = Experiment
+        admin_site = mock.MagicMock()
+        admin_site = ExperimentAdmin(model, admin_site)
+
+        admin_site.save_model(request, obj, form, changed)
+
+        obj.set_default_alternative.assert_not_called()
+        obj.save()
