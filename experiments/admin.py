@@ -109,7 +109,8 @@ class ExperimentAdmin(admin.ModelAdmin):
         obj.save()
 
     def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
+        super(ExperimentAdmin, self).save_related(
+            request, form, formsets, change)
         self._update_obj_alternatives_dict(form.instance)
 
     def _update_obj_alternatives_dict(self, obj):
