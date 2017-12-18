@@ -162,11 +162,12 @@ body.change-form #admin_conditionals-group .inline-related.last-related .form-ro
 
 
 /* remote experiments stats mini table */
-.field-confidences > table {
+#changelist .field-confidences > table.ministats {
     border: none;
+    width: auto;
 }
-.field-confidences > table.ministats th,
-.field-confidences > table.ministats td {
+#changelist .field-confidences > table.ministats th,
+#changelist .field-confidences > table.ministats td {
     padding: 0 8px 3px 0;
     border: none;
 }
