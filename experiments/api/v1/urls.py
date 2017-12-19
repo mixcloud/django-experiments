@@ -18,7 +18,8 @@ urlpatterns = [
         name='root'),
 
     url(r'^experiments/$',
-        lambda r: HttpResponsePermanentRedirect(reverse_lazy('experiment'))
+        lambda r: HttpResponsePermanentRedirect(
+            reverse_lazy('experiments:api:v1:experiments'))
         ),
 
     url(r'^experiment/$',

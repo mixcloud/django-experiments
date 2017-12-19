@@ -33,7 +33,7 @@ class ExperimentUrlField(ReadOnlyMixin, serializers.URLField):
     def to_representation(self, value):
         request = self.context.get('request', None)
         return reverse(
-            'experiments_api:v1:experiment',
+            'experiments:api:v1:experiment',
             request=request,
             kwargs={'name': value})
 
