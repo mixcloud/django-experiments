@@ -8,7 +8,7 @@ import requests
 
 from .. import conf
 from ..consts import STATES
-from ..lock import DbLock
+from ..lock import DbLock as Lock
 
 
 logger = logging.getLogger(__file__)
@@ -16,13 +16,23 @@ logger = logging.getLogger(__file__)
 
 __all__ = (
     'RemoteExperiment',
+    'RemoteApiException',
 )
 
 
 class RemoteApiException(Exception):
+    """
+    Wrapper used to wrap any other exception that might occur while
+    syncing RemoteExperiment instances with remote APIs.
+    This exception is recognised in django admin (custom code),
+    and displayed in standard messages.
+    """
     def __init__(self, server, original_exception):
         self.server = server
         self.original_exception = original_exception
+
+    def __repr__(self):
+        return 'RemoteApiException({})'.format(repr(self.original_exception))
 
 
 class RemoteExperiment(models.Model):
@@ -42,16 +52,24 @@ class RemoteExperiment(models.Model):
     batch = models.PositiveIntegerField(
         default=0, null=False, editable=False)
 
+    MAX_WAIT_REMOTE_SYNC = 60  # seconds
+
     class Meta:
         ordering = ('-start_date', 'name',)
 
     @classmethod
     def update_remotes(cls):
-        lock = DbLock('fetching_remote_experiments')
+        """
+        Looks up all remote APIs and updates local instances.
+        Makes sure that only one lookup is running at a time.
+        Yields any exceptions so that they can be displayed in
+        the admin as messages.
+        """
+        lock = Lock('fetching_remote_experiments')
         try:
             if lock.acquire(blocking=False):
-                excs = cls._update_remotes(lock)
-                for e in excs:
+                exceptions = cls._update_remotes(lock)
+                for e in exceptions:
                     yield e
             else:
                 # just wait for another thread or process to finish the work:
@@ -61,12 +79,15 @@ class RemoteExperiment(models.Model):
 
     @classmethod
     def _update_remotes(cls, lock):
+        """
+        Actually performs the remote API lookups.
+        """
         batch = RemoteExperiment.objects.all().aggregate(
             Max('batch'))['batch__max'] or 0
         batch += 1
         for server in conf.API['remotes']:
             try:
-                relocked = lock.extend(timeout=60)
+                relocked = lock.extend(timeout=cls.MAX_WAIT_REMOTE_SYNC)
                 if not relocked:
                     logger.warning(
                         'Server too slow or lock to short! {}'.format(server))
@@ -79,6 +100,10 @@ class RemoteExperiment(models.Model):
 
     @classmethod
     def _fetch_remote_instances(cls, server):
+        """
+        Reads the list of experiments from an API endpoint,
+        taking care of pagination.
+        """
         url = '{}/experiments/api/v1/experiment/'.format(server['url'])
         token = server['token']
         while url:
@@ -90,6 +115,7 @@ class RemoteExperiment(models.Model):
 
     @classmethod
     def _fetch_paginated_page(cls, url, token):
+        """Makes an actual request to remote API"""
         headers = {
             'Authorization': 'Token {}'.format(token),
             'Accept': 'application/json',
@@ -100,9 +126,9 @@ class RemoteExperiment(models.Model):
         response.raise_for_status()
         return response.json()
 
-
     @classmethod
     def _update_or_create(cls, remote_instance, remote_site, batch):
+        """Create instances in local DB from remote API data"""
         local_instance, _ = cls.objects.update_or_create(
             site=remote_site['name'],
             name=remote_instance['name'],
@@ -120,4 +146,5 @@ class RemoteExperiment(models.Model):
 
     @classmethod
     def _cleanup(cls, batch):
+        """Deletes all previous batches"""
         cls.objects.filter(batch__lt=batch).delete()

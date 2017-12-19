@@ -1,12 +1,18 @@
+# coding=utf-8
 from test import lock_tests
+from unittest import skipIf
 
-from experiments.api.models import DbLock
+from django.conf import settings
+
+from experiments.models import DbLock
 
 
+#@skipIf(not hasattr(LockTests, 'locktype'), 'test.lock_tests not found')
+@skipIf('sqlite' in settings.DATABASES['default']['ENGINE'],
+        'Not testing DbLock with SQLite')
 class DbLockTestCase(lock_tests.LockTests):
 
-    @staticmethod
-    def locktype():
+    def locktype(self):
         return DbLock('foo')
 
     def test_extend(self):
