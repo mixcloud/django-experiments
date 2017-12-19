@@ -1,7 +1,8 @@
 # coding=utf-8
 from django.test import (
     TestCase,
-    RequestFactory)
+    RequestFactory,
+)
 
 from experiments.api.views import APIVersionsView
 
