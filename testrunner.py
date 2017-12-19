@@ -18,10 +18,6 @@ def runtests():
                 'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': ':memory:',
             },
-            'OPTIONS': {
-                'timeout': 20,
-                'check_same_thread': False,
-            },
         },
         INSTALLED_APPS=('django.contrib.auth',
                         'django.contrib.contenttypes',
