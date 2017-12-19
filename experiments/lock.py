@@ -6,7 +6,7 @@ from time import sleep
 import uuid
 
 import django
-from django.db import models
+from django.db import models, transaction
 from django.db.utils import IntegrityError, OperationalError
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -22,6 +22,7 @@ class DbLock(models.Model):
     """Simple expirable lock, backed by database"""
     DEFAULT_TIMEOUT = 5  # seconds
     RETRY_INTERVAL = 1  # seconds
+    DB_ERROR_RETRY_INTERVAL = 0.1  # seconds
     name = models.SlugField(primary_key=True)
     uuid = models.CharField(
         max_length=36, null=False, unique=True, db_index=True,
@@ -35,6 +36,7 @@ class DbLock(models.Model):
             uuid=self.uuid,
         )
 
+    @transaction.atomic
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
         if not self.uuid:
@@ -123,7 +125,7 @@ class DbLock(models.Model):
             except OperationalError:
                 if i == limit-1:
                     raise
-                sleep(0.01 * random.uniform(0.3, 1.6))
+                sleep(self.DB_ERROR_RETRY_INTERVAL * random.uniform(0.3, 1.6))
 
     def _release(self):
         if django.VERSION < (1, 9):
