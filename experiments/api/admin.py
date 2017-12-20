@@ -72,14 +72,14 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
                 data_html=data_html,
             )
 
-        alterantives_header_html = ''.join(
+        alternatives_header_html = ''.join(
             '<th>{}</th>'.format(alternative)
             for alternative in obj.alternatives_list
             if alternative != 'control'
         )
         table_html = (
             '<table class="ministats">'
-            '<tr><td></td>{alterantives_header_html}</tr>'
+            '<tr><td></td>{alternatives_header_html}</tr>'
             '{goals}'
             '</table>')
         results = obj.statistics['results']
@@ -89,7 +89,7 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
             if results[goal]['is_primary']
         )
         return table_html.format(
-            alterantives_header_html=alterantives_header_html,
+            alternatives_header_html=alternatives_header_html,
             goals=goals_html,
         )
     confidences.allow_tags = True
