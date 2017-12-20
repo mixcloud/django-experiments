@@ -37,12 +37,13 @@ class Experiments(object):
         for name in self.experiment_names:
             experiment = experiment_manager.get_experiment(
                 name, auto_create=False)
-            active = experiment.is_enabled_by_conditionals(self.request)
-            alternative = None
-            if not active:
-                self.disabled_experiments.append(experiment.name)
-                alternative = experiment.default_alternative
-            self._report(experiment, active, alternative)
+            if experiment:
+                active = experiment.is_enabled_by_conditionals(self.request)
+                alternative = None
+                if not active:
+                    self.disabled_experiments.append(experiment.name)
+                    alternative = experiment.default_alternative
+                self._report(experiment, active, alternative)
 
     def _report(self, instance, active, variate):
         """
