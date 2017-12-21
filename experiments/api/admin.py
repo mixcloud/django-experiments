@@ -49,9 +49,10 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
 
         def link(state):
             return (
-                '<a href="#" data-state="{code}" class="{active}">{label}</a>'
+                '<a href="#" data-state="{code}" data-id="{id}" class="{active}">{label}</a>'
                 .format(
                     code=state,
+                    id=obj.id,
                     label=states[state],
                     active='active' if obj.state == state else '',
                 ))
