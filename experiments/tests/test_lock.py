@@ -7,7 +7,6 @@ from django.conf import settings
 from experiments.models import DbLock
 
 
-#@skipIf(not hasattr(LockTests, 'locktype'), 'test.lock_tests not found')
 @skipIf('sqlite' in settings.DATABASES['default']['ENGINE'],
         'Not testing DbLock with SQLite')
 class DbLockTestCase(lock_tests.LockTests):
