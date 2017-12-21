@@ -6,7 +6,7 @@ from django.contrib import admin
 from .models import RemoteExperiment
 
 
-_all__ = (
+__all__ = (
     'RemoteExperimentAdmin',
 )
 
@@ -39,9 +39,9 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
             admin_url=obj.admin_url,
             name=obj.name,
         )
-    admin_link.short_description = 'name'
-    admin_link.allow_tags = True
     admin_link.admin_order_field = 'name'
+    admin_link.allow_tags = True
+    admin_link.short_description = 'name'
 
     def participants(self, obj):
         return sum(dict(obj.statistics['alternatives']).values())
@@ -77,19 +77,19 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
             for alternative in obj.alternatives_list
             if alternative != 'control'
         )
-        table_html = (
-            '<table class="ministats">'
-            '<tr><td></td>{alternatives_header_html}</tr>'
-            '{goals}'
-            '</table>')
         results = obj.statistics['results']
         goals_html = '\n'.join(
             _goal(goal, results[goal])
             for goal in sorted(results)
             if results[goal]['is_primary']
         )
+        table_html = (
+            '<table class="ministats">'
+            '<tr><td></td>{alternatives_header}</tr>'
+            '{goals}'
+            '</table>')
         return table_html.format(
-            alternatives_header_html=alternatives_header_html,
+            alternatives_header=alternatives_header_html,
             goals=goals_html,
         )
     confidences.allow_tags = True

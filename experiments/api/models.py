@@ -80,7 +80,8 @@ class RemoteExperiment(models.Model):
     @classmethod
     def _update_remotes(cls, lock):
         """
-        Actually performs the remote API lookups.
+        Goes over the list of remote servers, fetches data from
+        each one, and updates local DB.
         """
         batch = RemoteExperiment.objects.all().aggregate(
             Max('batch'))['batch__max'] or 0
