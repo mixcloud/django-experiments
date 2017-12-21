@@ -172,6 +172,26 @@ body.change-form #admin_conditionals-group .inline-related.last-related .form-ro
     border: none;
 }
 
+/* remote expderiments state toggle */
+#changelist .field-state_toggle .state_toggle {
+    white-space: nowrap;
+}
+#changelist .field-state_toggle .state_toggle a {
+    display: inline-block;
+}
+#changelist .field-state_toggle .state_toggle a[data-state="0"] {
+    width: 100px;
+}
+#changelist .field-state_toggle .state_toggle a[data-state="1"] {
+    width: 54px;
+}
+#changelist .field-state_toggle .state_toggle a[data-state="3"] {
+    width: 38px;
+}
+#changelist .field-state_toggle .state_toggle a.active {
+    font-weight: bold;
+}
+
 /* misc */
 body.experiments-experiment table.relevant-goals,
 body.model-experiment table.relevant-goals {

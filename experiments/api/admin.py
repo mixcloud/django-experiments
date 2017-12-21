@@ -3,6 +3,7 @@ import logging
 
 from django.contrib import admin
 
+from experiments.consts import STATES
 from .models import RemoteExperiment
 
 
@@ -19,7 +20,7 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
     list_display = (
         'admin_link',
         'site',
-        'state',
+        'state_toggle',
         'start_date',
         'end_date',
         'participants',
@@ -42,6 +43,25 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
     admin_link.short_description = 'name'
     admin_link.allow_tags = True
     admin_link.admin_order_field = 'name'
+
+    def state_toggle(self, obj):
+        states = dict(STATES)
+
+        def link(state):
+            return (
+                '<a href="#" data-state="{code}" class="{active}">{label}</a>'
+                .format(
+                    code=state,
+                    label=states[state],
+                    active='active' if obj.state == state else '',
+                ))
+
+        return '<div class="state_toggle">{}</div>'.format(
+            ''.join([link(s) for s in states])
+        )
+    state_toggle.short_description = 'state'
+    state_toggle.allow_tags = True
+    state_toggle.admin_order_field = 'state'
 
     def participants(self, obj):
         return sum(dict(obj.statistics['alternatives']).values())
