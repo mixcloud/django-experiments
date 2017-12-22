@@ -57,9 +57,8 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
                     active='active' if obj.state == state else '',
                 ))
 
-        return '<div class="state_toggle">{}</div>'.format(
-            ''.join([link(s) for s in states])
-        )
+        html = ''.join(link(s) for s in states)
+        return '<div class="state_toggle">{}</div>'.format(html)
     state_toggle.short_description = 'state'
     state_toggle.allow_tags = True
     state_toggle.admin_order_field = 'state'
