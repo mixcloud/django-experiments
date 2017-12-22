@@ -107,7 +107,7 @@ def conversion_distributions_to_graph_table(conversion_distributions):
     return json.dumps(graph_table)
 
 
-def get_result_context(request, experiment):
+def get_experiment_stats(experiment):
     experiment_counter = ExperimentCounter()
 
     try:
@@ -119,6 +119,10 @@ def get_result_context(request, experiment):
     except AttributeError:
         mwu_goals = [u'']
     relevant_goals = set(chi2_goals + mwu_goals)
+    try:
+        primary_goals = experiment.primary_goals.replace(" ", "").split(",")
+    except AttributeError:
+        primary_goals = [u'']
 
     alternatives = {}
     for alternative_name in experiment.alternatives.keys():
@@ -178,7 +182,8 @@ def get_result_context(request, experiment):
             "alternatives": sorted(alternatives_conversions.items()),
             "relevant": goal in relevant_goals or relevant_goals == {u''},
             "mwu": goal in mwu_goals,
-            "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram) if show_mwu else None
+            "mwu_histogram": conversion_distributions_to_graph_table(mwu_histogram) if show_mwu else None,
+            "is_primary": goal in primary_goals,
         }
 
     return {
@@ -187,5 +192,13 @@ def get_result_context(request, experiment):
         'control_participants': control_participants,
         'results': results,
         'column_count': len(alternatives_conversions) * 3 + 2,  # Horrible coupling with template design
-        'user_alternative': participant(request).get_alternative(experiment.name),
     }
+
+
+def get_result_context(request, experiment):
+    stats = get_experiment_stats(experiment)
+    stats.update({
+        'user_alternative': participant(request).get_alternative(
+            experiment.name),
+    })
+    return stats

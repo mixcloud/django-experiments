@@ -116,6 +116,9 @@ google.load('visualization', '1.0', {'packages':['corechart']});
             if (goalType === 'mwu') {
                 return $('#id_relevant_mwu_goals').val() + ','
             }
+            if (goalType === 'primary') {
+                return $('#id_primary_goals').val() + ','
+            }
         }
 
         function setGoalList(goalType, goalList) {
@@ -125,10 +128,44 @@ google.load('visualization', '1.0', {'packages':['corechart']});
             if (goalType === 'mwu') {
                 return $('#id_relevant_mwu_goals').val(goalList.replace(/,$/, ''));
             }
+            if (goalType === 'primary') {
+                return $('#id_primary_goals').val(goalList.replace(/,$/, ''));
+            }
+        }
+
+        /**
+         * Keep checkboxes for "primary" goals enabled or disabled, and uncheck if needed
+         */
+        function refreshPrimaryCheckboxes() {
+            var goalList = getGoalList('primary');
+            $('#goal-list').children().each(function() {
+                var $tr = $(this);
+                var goal = $tr.data('goal');
+                var isActualGoal = $tr.find(
+                    '[data-goal-type="chi2"]:checked, [data-goal-type="mwu"]:checked'
+                ).length > 0;
+                var $primaryCheckbox = $tr.find('[data-goal-type="primary"]');
+                var isChecked = $primaryCheckbox.is(':checked');
+
+                $primaryCheckbox.attr('disabled', !isActualGoal);
+                if (!isActualGoal) {
+                    $primaryCheckbox.attr('checked', false);
+                }
+
+                if (isChecked) {
+                    if (goalList.indexOf(goal + ',') === -1) {
+                        goalList += goal;
+                    }
+                } else {
+                    goalList = goalList.replace(goal + ',', '');
+                }
+            });
+            setGoalList('primary', goalList);
         }
 
         var chi2Goals = getGoalList('chi2'),
-            mwuGoals = getGoalList('mwu');
+            mwuGoals = getGoalList('mwu'),
+            primaryGoals = getGoalList('primary');
 
         var $goals = $('#goal-list').children().each(function() {
             var $tr = $(this);
@@ -138,7 +175,12 @@ google.load('visualization', '1.0', {'packages':['corechart']});
             if (mwuGoals.indexOf($tr.data('goal') + ',') > -1) {
                 $tr.find('[data-goal-type="mwu"]').attr('checked', true);
             }
+            if (primaryGoals.indexOf($tr.data('goal') + ',') > -1) {
+                $tr.find('[data-goal-type="primary"]').attr('checked', true);
+            }
         });
+
+        refreshPrimaryCheckboxes();
 
         $goals.bind('click', function(event) {
             var $target = $(event.target);
@@ -155,6 +197,9 @@ google.load('visualization', '1.0', {'packages':['corechart']});
                     goalList = goalList.replace(goal + ',', '');
                 }
                 setGoalList(goalType, goalList);
+                if (goalType !== 'primary') {
+                    refreshPrimaryCheckboxes();
+                }
             }
         });
 
