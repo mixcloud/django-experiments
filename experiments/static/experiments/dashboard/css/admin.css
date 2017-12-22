@@ -176,23 +176,36 @@ body.change-form #admin_conditionals-group .inline-related.last-related .form-ro
 }
 
 /* remote expderiments state toggle */
-#changelist .field-state_toggle .state_toggle {
+#changelist .field-state_toggle .state_toggle,
+.grp-change-list .field-state_toggle .state_toggle {
     white-space: nowrap;
 }
-#changelist .field-state_toggle .state_toggle a {
+#changelist .field-state_toggle .state_toggle a,
+.grp-change-list .field-state_toggle .state_toggle a {
     display: inline-block;
+    border: 1px solid transparent;
+    padding: 0 2px;
 }
-#changelist .field-state_toggle .state_toggle a[data-state="0"] {
-    width: 100px;
+#changelist .field-state_toggle .state_toggle a[data-state],
+.grp-change-list .field-state_toggle .state_toggle a[data-state] {
+    margin-right: 15px;
 }
-#changelist .field-state_toggle .state_toggle a[data-state="1"] {
-    width: 54px;
+#changelist .field-state_toggle .state_toggle a[data-state]:last-child,
+.grp-change-list .field-state_toggle .state_toggle a[data-state]:last-child {
+    margin-right: 0;
 }
-#changelist .field-state_toggle .state_toggle a[data-state="3"] {
-    width: 38px;
+#changelist .field-state_toggle .state_toggle a.active,
+.grp-change-list .field-state_toggle .state_toggle a.active {
+    text-decoration: none;
+    border-color: inherit;
 }
-#changelist .field-state_toggle .state_toggle a.active {
-    font-weight: bold;
+#changelist .field-state_toggle .state_toggle a.error,
+.grp-change-list .field-state_toggle .state_toggle a.error{
+    color: red;
+}
+#changelist .field-state_toggle .state_toggle a.working,
+.grp-change-list .field-state_toggle .state_toggle a.working{
+    color: gray;
 }
 
 /* misc */
