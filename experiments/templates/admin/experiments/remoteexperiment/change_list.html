@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "experiments/dashboard/css/admin.css" %}" />
+{% endblock extrastyle %}
+

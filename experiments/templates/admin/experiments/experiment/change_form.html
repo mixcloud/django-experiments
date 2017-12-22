@@ -50,14 +50,16 @@
                         <th>Goal</th>
                         <th><a href="http://en.wikipedia.org/wiki/Chi-squared_test" target="_blank" title="Used when optimising for conversion rate">&Chi;&sup2;</a></th>
                         <th><a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" target="_blank" title="Used when optimising for number of times users perform an action. (Advanced.)">U</a></th>
+                        <th><span title="Used to highlight primary goals in results table, and also to display them in the multi-site dashboard">Pri</span></th>
                     </tr>
                 </thead>
                 <tbody id="goal-list">
                     {% for goal in all_goals %}
                         <tr data-goal="{{ goal }}">
-                            <td>{{ goal }}</td>
-                            <td><input data-goal-type="chi2" type="checkbox"></td>
-                            <td><input data-goal-type="mwu" type="checkbox"></td>
+                            <th scope="row">{{ goal }}</th>
+                            <td><label><input data-goal-type="chi2" type="checkbox"></label></td>
+                            <td><label><input data-goal-type="mwu" type="checkbox"></label></td>
+                            <td><label><input data-goal-type="primary" type="checkbox" disabled></label></td>
                         </tr>
                     {% endfor %}
                 </tbody>
