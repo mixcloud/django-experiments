@@ -50,7 +50,7 @@ class ModelsTestCase(TestCase):
             (mock.call(blocking=False), mock.call(blocking=True)))
         mock_lock.release.assert_called_once_with()
 
-    @mock.patch('experiments.conf')
+    @mock.patch('experiments.api.models.conf')
     def test_update_remotes_wo_remotes(self, patched_conf):
         patched_conf.API['remotes'] = []
         mock_lock = mock.MagicMock()

@@ -123,6 +123,7 @@ class RemoteExperimentStateViewTestCase(TestCase):
         cls.user = User.objects.create(
             username='tester',
             is_staff=True,
+            is_active=True,
         )
 
     @classmethod
@@ -149,10 +150,12 @@ class RemoteExperimentStateViewTestCase(TestCase):
         self.factory = APIRequestFactory()
         self.view = RemoteExperimentStateView().as_view()
 
+    @mock.patch('experiments.api.v1.views.conf')
     @mock.patch('experiments.api.v1.views.requests')
     @mock.patch(
         'experiments.api.v1.views.RemoteExperimentStateView._check_response')
-    def test_success(self, _check_response, requests):
+    def test_success(self, _check_response, requests, conf):
+        conf.API = {'api_mode': 'cllient,server'}
         remote_response = requests.patch.return_value
         remote_data = remote_response.json.return_value
 
@@ -161,10 +164,12 @@ class RemoteExperimentStateViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         _check_response.assert_called_once_with(remote_data, self.instance)
 
+    @mock.patch('experiments.api.v1.views.conf')
     @mock.patch('experiments.api.v1.views.requests')
     @mock.patch(
         'experiments.api.v1.views.RemoteExperimentStateView._check_response')
-    def test_exception(self, _check_response, requests):
+    def test_exception(self, _check_response, requests, conf):
+        conf.API = {'api_mode': 'cllient,server'}
         remote_response = requests.patch.return_value
         remote_response.json.side_effect = ValueError('OMG!')
 
