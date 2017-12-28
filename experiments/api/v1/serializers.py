@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework.reverse import reverse
 
 from ... import conf
+from ..models import RemoteExperiment
 from ...admin_utils import get_experiment_stats
 from ...models import Experiment
 
@@ -113,3 +114,10 @@ class ExperimentNestedSerializer(ExperimentSerializer):
 
     def get_alternatives_list(self, obj):
         return list(obj.alternatives.keys())
+
+
+class RemoteExperimentStateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RemoteExperiment
+        fields = ('state',)

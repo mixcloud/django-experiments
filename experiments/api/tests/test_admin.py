@@ -108,6 +108,18 @@ class AdminTestCase(TestCase):
         self.assertIn('<a href', value)
         self.assertIn('Some admin URL', value)
 
+    def test_state_toggle(self):
+        value = self.modeladmin.state_toggle(self.obj)
+        self.assertIn('<a href', value)
+        self.assertIn('Default/Control', value)
+        self.assertIn('data-id="{}"'.format(self.obj.id), value)
+
+    @mock.patch('experiments.api.admin.STATES')
+    def test_state_toggle_w_no_states_lol(self, STATES):
+        STATES = {}
+        value = self.modeladmin.state_toggle(self.obj)
+        self.assertEqual('<div class="state_toggle"></div>', value)
+
     def test_participants(self):
         value = self.modeladmin.participants(self.obj)
         self.assertEqual(66, value)

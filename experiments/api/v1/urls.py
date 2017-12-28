@@ -7,6 +7,8 @@ from .views import (
     APIRootView,
     ExperimentsListView,
     ExperimentView,
+    RemoteExperimentStateView,
+    RemoteExperimentView,
 )
 
 
@@ -29,4 +31,14 @@ urlpatterns = [
     url(r'^experiment/(?P<name>[-\w]+)/$',
         ExperimentView.as_view(),
         name='experiment'),
+
+    url(r'^remote_experiment/$',
+        RemoteExperimentView.as_view(),
+        name='remote_experiments'),
+
+    url(r'^remote_experiment/(?P<pk>[0-9]+)/state/$',
+        RemoteExperimentStateView.as_view(),
+        name='remote_experiment_state'),
+
+
 ]
