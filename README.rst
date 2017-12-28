@@ -393,6 +393,22 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.4.0
+~~~~~
+ - multisite admin dashboard
+
+1.3.6
+~~~~~
+ - compatibility improvements of unit tests
+
+1.3.5
+~~~~~
+ - bugfix for python2
+
+1.3.4
+~~~~~
+ - bugfix related to auto-create of experiments
+
 1.3.3
 ~~~~~
  - experiment conditionals

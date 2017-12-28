@@ -11,7 +11,7 @@ with codecs.open(path.join(PATH, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='consumeraffairs-django-experiments',
-    version='1.3.3',
+    version='1.4.0',
     description='Python Django AB Testing Framework',
     long_description=LONG_DESCRIPTION,
     author='ConsumerAffairs',
@@ -28,6 +28,8 @@ setup(
         'django-jinja>=2.3.1',
         'six>=1.10.0',
         'lxml>=4.1.1,<5',
+        'djangorestframework==3.6.4',
+        'requests>2.18,<2.19',
     ],
     tests_require=[
         'mock>=1.0.1',

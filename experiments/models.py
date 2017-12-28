@@ -8,25 +8,23 @@ from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
+from jsonfield import JSONField
 
 from experiments import conf
+from experiments.consts import (
+    CONTROL_STATE,
+    ENABLED_STATE,
+    STATES,
+    TRACK_STATE,
+)
 from experiments.dateutils import now
-
-from jsonfield import JSONField
+from experiments.api.models import *  # noqa
+from experiments.lock import DbLock  # noqa
 
 
 logger = logging.getLogger(__file__)
 
 
-CONTROL_STATE = 0
-ENABLED_STATE = 1
-TRACK_STATE = 3
-
-STATES = (
-    (CONTROL_STATE, 'Default/Control'),
-    (ENABLED_STATE, 'Enabled'),
-    (TRACK_STATE, 'Track'),
-)
 
 
 @python_2_unicode_compatible
@@ -41,10 +39,14 @@ class Experiment(models.Model):
     alternatives = JSONField(default={}, blank=True, null=False)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
+    primary_goals = models.TextField(default="", null=False, blank=True)
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
     start_date = models.DateTimeField(
         default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ('-start_date', 'name',)
 
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
@@ -133,6 +135,7 @@ class Experiment(models.Model):
             'description': self.description,
             'relevant_chi2_goals': self.relevant_chi2_goals,
             'relevant_mwu_goals': self.relevant_mwu_goals,
+            'primary_goals': self.primary_goals,
             'default_alternative': self.default_alternative,
             'alternatives': ','.join(self.alternative_keys),
         }

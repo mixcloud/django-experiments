@@ -1,8 +1,9 @@
 # coding=utf-8
 from __future__ import division
+from django import forms
+from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
-from django import forms
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -18,9 +19,12 @@ from experiments.models import (
     ExperimentAlternative,
 )
 from experiments import conf
-from django.conf.urls import url
 from experiments.utils import participant
 from experiments.conditional.admin import AdminConditionalInline
+
+
+if 'client' in conf.API['api_mode']:
+    from experiments.api.admin import *  # noqa
 
 
 class ExperimentAlternativeInline(admin.TabularInline):
@@ -70,7 +74,11 @@ class ExperimentAdmin(admin.ModelAdmin):
             }),
             ('Relevant Goals', {
                 'classes': ('collapse', 'hidden-relevant-goals'),
-                'fields': ('relevant_chi2_goals', 'relevant_mwu_goals'),
+                'fields': (
+                    'relevant_chi2_goals',
+                    'relevant_mwu_goals',
+                    'primary_goals',
+                ),
             }),
         )
 
@@ -101,7 +109,8 @@ class ExperimentAdmin(admin.ModelAdmin):
         obj.save()
 
     def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
+        super(ExperimentAdmin, self).save_related(
+            request, form, formsets, change)
         self._update_obj_alternatives_dict(form.instance)
 
     def _update_obj_alternatives_dict(self, obj):

@@ -32,15 +32,20 @@ class ExperimentManager(ModelDict):
             return self.auto_create
 
     def _set_auto_crate_override(self, value):
-        thread_locals.django_experiments_manager_auto_create = value
+        if value is None:
+            try:
+                del thread_locals.django_experiments_manager_auto_create
+            except AttributeError:
+                pass
+        else:
+            thread_locals.django_experiments_manager_auto_create = value
 
     def get_experiment(self, experiment_name, auto_create=None):
         """
         Helper that mimics self[...] while allowing to override
         auto_create value.
         """
-        if auto_create is not None:
-            self._set_auto_crate_override(auto_create)
+        self._set_auto_crate_override(auto_create)
         try:
             return self[experiment_name]
         except KeyError:

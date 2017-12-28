@@ -41,8 +41,22 @@ thead th.experiment-toggle-goals {
     display: none;
 }
 
+.experiment-results-table tbody tr .primary_goal {
+    font-weight: bold;
+}
 .experiment-alternative-enrolled {
     display: none;
+}
+table.relevant-goals tbody th {
+    font-size: 11px;
+    font-weight: normal;
+}
+table.relevant-goals td {
+    padding: 0;
+}
+table.relevant-goals td label {
+    display: block;
+    padding: 10px;
 }
 
 .experiment-selected-alternative .experiment-alternative-join {
@@ -120,17 +134,45 @@ body.model-experiment .js-alternatives {
 }
 
 /* conditionals inline */
-#admin_conditionals-group .inline-related .form-row {
-    display: none;
-}
-#admin_conditionals-group .inline-related .form-row.copy_from {
+body.grp-change-form #admin_conditionals-group .inline-related.has_original .form-row {
     display: block;
 }
-#admin_conditionals-group .inline-related.has_original .form-row {
+body.grp-change-form #admin_conditionals-group .inline-related.has_original .form-row.copy_from {
+    display: none;
+}
+body.grp-change-form #admin_conditionals-group .inline-related .form-row {
+    display: none;
+}
+body.grp-change-form #admin_conditionals-group .inline-related .form-row.copy_from {
     display: block;
 }
-#admin_conditionals-group .inline-related.has_original .form-row.copy_from {
+
+body.change-form #admin_conditionals-group .inline-related .form-row {
+    display: block;
+}
+body.change-form #admin_conditionals-group .inline-related .form-row.field-copy_from {
     display: none;
+}
+body.change-form #admin_conditionals-group .inline-related.last-related .form-row {
+    display: none;
+}
+body.change-form #admin_conditionals-group .inline-related.last-related .form-row.field-copy_from {
+    display: block;
+}
+
+
+/* remote experiments stats mini table */
+#changelist .field-confidences > table.ministats,
+.grp-change-list .field-confidences > table.ministats {
+    border: none;
+    width: auto;
+}
+#changelist .field-confidences > table.ministats th,
+#changelist .field-confidences > table.ministats td,
+.grp-change-list .field-confidences > table.ministats th,
+.grp-change-list .field-confidences > table.ministats td {
+    padding: 0 8px 3px 0;
+    border: none;
 }
 
 /* misc */

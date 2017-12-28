@@ -25,7 +25,7 @@
     <tbody>
         {% for goal, data in results.items %}
             <tr{% if not data.relevant %} class="experiment-irrelevant-goal"{% endif %}>
-                <td>
+                <td class="{% if data.is_primary %}primary_goal{% endif %}">
                     {% if data.mwu %}
                         <span class="experiment-mwu-goal" data-chart-goal="{{ goal }}">{{ goal }}</span>
                     {% else %}

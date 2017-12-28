@@ -67,7 +67,7 @@ def experiments_prepare_conditionals(context):
 def _experiments_prepare_conditionals(context):
     Experiments(context)
     request = context['request']
-    if request.user.is_staff:
+    if getattr(request, 'user', None) and request.user.is_staff:
         report = json.dumps(request.experiments.report)
         script = '<script>window.ca_experiments = {};</script>'.format(
             report,
