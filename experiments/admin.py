@@ -1,9 +1,9 @@
 # coding=utf-8
-from __future__ import division
-from django import forms
+from __future__ import division, unicode_literals
 from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
+from django import forms
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -13,18 +13,22 @@ from django.http import (
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 
-from experiments.admin_utils import get_result_context
+from experiments.admin_utils import get_result_context, get_experiment_stats
 from experiments.models import (
     Experiment,
     ExperimentAlternative,
 )
 from experiments import conf
+from django.conf.urls import url
 from experiments.utils import participant
 from experiments.conditional.admin import AdminConditionalInline
 
 
 if 'client' in conf.API['api_mode']:
     from experiments.api.admin import *  # noqa
+import import_export
+from import_export.admin import ExportActionModelAdmin
+from import_export.resources import ModelResource
 
 
 class ExperimentAlternativeInline(admin.TabularInline):
@@ -33,15 +37,60 @@ class ExperimentAlternativeInline(admin.TabularInline):
     extra = 0
 
 
+class ExperimentResource (ModelResource):
+    traffic = import_export.fields.Field(column_name='traffic')
+    statistic = import_export.fields.Field(column_name='statistic')
+    conversion = import_export.fields.Field(column_name='conversion')
+
+    class Meta:
+        model = Experiment
+        fields = ('name', 'start_date', 'end_date', 'state', 'traffic',
+            'statistic', 'conversion')
+
+    def dehydrate_traffic(self, experiment):
+        traffic_context = get_experiment_stats(experiment)['alternatives']
+        traffic_string = ''
+        for k, v in traffic_context:
+            traffic_string = traffic_string + k + ':' + str(v) + ', '
+        return traffic_string[:-2]
+
+    def dehydrate_statistic(self, experiment):
+        stat_context = get_experiment_stats(experiment)['results']
+        stats = []
+        for goal_name, goal_value in stat_context.items():
+            if goal_value['is_primary']:
+                stats.append(self._parse_alternatives(
+                    goal_name, goal_value['alternatives'], 'confidence'))
+        import ipdb; ipdb.set_trace()
+        return ', '.join(stats)
+        conversion_context = get_experiment_stats(experiment)['results']
+        conversions = []
+        for goal_name, goal_value in conversion_context.items():
+            if goal_value['is_primary']:
+                conversions.append(self._parse_alternatives(
+                    goal_name, goal_value['alternatives'], 'conversions'))
+                # For every goal there is one control which has a conversion
+                conversions.append(self._parse_alternatives(
+                    goal_name, [goal_value['control']], 'conversions'))
+        return ', '.join(conversions)
+
+    def _parse_alternatives(self, goal_name, alternatives, key):
+        import pdb; pdb.set_trace()
+        return ', '.join(
+            '{0}/{1}: {2}'.format(goal_name, alt_name, alt_data[key])
+            for alt_name, alt_data in alternatives
+        )
+
 @admin.register(Experiment)
-class ExperimentAdmin(admin.ModelAdmin):
+class ExperimentAdmin(ExportActionModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'state',)
     list_filter = ('state', 'start_date', 'end_date',)
     ordering = ('-start_date',)
     search_fields = ('=name',)
-    actions = None
+    actions = []
     readonly_fields = ('start_date', 'end_date', 'state',)
     inlines = (ExperimentAlternativeInline, AdminConditionalInline,)
+    resource_class = ExperimentResource
 
     def get_fieldsets(self, request, obj=None):
         """

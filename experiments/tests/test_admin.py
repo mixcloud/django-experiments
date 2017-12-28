@@ -114,3 +114,25 @@ class AdminTestCase(TestCase):
 
         obj.set_default_alternative.assert_not_called()
         obj.save()
+
+
+class ExperimentResourceTestCase(TestCase):
+
+    def setUp(self):
+        self.experiment = Experimentobjects.create(name='test_experiment',
+            state=ENABLED_STATE)
+        user = User.objects.create_superuser(username='user', email='deleted@mixcloud.com', password='pass')
+        self.client.login(username='user', password='pass')
+
+        participant(user=user).enroll('test_experiment', alternatives=['other1', 'other2'])
+
+        for alternative in ('other2', 'control', 'other1'):
+            response = self.client.post(reverse('admin:experiment_admin_set_alternative'), {
+                'experiment': experiment.name,
+                'alternative': alternative,
+            })
+            self.assertDictEqual(json.loads(response.content.decode('utf-8')), {
+                'success': True,
+                'alternative': alternative,
+            })
+            self.assertEqual(participant(user=user).get_alternative('test_experiment'), alternative)
