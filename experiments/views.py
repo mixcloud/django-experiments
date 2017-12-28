@@ -1,11 +1,16 @@
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.views.decorators.cache import never_cache
-from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_POST
+# coding=utf-8
+from functools import wraps
 
-from experiments.utils import participant
-from experiments.models import Experiment
+from django.conf.urls import url
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
+from django.views.generic.base import ContextMixin, View
 from experiments import conf
+from experiments.models import Experiment
+from experiments.utils import participant
+
 
 TRANSPARENT_1X1_PNG = \
 ("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52"

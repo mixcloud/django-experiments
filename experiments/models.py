@@ -1,38 +1,52 @@
+# coding=utf-8
+import random
+import json
+import logging
+
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
-
+from django.utils.encoding import python_2_unicode_compatible
 from jsonfield import JSONField
 
-import random
-import json
-
-from experiments.dateutils import now
 from experiments import conf
-
-
-CONTROL_STATE = 0
-ENABLED_STATE = 1
-TRACK_STATE = 3
-
-STATES = (
-    (CONTROL_STATE, 'Default/Control'),
-    (ENABLED_STATE, 'Enabled'),
-    (TRACK_STATE, 'Track'),
+from experiments.consts import (
+    CONTROL_STATE,
+    ENABLED_STATE,
+    STATES,
+    TRACK_STATE,
 )
+from experiments.dateutils import now
+from experiments.api.models import *  # noqa
+from experiments.lock import DbLock  # noqa
 
 
+logger = logging.getLogger(__file__)
+
+
+
+
+@python_2_unicode_compatible
 class Experiment(models.Model):
-    name = models.CharField(primary_key=True, max_length=128)
+    name = models.CharField(
+        primary_key=True,
+        max_length=128,
+        help_text='This field is the primary key and is only editable'
+                  ' when creating the experiment',
+    )
     description = models.TextField(default="", blank=True, null=True)
-    alternatives = JSONField(default={}, blank=True)
+    alternatives = JSONField(default={}, blank=True, null=False)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
-
+    primary_goals = models.TextField(default="", null=False, blank=True)
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
-
-    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(
+        default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ('-start_date', 'name',)
 
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
@@ -53,6 +67,11 @@ class Experiment(models.Model):
             return False
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
+
+    def is_enabled_by_conditionals(self, request):
+        if not self.admin_conditionals.exists():
+            return True
+        return any(c.evaluate(request) for c in self.admin_conditionals.all())
 
     def ensure_alternative_exists(self, alternative, weight=None):
         if alternative not in self.alternatives:
@@ -81,9 +100,30 @@ class Experiment(models.Model):
         if all('weight' in alt for alt in self.alternatives.values()):
             return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
         else:
+            if any('weight' in alt for alt in self.alternatives.values()):
+                logger.warning(
+                    'Ignoring weights for experiment {}, all alternatives'
+                    ' need to have specified weights.'.format(
+                        self.name,
+                    ))
             return random.choice(list(self.alternatives))
 
-    def __unicode__(self):
+    @property
+    def alternative_keys(self):
+        return list(self.alternatives.keys())
+
+    @property
+    def has_alternatives(self):
+        """
+        When an experiment is created it only has 'control' alternative,
+        until an `enroll` command (template tag or WebUser.enroll() method)
+        is first called.
+
+        Note: PUMA-83 will need to introduce some changes to this behaviour
+        """
+        return len(self.alternative_keys) > 1
+
+    def __str__(self):
         return self.name
 
     def to_dict(self):
@@ -95,8 +135,9 @@ class Experiment(models.Model):
             'description': self.description,
             'relevant_chi2_goals': self.relevant_chi2_goals,
             'relevant_mwu_goals': self.relevant_mwu_goals,
+            'primary_goals': self.primary_goals,
             'default_alternative': self.default_alternative,
-            'alternatives': ','.join(self.alternatives.keys()),
+            'alternatives': ','.join(self.alternative_keys),
         }
         return data
 
@@ -104,6 +145,39 @@ class Experiment(models.Model):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
 
 
+@python_2_unicode_compatible
+class ExperimentAlternative(models.Model):
+    """
+    This model is only ever used in the admin, and should never
+    be accessed outside it. Use `experiment.alternatives` instead.
+    """
+    experiment = models.ForeignKey(Experiment)
+    name = models.CharField(max_length=254, blank=False, null=False)
+    weight = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)],
+        null=True,
+        blank=True,
+        default=None,
+    )
+
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        if self.weight:
+            return '{} ({})'.format(self.name, self.weight)
+        return self.name
+
+    def to_dict(self):
+        representation = {
+            'enabled': True,
+        }
+        if self.weight is not None:
+            representation.update(weight=self.weight)
+        return representation
+
+
+@python_2_unicode_compatible
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
     user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'))
@@ -111,11 +185,12 @@ class Enrollment(models.Model):
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
+    disabled = models.BooleanField(default=False, null=False, blank=True)
 
     class Meta:
         unique_together = ('user', 'experiment')
 
-    def __unicode__(self):
+    def __str__(self):
         return u'%s - %s' % (self.user, self.experiment)
 
 
@@ -127,5 +202,3 @@ def weighted_choice(choices):
         upto += w
         if upto >= r:
             return c
-
-

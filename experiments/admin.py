@@ -1,22 +1,47 @@
+# coding=utf-8
+from __future__ import division
+from django import forms
+from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
-from django import forms
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    JsonResponse,
+)
 from django.utils import timezone
+from django.utils.safestring import mark_safe
+
 from experiments.admin_utils import get_result_context
-from experiments.models import Experiment
+from experiments.models import (
+    Experiment,
+    ExperimentAlternative,
+)
 from experiments import conf
-from django.conf.urls import url
 from experiments.utils import participant
+from experiments.conditional.admin import AdminConditionalInline
 
 
+if 'client' in conf.API['api_mode']:
+    from experiments.api.admin import *  # noqa
+
+
+class ExperimentAlternativeInline(admin.TabularInline):
+    model = ExperimentAlternative
+    min_num = 1
+    extra = 0
+
+
+@admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'end_date', 'state')
-    list_filter = ('state', 'start_date', 'end_date')
+    list_display = ('name', 'start_date', 'end_date', 'state',)
+    list_filter = ('state', 'start_date', 'end_date',)
     ordering = ('-start_date',)
     search_fields = ('=name',)
     actions = None
-    readonly_fields = ['start_date', 'end_date']
+    readonly_fields = ('start_date', 'end_date', 'state',)
+    inlines = (ExperimentAlternativeInline, AdminConditionalInline,)
 
     def get_fieldsets(self, request, obj=None):
         """
@@ -24,7 +49,8 @@ class ExperimentAdmin(admin.ModelAdmin):
          - default_alternative can only be changed
          - name can only be set on Add
         """
-        main_fields = ('description', 'start_date', 'end_date', 'state')
+        main_fields = (
+            'description', 'start_date', 'end_date', 'state',)
 
         if obj:
             main_fields += ('default_alternative',)
@@ -35,18 +61,32 @@ class ExperimentAdmin(admin.ModelAdmin):
             (None, {
                 'fields': main_fields,
             }),
+            ('Alternatives', {
+                'classes': ('js-alternatives',),
+                'fields': (),
+                'description': mark_safe(
+                    '"<strong>control</strong>" alternative will be'
+                    ' created if missing.<br />'
+                    '<strong>Weights</strong> can all be empty (equal'
+                    ' distribution of traffic). <br />'
+                    'If only some weights are empty, they will be set to'
+                    ' average weight of other alternatives.'),
+            }),
             ('Relevant Goals', {
                 'classes': ('collapse', 'hidden-relevant-goals'),
-                'fields': ('relevant_chi2_goals', 'relevant_mwu_goals'),
-            })
+                'fields': (
+                    'relevant_chi2_goals',
+                    'relevant_mwu_goals',
+                    'primary_goals',
+                ),
+            }),
         )
-
-    # --------------------------------------- Default alternative
 
     def get_form(self, request, obj=None, **kwargs):
         """
         Add the default alternative dropdown with appropriate choices
         """
+
         if obj:
             if obj.alternatives:
                 choices = [(alternative, alternative) for alternative in obj.alternatives.keys()]
@@ -54,9 +94,12 @@ class ExperimentAdmin(admin.ModelAdmin):
                 choices = [(conf.CONTROL_GROUP, conf.CONTROL_GROUP)]
 
             class ExperimentModelForm(forms.ModelForm):
-                default_alternative = forms.ChoiceField(choices=choices,
-                                                        initial=obj.default_alternative,
-                                                        required=False)
+                default_alternative = forms.ChoiceField(
+                    choices=sorted(choices),
+                    initial=obj.default_alternative,
+                    required=False,
+                )
+
             kwargs['form'] = ExperimentModelForm
         return super(ExperimentAdmin, self).get_form(request, obj=obj, **kwargs)
 
@@ -64,6 +107,89 @@ class ExperimentAdmin(admin.ModelAdmin):
         if change:
             obj.set_default_alternative(form.cleaned_data['default_alternative'])
         obj.save()
+
+    def save_related(self, request, form, formsets, change):
+        super(ExperimentAdmin, self).save_related(
+            request, form, formsets, change)
+        self._update_obj_alternatives_dict(form.instance)
+
+    def _update_obj_alternatives_dict(self, obj):
+        """
+        Read ExperimentAlternative inlines and update obj.alternatives.
+        """
+
+        def update_obj():
+            Experiment.objects.filter(pk=obj.pk).update(
+                alternatives=obj.alternatives)
+
+        default = obj.default_alternative
+        alternatives = obj.experimentalternative_set.all()
+        if not alternatives.filter(name=conf.CONTROL_GROUP).exists():
+            ExperimentAlternative.objects.create(
+                experiment=obj,
+                name=conf.CONTROL_GROUP,
+            )
+        weightless = alternatives.filter(weight__isnull=True)
+        weighted = alternatives.exclude(weight__isnull=True)
+
+        if not alternatives.exists():
+            # short-circuit the calculations below
+            obj.alternatives = {}
+            update_obj()
+            return
+
+        # fill out missing weight values
+        if alternatives.count() == weightless.count():
+            # no alternative has specified weight, don't fill anything
+            pass
+        else:
+            # set missing weights to be average of existing values
+            total_weight = sum(weighted.values_list('weight', flat=True))
+            equality_weight = total_weight / weighted.count()
+            weightless.update(weight=equality_weight)
+
+        # update obj.alternatives dict
+        obj.alternatives = {
+            a.name: a.to_dict()
+            for a in alternatives
+        }
+        if default not in obj.alternatives:
+            default = conf.CONTROL_GROUP
+        obj.alternatives[default]['default'] = True
+        update_obj()
+
+    def _update_alternative_inlines(self, obj):
+        """
+        Reads self.alternatives JSON field and re-creates related
+        ExperimentAlternative objects if needed
+        """
+
+        def recreate_all():
+            obj.experimentalternative_set.all().delete()
+            for name, data in obj.alternatives.items():
+                alt_obj = ExperimentAlternative(
+                    experiment=obj,
+                    name=name
+                )
+                if 'weight' in data:
+                    alt_obj.weight = data['weight']
+                alt_obj.save()
+
+        def generate_json_from_related_objects():
+            alternatives = {}
+            default = obj.default_alternative
+            for alt_obj in obj.experimentalternative_set.all():
+                alternatives[alt_obj.name] = {
+                    'enabled': True,
+                }
+                if alt_obj.weight is not None:
+                    alternatives[alt_obj.name]['weight'] = alt_obj.weight
+                if alt_obj.name == default:
+                    alternatives[alt_obj.name]['default'] = True
+            return alternatives
+
+        if generate_json_from_related_objects() != obj.alternatives:
+            recreate_all()
 
     # --------------------------------------- Overriding admin views
 
@@ -90,22 +216,30 @@ class ExperimentAdmin(admin.ModelAdmin):
         return context
 
     def add_view(self, request, form_url='', extra_context=None):
-        return super(ExperimentAdmin, self).add_view(request,
-                                                     form_url=form_url,
-                                                     extra_context=self._admin_view_context(extra_context=extra_context))
+        view_context = self._admin_view_context(extra_context=extra_context)
+        return super(ExperimentAdmin, self).add_view(
+            request, form_url=form_url, extra_context=view_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         experiment = self.get_object(request, unquote(object_id))
         context = self._admin_view_context(extra_context=extra_context)
         context.update(get_result_context(request, experiment))
-        return super(ExperimentAdmin, self).change_view(request, object_id, form_url=form_url, extra_context=context)
+        if request.method == 'GET':
+            # for POST see `_save_related()`
+            self._update_alternative_inlines(experiment)
+        return super(ExperimentAdmin, self).change_view(
+            request, object_id, form_url=form_url, extra_context=context)
 
     # --------------------------------------- Views for ajax functionality
 
     def get_urls(self):
         experiment_urls = [
-            url(r'^set-alternative/$', self.admin_site.admin_view(self.set_alternative_view), name='experiment_admin_set_alternative'),
-            url(r'^set-state/$', self.admin_site.admin_view(self.set_state_view), name='experiment_admin_set_state'),
+            url(r'^set-alternative/$',
+                self.admin_site.admin_view(self.set_alternative_view),
+                name='experiment_admin_set_alternative'),
+            url(r'^set-state/$',
+                self.admin_site.admin_view(self.set_state_view),
+                name='experiment_admin_set_state'),
         ]
         return experiment_urls + super(ExperimentAdmin, self).get_urls()
 
@@ -154,6 +288,3 @@ class ExperimentAdmin(admin.ModelAdmin):
         experiment.save()
 
         return HttpResponse()
-
-admin.site.register(Experiment, ExperimentAdmin)
-

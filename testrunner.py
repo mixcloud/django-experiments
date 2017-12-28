@@ -1,9 +1,11 @@
+#!/usr/bin/env python
+# coding=utf-8
 import os
 import sys
 
 from django.conf import settings
-
 import django
+
 
 def runtests():
     test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,7 +16,8 @@ def runtests():
         DATABASES={
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-            }
+                'NAME': ':memory:',
+            },
         },
         INSTALLED_APPS=('django.contrib.auth',
                         'django.contrib.contenttypes',
@@ -22,13 +25,13 @@ def runtests():
                         'django.contrib.admin',
                         'experiments',),
         ROOT_URLCONF='experiments.tests.urls',
-        MIDDLEWARE_CLASSES = (
+        MIDDLEWARE_CLASSES=(
             'django.contrib.sessions.middleware.SessionMiddleware',
             'django.middleware.csrf.CsrfViewMiddleware',
             'django.contrib.auth.middleware.AuthenticationMiddleware',
             'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
         ),
-        TEMPLATES = [
+        TEMPLATES=[
             {
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
                 'DIRS': [],
@@ -40,13 +43,16 @@ def runtests():
                 },
             },
         ],
+        EXPERIMENTS_API={
+            'api_mode': 'client,server',
+            'local': {'name': 'Test site'},
+        },
     )
     django.setup()
 
-
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
-    test_runner = TestRunner(verbosity=1, failfast=False)
+    test_runner = TestRunner(verbosity=3, failfast=False)
     failures = test_runner.run_tests(['experiments', ])
     sys.exit(bool(failures))
 
