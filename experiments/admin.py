@@ -45,7 +45,7 @@ class ExperimentAlternativeInline(admin.TabularInline):
 
 
 class ExperimentResource(ModelResource):
-    created_date = import_export.fields.Field(column_name="created date")
+    created_date = import_export.fields.Field(column_name="created_date")
     state = import_export.fields.Field(column_name='state')
     participants = import_export.fields.Field(column_name='participants')
     statistic = import_export.fields.Field(column_name='statistic')
