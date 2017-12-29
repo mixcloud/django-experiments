@@ -5,7 +5,8 @@ import json
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from experiments.admin import ExperimentAdmin
+from django.utils import timezone
+from experiments.admin import ExperimentAdmin, ExperimentResource
 
 from experiments.models import Experiment, CONTROL_STATE, ENABLED_STATE
 from experiments.utils import participant
@@ -119,20 +120,92 @@ class AdminTestCase(TestCase):
 class ExperimentResourceTestCase(TestCase):
 
     def setUp(self):
-        self.experiment = Experimentobjects.create(name='test_experiment',
-            state=ENABLED_STATE)
-        user = User.objects.create_superuser(username='user', email='deleted@mixcloud.com', password='pass')
-        self.client.login(username='user', password='pass')
+        self.experiment = Experiment.objects.create(
+            name='test_experiment',
+            state=ENABLED_STATE,
+            start_date=timezone.datetime(2017,12,21),
+        )
+        self.experiment_resource = ExperimentResource()
+        self.stat = {
+            'alternatives': [('control', 10), ('alt1', 100), ('alt2', 1000)],
+            'results': {
+                'test_goal_1': {
+                    'control': {
+                        'conversions': 1,
+                        'average_goal_actions': 1.0,
+                        'conversion_rate': 100.0
+                    },
+                    'relevant': True,
+                    'is_primary': True,
+                    'alternatives': [('alt1', {
+                        'conversions': 0,
+                        'confidence': None,
+                        'mann_whitney_confidence': None
+                    }), ('alt2', {
+                        'conversions': 1,
+                        'confidence': None,
+                        'mann_whitney_confidence': None
+                    })],
+                },
+                'test_goal_2': {
+                    'control': {
+                        'conversions': 0,
+                        'average_goal_actions': None,
+                        'conversion_rate': 0.0
+                    },
+                    'relevant': True,
+                    'is_primary': True,
+                    'alternatives': [('alt1', {
+                        'conversions': 0,
+                        'confidence': None,
+                        'mann_whitney_confidence': None
+                    }), ('alt2', {
+                        'conversions': 1,
+                        'confidence': 84.27007929422173,
+                        'mann_whitney_confidence': None
+                    })],
+                },
+                'test_goal_3': {
+                    'control': {
+                        'conversions': 0,
+                        'average_goal_actions': None,
+                        'conversion_rate': 0.0
+                    },
+                    'relevant': True,
+                    'is_primary': False,
+                    'alternatives': [('alt1', {
+                        'conversions': 0,
+                        'confidence': None,
+                        'mann_whitney_confidence': None
+                    }), ('alt2', {
+                        'conversions': 1,
+                        'confidence': 0.0001,
+                        'mann_whitney_confidence': None
+                    })],
+                }
+            },
+        }
 
-        participant(user=user).enroll('test_experiment', alternatives=['other1', 'other2'])
+    def test_dehydrate_created_date(self):
+        actual = self.experiment_resource.dehydrate_created_date(
+            self.experiment)
+        expected = "2017-12-21"
 
-        for alternative in ('other2', 'control', 'other1'):
-            response = self.client.post(reverse('admin:experiment_admin_set_alternative'), {
-                'experiment': experiment.name,
-                'alternative': alternative,
-            })
-            self.assertDictEqual(json.loads(response.content.decode('utf-8')), {
-                'success': True,
-                'alternative': alternative,
-            })
-            self.assertEqual(participant(user=user).get_alternative('test_experiment'), alternative)
+        self.assertEqual(expected, actual)
+
+    def test_dehydrate_state(self):
+        actual = self.experiment_resource.dehydrate_state(self.experiment)
+        expected = "Enabled"
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('experiments.admin.get_experiment_stats')
+    def test_dehydrate_participants(self, get_experiment_stats):
+        get_experiment_stats.return_value = self.stat
+
+        actual = self.experiment_resource.dehydrate_participants(
+            self.experiment)
+        expected = "control: 10, \nalt1: 100, \nalt2: 1000"
+
+        get_experiment_stats.assert_called_once_with(self.experiment)
+        self.assertEqual(expected, actual)
