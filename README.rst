@@ -393,6 +393,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.4.1
+~~~~~
+ - state toggle on the multisite admin dashboard
+
 1.4.0
 ~~~~~
  - multisite admin dashboard
