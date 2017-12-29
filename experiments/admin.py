@@ -46,6 +46,7 @@ class ExperimentResource (ModelResource):
         model = Experiment
         fields = ('name', 'start_date', 'end_date', 'state', 'traffic',
             'statistic', 'conversion')
+        export_order = fields
 
     def dehydrate_traffic(self, experiment):
         traffic_context = get_experiment_stats(experiment)['alternatives']
