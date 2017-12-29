@@ -30,9 +30,9 @@ from experiments.utils import (
     format_percentage,
 )
 
-
-if 'client' in conf.API['api_mode']:
+if 'client' in conf.API['api_mode']:  # noqa
     from experiments.api.admin import *  # noqa
+
 import import_export
 from import_export.admin import ExportActionModelAdmin
 from import_export.resources import ModelResource
@@ -53,8 +53,15 @@ class ExperimentResource(ModelResource):
 
     class Meta:
         model = Experiment
-        fields = ('name', 'created_date', 'end_date', 'state', 'participants',
-            'statistic', 'conversion')
+        fields = (
+            'name',
+            'created_date',
+            'end_date',
+            'state',
+            'participants',
+            'statistic',
+            'conversion',
+        )
         export_order = fields
 
     def dehydrate_created_date(self, experiment):
@@ -100,12 +107,12 @@ class ExperimentResource(ModelResource):
 
     def _parse_alternatives(
             self, goal_name, alternatives, key, formatter=None):
-        if formatter is None:
-            formatter = lambda v: v
-
         return ', \n'.join(
             '{0}/{1}: {2}'.format(
-                goal_name, alt_name, formatter(alt_data[key]))
+                goal_name,
+                alt_name,
+                formatter(alt_data[key]) if formatter else alt_data[key],
+            )
             for alt_name, alt_data in alternatives
         )
 
@@ -167,7 +174,10 @@ class ExperimentAdmin(ExportActionModelAdmin):
 
         if obj:
             if obj.alternatives:
-                choices = [(alternative, alternative) for alternative in obj.alternatives.keys()]
+                choices = [
+                    (alternative, alternative)
+                    for alternative in obj.alternatives.keys()
+                ]
             else:
                 choices = [(conf.CONTROL_GROUP, conf.CONTROL_GROUP)]
 
@@ -179,11 +189,13 @@ class ExperimentAdmin(ExportActionModelAdmin):
                 )
 
             kwargs['form'] = ExperimentModelForm
-        return super(ExperimentAdmin, self).get_form(request, obj=obj, **kwargs)
+        return super(ExperimentAdmin, self).get_form(
+            request, obj=obj, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if change:
-            obj.set_default_alternative(form.cleaned_data['default_alternative'])
+            obj.set_default_alternative(
+                form.cleaned_data['default_alternative'])
         obj.save()
 
     def save_related(self, request, form, formsets, change):
@@ -298,7 +310,8 @@ class ExperimentAdmin(ExportActionModelAdmin):
         return super(ExperimentAdmin, self).add_view(
             request, form_url=form_url, extra_context=view_context)
 
-    def change_view(self, request, object_id, form_url='', extra_context=None):
+    def change_view(
+            self, request, object_id, form_url='', extra_context=None):
         experiment = self.get_object(request, unquote(object_id))
         context = self._admin_view_context(extra_context=extra_context)
         context.update(get_result_context(request, experiment))
@@ -333,10 +346,11 @@ class ExperimentAdmin(ExportActionModelAdmin):
         if not (experiment_name and alternative_name):
             return HttpResponseBadRequest()
 
-        participant(request).set_alternative(experiment_name, alternative_name)
+        participant_value = participant(request)
+        participant_value.set_alternative(experiment_name, alternative_name)
         return JsonResponse({
             'success': True,
-            'alternative': participant(request).get_alternative(experiment_name)
+            'alternative': participant_value.get_alternative(experiment_name)
         })
 
     def set_state_view(self, request):
@@ -352,7 +366,8 @@ class ExperimentAdmin(ExportActionModelAdmin):
             return HttpResponseBadRequest()
 
         try:
-            experiment = Experiment.objects.get(name=request.POST.get("experiment"))
+            experiment = Experiment.objects.get(
+                name=request.POST.get("experiment"))
         except Experiment.DoesNotExist:
             return HttpResponseBadRequest()
 
