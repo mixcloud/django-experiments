@@ -64,6 +64,8 @@ class ExperimentResource (ModelResource):
                     goal_name, goal_value['alternatives'], 'confidence'))
         import ipdb; ipdb.set_trace()
         return ', '.join(stats)
+
+    def dehydrate_conversion(self, experiment):
         conversion_context = get_experiment_stats(experiment)['results']
         conversions = []
         for goal_name, goal_value in conversion_context.items():
@@ -71,8 +73,9 @@ class ExperimentResource (ModelResource):
                 conversions.append(self._parse_alternatives(
                     goal_name, goal_value['alternatives'], 'conversions'))
                 # For every goal there is one control which has a conversion
+                control_alternative = ['control', goal_value['control']]
                 conversions.append(self._parse_alternatives(
-                    goal_name, [goal_value['control']], 'conversions'))
+                    goal_name, [control_alternative], 'conversions'))
         return ', '.join(conversions)
 
     def _parse_alternatives(self, goal_name, alternatives, key):
