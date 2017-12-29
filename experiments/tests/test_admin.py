@@ -142,8 +142,8 @@ class ExperimentResourceTestCase(TestCase):
                         'confidence': None,
                         'mann_whitney_confidence': None
                     }), ('alt2', {
-                        'conversions': 1,
-                        'confidence': None,
+                        'conversions': 11,
+                        'confidence': 0,
                         'mann_whitney_confidence': None
                     })],
                 },
@@ -189,14 +189,12 @@ class ExperimentResourceTestCase(TestCase):
     def test_dehydrate_created_date(self):
         actual = self.experiment_resource.dehydrate_created_date(
             self.experiment)
-        expected = "2017-12-21"
-
+        expected = timezone.datetime(2017, 12, 21).date()
         self.assertEqual(expected, actual)
 
     def test_dehydrate_state(self):
         actual = self.experiment_resource.dehydrate_state(self.experiment)
         expected = "Enabled"
-
         self.assertEqual(expected, actual)
 
     @mock.patch('experiments.admin.get_experiment_stats')
@@ -205,7 +203,32 @@ class ExperimentResourceTestCase(TestCase):
 
         actual = self.experiment_resource.dehydrate_participants(
             self.experiment)
-        expected = "control: 10, \nalt1: 100, \nalt2: 1000"
 
+        expected = "control: 10, \nalt1: 100, \nalt2: 1000"
         get_experiment_stats.assert_called_once_with(self.experiment)
         self.assertEqual(expected, actual)
+
+    @mock.patch('experiments.admin.get_experiment_stats')
+    def test_dehydrate_statistic(self, get_experiment_stats):
+        get_experiment_stats.return_value = self.stat
+
+        actual = self.experiment_resource.dehydrate_statistic(
+            self.experiment)
+
+        self.assertIn('test_goal_1/alt1: N/A', actual)
+        self.assertIn('test_goal_1/alt2: 0.00%', actual)
+        self.assertIn('test_goal_2/alt2: 84.27%', actual)
+        self.assertNotIn('test_goal_3/alt1', actual)
+        get_experiment_stats.assert_called_once_with(self.experiment)
+
+    @mock.patch('experiments.admin.get_experiment_stats')
+    def test_dehydrate_conversion(self, get_experiment_stats):
+        get_experiment_stats.return_value = self.stat
+
+        actual = self.experiment_resource.dehydrate_conversion(
+            self.experiment)
+
+        self.assertIn('test_goal_1/alt1: 0', actual)
+        self.assertIn('test_goal_1/alt2: 11', actual)
+        self.assertNotIn('test_goal_3/alt1', actual)
+        get_experiment_stats.assert_called_once_with(self.experiment)
