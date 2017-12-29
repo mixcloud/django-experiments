@@ -511,7 +511,7 @@ class SessionUser(WebUser):
 
 
 def format_percentage(value):
-    return '{0:.2f}%'.format(value) if value else 'N/A'
+    return '{0:.2f}%'.format(value) if value is not None else 'N/A'
 
 
 __all__ = ['participant']
