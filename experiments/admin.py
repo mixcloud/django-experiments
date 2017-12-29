@@ -1,9 +1,10 @@
 # coding=utf-8
 from __future__ import division, unicode_literals
+
+from django import forms
 from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
-from django import forms
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -13,15 +14,21 @@ from django.http import (
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 
-from experiments.admin_utils import get_result_context, get_experiment_stats
+from experiments import conf
+from experiments.admin_utils import (
+    get_result_context,
+    get_experiment_stats,
+)
+from experiments.conditional.admin import AdminConditionalInline
+from experiments.consts import STATES
 from experiments.models import (
     Experiment,
     ExperimentAlternative,
 )
-from experiments import conf
-from django.conf.urls import url
-from experiments.utils import participant
-from experiments.conditional.admin import AdminConditionalInline
+from experiments.utils import (
+    participant,
+    format_percentage,
+)
 
 
 if 'client' in conf.API['api_mode']:
@@ -39,6 +46,7 @@ class ExperimentAlternativeInline(admin.TabularInline):
 
 class ExperimentResource (ModelResource):
     created_date = import_export.fields.Field(column_name="created date")
+    state = import_export.fields.Field(column_name='state')
     participants = import_export.fields.Field(column_name='participants')
     statistic = import_export.fields.Field(column_name='statistic')
     conversion = import_export.fields.Field(column_name='conversion')
@@ -50,7 +58,10 @@ class ExperimentResource (ModelResource):
         export_order = fields
 
     def dehydrate_created_date(self, experiment):
-        return experiment.start_date
+        return experiment.start_date.date()
+
+    def dehydrate_state(self, experiment):
+        return dict(STATES)[experiment.state]
 
     def dehydrate_participants(self, experiment):
         participants_context = get_experiment_stats(
@@ -65,8 +76,13 @@ class ExperimentResource (ModelResource):
         stats = []
         for goal_name, goal_value in stat_context.items():
             if goal_value['is_primary']:
-                stats.append(self._parse_alternatives(
-                    goal_name, goal_value['alternatives'], 'confidence'))
+                goal_stat = self._parse_alternatives(
+                    goal_name,
+                    goal_value['alternatives'],
+                    'confidence',
+                    format_percentage,
+                )
+                stats.append(goal_stat)
         return ', \n'.join(stats)
 
     def dehydrate_conversion(self, experiment):
@@ -82,11 +98,17 @@ class ExperimentResource (ModelResource):
                     goal_name, [control_alternative], 'conversions'))
         return ', \n'.join(conversions)
 
-    def _parse_alternatives(self, goal_name, alternatives, key):
+    def _parse_alternatives(
+            self, goal_name, alternatives, key, formatter=None):
+        if formatter is None:
+            formatter = lambda v: v
+
         return ', \n'.join(
-            '{0}/{1}: {2}'.format(goal_name, alt_name, alt_data[key])
+            '{0}/{1}: {2}'.format(
+                goal_name, alt_name, formatter(alt_data[key]))
             for alt_name, alt_data in alternatives
         )
+
 
 @admin.register(Experiment)
 class ExperimentAdmin(ExportActionModelAdmin):
