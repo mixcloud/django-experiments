@@ -46,6 +46,7 @@ class ExperimentResource (ModelResource):
         model = Experiment
         fields = ('name', 'start_date', 'end_date', 'state', 'traffic',
             'statistic', 'conversion')
+        export_order = fields
 
     def dehydrate_traffic(self, experiment):
         traffic_context = get_experiment_stats(experiment)['alternatives']
@@ -61,8 +62,9 @@ class ExperimentResource (ModelResource):
             if goal_value['is_primary']:
                 stats.append(self._parse_alternatives(
                     goal_name, goal_value['alternatives'], 'confidence'))
-        import ipdb; ipdb.set_trace()
         return ', '.join(stats)
+
+    def dehydrate_conversion(self, experiment):
         conversion_context = get_experiment_stats(experiment)['results']
         conversions = []
         for goal_name, goal_value in conversion_context.items():
@@ -70,12 +72,12 @@ class ExperimentResource (ModelResource):
                 conversions.append(self._parse_alternatives(
                     goal_name, goal_value['alternatives'], 'conversions'))
                 # For every goal there is one control which has a conversion
+                control_alternative = ['control', goal_value['control']]
                 conversions.append(self._parse_alternatives(
-                    goal_name, [goal_value['control']], 'conversions'))
+                    goal_name, [control_alternative], 'conversions'))
         return ', '.join(conversions)
 
     def _parse_alternatives(self, goal_name, alternatives, key):
-        import pdb; pdb.set_trace()
         return ', '.join(
             '{0}/{1}: {2}'.format(goal_name, alt_name, alt_data[key])
             for alt_name, alt_data in alternatives
