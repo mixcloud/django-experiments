@@ -38,22 +38,27 @@ class ExperimentAlternativeInline(admin.TabularInline):
 
 
 class ExperimentResource (ModelResource):
-    traffic = import_export.fields.Field(column_name='traffic')
+    created_date = import_export.fields.Field(column_name="created date")
+    participants = import_export.fields.Field(column_name='participants')
     statistic = import_export.fields.Field(column_name='statistic')
     conversion = import_export.fields.Field(column_name='conversion')
 
     class Meta:
         model = Experiment
-        fields = ('name', 'start_date', 'end_date', 'state', 'traffic',
+        fields = ('name', 'created_date', 'end_date', 'state', 'participants',
             'statistic', 'conversion')
         export_order = fields
 
-    def dehydrate_traffic(self, experiment):
-        traffic_context = get_experiment_stats(experiment)['alternatives']
-        traffic_string = ''
-        for k, v in traffic_context:
-            traffic_string = traffic_string + k + ':' + str(v) + ', '
-        return traffic_string[:-2]
+    def dehydrate_created_date(self, experiment):
+        return experiment.start_date
+
+    def dehydrate_participants(self, experiment):
+        participants_context = get_experiment_stats(
+            experiment)['alternatives']
+        participants = []
+        for k, v in participants_context:
+            participants.append('{0}: {1}'.format(k, v))
+        return ', \n'.join(participants)
 
     def dehydrate_statistic(self, experiment):
         stat_context = get_experiment_stats(experiment)['results']
@@ -62,7 +67,7 @@ class ExperimentResource (ModelResource):
             if goal_value['is_primary']:
                 stats.append(self._parse_alternatives(
                     goal_name, goal_value['alternatives'], 'confidence'))
-        return ', '.join(stats)
+        return ', \n'.join(stats)
 
     def dehydrate_conversion(self, experiment):
         conversion_context = get_experiment_stats(experiment)['results']
@@ -75,10 +80,10 @@ class ExperimentResource (ModelResource):
                 control_alternative = ['control', goal_value['control']]
                 conversions.append(self._parse_alternatives(
                     goal_name, [control_alternative], 'conversions'))
-        return ', '.join(conversions)
+        return ', \n'.join(conversions)
 
     def _parse_alternatives(self, goal_name, alternatives, key):
-        return ', '.join(
+        return ', \n'.join(
             '{0}/{1}: {2}'.format(goal_name, alt_name, alt_data[key])
             for alt_name, alt_data in alternatives
         )
