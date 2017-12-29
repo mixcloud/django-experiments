@@ -62,7 +62,6 @@ class ExperimentResource (ModelResource):
             if goal_value['is_primary']:
                 stats.append(self._parse_alternatives(
                     goal_name, goal_value['alternatives'], 'confidence'))
-        import ipdb; ipdb.set_trace()
         return ', '.join(stats)
 
     def dehydrate_conversion(self, experiment):
@@ -79,7 +78,6 @@ class ExperimentResource (ModelResource):
         return ', '.join(conversions)
 
     def _parse_alternatives(self, goal_name, alternatives, key):
-        import pdb; pdb.set_trace()
         return ', '.join(
             '{0}/{1}: {2}'.format(goal_name, alt_name, alt_data[key])
             for alt_name, alt_data in alternatives
