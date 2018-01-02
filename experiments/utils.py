@@ -510,4 +510,8 @@ class SessionUser(WebUser):
         self.session['experiments_enrollments'] = enrollments
 
 
+def format_percentage(value):
+    return '{0:.2f}%'.format(value) if value is not None else 'N/A'
+
+
 __all__ = ['participant']

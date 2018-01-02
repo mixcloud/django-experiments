@@ -1,5 +1,6 @@
 # coding=utf-8
-from __future__ import division
+from __future__ import division, unicode_literals
+
 from django import forms
 from django.conf.urls import url
 from django.contrib import admin
@@ -13,18 +14,28 @@ from django.http import (
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 
-from experiments.admin_utils import get_result_context
+from experiments import conf
+from experiments.admin_utils import (
+    get_result_context,
+    get_experiment_stats,
+)
+from experiments.conditional.admin import AdminConditionalInline
+from experiments.consts import STATES
 from experiments.models import (
     Experiment,
     ExperimentAlternative,
 )
-from experiments import conf
-from experiments.utils import participant
-from experiments.conditional.admin import AdminConditionalInline
+from experiments.utils import (
+    participant,
+    format_percentage,
+)
 
-
-if 'client' in conf.API['api_mode']:
+if 'client' in conf.API['api_mode']:  # noqa
     from experiments.api.admin import *  # noqa
+
+import import_export
+from import_export.admin import ExportActionModelAdmin
+from import_export.resources import ModelResource
 
 
 class ExperimentAlternativeInline(admin.TabularInline):
@@ -33,15 +44,89 @@ class ExperimentAlternativeInline(admin.TabularInline):
     extra = 0
 
 
+class ExperimentResource(ModelResource):
+    created_date = import_export.fields.Field(column_name="created_date")
+    state = import_export.fields.Field(column_name='state')
+    participants = import_export.fields.Field(column_name='participants')
+    statistic = import_export.fields.Field(column_name='statistic')
+    conversion = import_export.fields.Field(column_name='conversion')
+
+    class Meta:
+        model = Experiment
+        fields = (
+            'name',
+            'created_date',
+            'end_date',
+            'state',
+            'participants',
+            'statistic',
+            'conversion',
+        )
+        export_order = fields
+
+    def dehydrate_created_date(self, experiment):
+        return experiment.start_date.date()
+
+    def dehydrate_state(self, experiment):
+        return dict(STATES)[experiment.state]
+
+    def dehydrate_participants(self, experiment):
+        participants_context = get_experiment_stats(
+            experiment)['alternatives']
+        participants = []
+        for k, v in participants_context:
+            participants.append('{0}: {1}'.format(k, v))
+        return ', \n'.join(participants)
+
+    def dehydrate_statistic(self, experiment):
+        stat_context = get_experiment_stats(experiment)['results']
+        stats = []
+        for goal_name, goal_value in stat_context.items():
+            if goal_value['is_primary']:
+                goal_stat = self._parse_alternatives(
+                    goal_name,
+                    goal_value['alternatives'],
+                    'confidence',
+                    format_percentage,
+                )
+                stats.append(goal_stat)
+        return ', \n'.join(stats)
+
+    def dehydrate_conversion(self, experiment):
+        conversion_context = get_experiment_stats(experiment)['results']
+        conversions = []
+        for goal_name, goal_value in conversion_context.items():
+            if goal_value['is_primary']:
+                conversions.append(self._parse_alternatives(
+                    goal_name, goal_value['alternatives'], 'conversions'))
+                # For every goal there is one control which has a conversion
+                control_alternative = ['control', goal_value['control']]
+                conversions.append(self._parse_alternatives(
+                    goal_name, [control_alternative], 'conversions'))
+        return ', \n'.join(conversions)
+
+    def _parse_alternatives(
+            self, goal_name, alternatives, key, formatter=None):
+        return ', \n'.join(
+            '{0}/{1}: {2}'.format(
+                goal_name,
+                alt_name,
+                formatter(alt_data[key]) if formatter else alt_data[key],
+            )
+            for alt_name, alt_data in alternatives
+        )
+
+
 @admin.register(Experiment)
-class ExperimentAdmin(admin.ModelAdmin):
+class ExperimentAdmin(ExportActionModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'state',)
     list_filter = ('state', 'start_date', 'end_date',)
     ordering = ('-start_date',)
     search_fields = ('=name',)
-    actions = None
+    actions = []
     readonly_fields = ('start_date', 'end_date', 'state',)
     inlines = (ExperimentAlternativeInline, AdminConditionalInline,)
+    resource_class = ExperimentResource
 
     def get_fieldsets(self, request, obj=None):
         """
@@ -89,7 +174,10 @@ class ExperimentAdmin(admin.ModelAdmin):
 
         if obj:
             if obj.alternatives:
-                choices = [(alternative, alternative) for alternative in obj.alternatives.keys()]
+                choices = [
+                    (alternative, alternative)
+                    for alternative in obj.alternatives.keys()
+                ]
             else:
                 choices = [(conf.CONTROL_GROUP, conf.CONTROL_GROUP)]
 
@@ -101,11 +189,13 @@ class ExperimentAdmin(admin.ModelAdmin):
                 )
 
             kwargs['form'] = ExperimentModelForm
-        return super(ExperimentAdmin, self).get_form(request, obj=obj, **kwargs)
+        return super(ExperimentAdmin, self).get_form(
+            request, obj=obj, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if change:
-            obj.set_default_alternative(form.cleaned_data['default_alternative'])
+            obj.set_default_alternative(
+                form.cleaned_data['default_alternative'])
         obj.save()
 
     def save_related(self, request, form, formsets, change):
@@ -220,7 +310,8 @@ class ExperimentAdmin(admin.ModelAdmin):
         return super(ExperimentAdmin, self).add_view(
             request, form_url=form_url, extra_context=view_context)
 
-    def change_view(self, request, object_id, form_url='', extra_context=None):
+    def change_view(
+            self, request, object_id, form_url='', extra_context=None):
         experiment = self.get_object(request, unquote(object_id))
         context = self._admin_view_context(extra_context=extra_context)
         context.update(get_result_context(request, experiment))
@@ -255,10 +346,11 @@ class ExperimentAdmin(admin.ModelAdmin):
         if not (experiment_name and alternative_name):
             return HttpResponseBadRequest()
 
-        participant(request).set_alternative(experiment_name, alternative_name)
+        participant_value = participant(request)
+        participant_value.set_alternative(experiment_name, alternative_name)
         return JsonResponse({
             'success': True,
-            'alternative': participant(request).get_alternative(experiment_name)
+            'alternative': participant_value.get_alternative(experiment_name)
         })
 
     def set_state_view(self, request):
@@ -274,7 +366,8 @@ class ExperimentAdmin(admin.ModelAdmin):
             return HttpResponseBadRequest()
 
         try:
-            experiment = Experiment.objects.get(name=request.POST.get("experiment"))
+            experiment = Experiment.objects.get(
+                name=request.POST.get("experiment"))
         except Experiment.DoesNotExist:
             return HttpResponseBadRequest()
 

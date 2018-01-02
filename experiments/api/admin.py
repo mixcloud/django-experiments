@@ -4,6 +4,7 @@ import logging
 from django.contrib import admin
 
 from experiments.consts import STATES
+from experiments.utils import format_percentage
 from .models import RemoteExperiment
 
 
@@ -78,8 +79,7 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
 
         def _td(data):
             confidence = data['confidence']
-            value = '{0:.2f}%'.format(confidence) if confidence else 'N/A'
-            return '<td>{}</td>'.format(value)
+            return '<td>{}</td>'.format(format_percentage(confidence))
 
         def _goal(name, data):
             data_dict = dict(data['alternatives'])
