@@ -11,7 +11,7 @@ with codecs.open(path.join(PATH, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='consumeraffairs-django-experiments',
-    version='1.4.1',
+    version='1.4.2',
     description='Python Django AB Testing Framework',
     long_description=LONG_DESCRIPTION,
     author='ConsumerAffairs',

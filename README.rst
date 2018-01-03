@@ -396,6 +396,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.4.2
+~~~~~
+ - export experiments to CSV and other formats from the admin
+
 1.4.1
 ~~~~~
  - state toggle on the multisite admin dashboard
