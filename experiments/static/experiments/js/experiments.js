@@ -16,7 +16,7 @@ experiments = function() {
             this.csrfToken = experimentsCsrfToken && experimentsCsrfToken();
             xhr.open('POST', '/experiments/goal/' + goal_name + '/');
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            if(this.csrfToken) {
+            if (this.csrfToken) {
                 xhr.setRequestHeader('X-CSRFToken', this.csrfToken);
             }
             xhr.onload = function() {
@@ -28,7 +28,7 @@ experiments = function() {
         },
         getCookie: function(name) {
             var cookieValue = null;
-            if (document.cookie && document.cookie != '') {
+            if (document.cookie) {
                 var cookies = document.cookie.split(';');
                 for (var i = 0; i < cookies.length; i++) {
                     var cookie = cookies[i] ? cookies[i].trim() : '';
