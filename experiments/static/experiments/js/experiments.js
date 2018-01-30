@@ -13,15 +13,35 @@ experiments = function() {
         },
         goal: function(goal_name) {
             var xhr = new XMLHttpRequest();
+            this.csrfToken = experimentsCsrfToken && experimentsCsrfToken();
             xhr.open('POST', '/experiments/goal/' + goal_name + '/');
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            if (this.csrfToken) {
+                xhr.setRequestHeader('X-CSRFToken', this.csrfToken);
+            }
             xhr.onload = function() {
                 if (xhr.status !== 200) {
                     throw 'POST to "/experiments/goal/" failed. Returned status of ' + xhr.status;
                 }
             };
             xhr.send();
-        }
+        },
+        getCookie: function(name) {
+            var cookieValue = null;
+            if (document.cookie) {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i] ? cookies[i].trim() : '';
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        },
+        csrfToken: null
     };
 }();
 
