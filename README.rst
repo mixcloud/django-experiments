@@ -409,6 +409,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.4.3
+~~~~~
+ - experimentsCsrfToken JS hook for reporting goals via JS
+
 1.4.2
 ~~~~~
  - export experiments to CSV and other formats from the admin
