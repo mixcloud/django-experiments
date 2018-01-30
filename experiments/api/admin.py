@@ -3,6 +3,8 @@ import logging
 
 from django.contrib import admin
 
+from experiments.consts import STATES
+from experiments.utils import format_percentage
 from .models import RemoteExperiment
 
 
@@ -19,7 +21,7 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
     list_display = (
         'admin_link',
         'site',
-        'state',
+        'state_toggle',
         'start_date',
         'end_date',
         'participants',
@@ -43,6 +45,25 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
     admin_link.allow_tags = True
     admin_link.short_description = 'name'
 
+    def state_toggle(self, obj):
+        states = dict(STATES)
+
+        def link(state):
+            return (
+                '<a href="#" data-state="{code}" data-id="{id}" class="{active}">{label}</a>'
+                .format(
+                    code=state,
+                    id=obj.id,
+                    label=states[state],
+                    active='active' if obj.state == state else '',
+                ))
+
+        html = ''.join(link(s) for s in states)
+        return '<div class="state_toggle">{}</div>'.format(html)
+    state_toggle.short_description = 'state'
+    state_toggle.allow_tags = True
+    state_toggle.admin_order_field = 'state'
+
     def participants(self, obj):
         return sum(dict(obj.statistics['alternatives']).values())
 
@@ -58,8 +79,7 @@ class RemoteExperimentAdmin(admin.ModelAdmin):
 
         def _td(data):
             confidence = data['confidence']
-            value = '{0:.2f}%'.format(confidence) if confidence else 'N/A'
-            return '<td>{}</td>'.format(value)
+            return '<td>{}</td>'.format(format_percentage(confidence))
 
         def _goal(name, data):
             data_dict = dict(data['alternatives'])

@@ -43,6 +43,7 @@ Dependencies
 - `Redis <http://redis.io/>`_
 - `django-jsonfield <https://github.com/dmkoch/django-jsonfield/>`_
 - `django-modeldict <https://github.com/disqus/django-modeldict>`_
+- `django-import-export<https://github.com/django-import-export/django-import-export>`_
 
 (Detailed list in setup.py)
 
@@ -83,9 +84,11 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
         'django.contrib.admin',
         'django.contrib.humanize',
         'experiments',
+        'import_export',
     ]
 
 Include 'django.contrib.humanize' as above if not already included.
+Include 'import_export' below 'experiments'.
 
 Include the app URLconf in your urls.py file:
 
@@ -393,9 +396,21 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.4.2
+~~~~~
+ - export experiments to CSV and other formats from the admin
+
+1.4.1
+~~~~~
+ - state toggle on the multisite admin dashboard
+
 1.4.0
 ~~~~~
  - multisite admin dashboard
+
+1.3.7
+~~~~~
+ - minor bugfix
 
 1.3.6
 ~~~~~

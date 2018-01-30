@@ -149,3 +149,22 @@ class RemoteExperiment(models.Model):
     def _cleanup(cls, batch):
         """Deletes all previous batches"""
         cls.objects.filter(batch__lt=batch).delete()
+
+    @property
+    def remote_payload(self):
+        """
+        Payload used for PATCH requests to change experiment state remotely
+        """
+        return {
+            'state': self.state,
+        }
+
+    @property
+    def remote_token(self):
+        """
+        Token from `EXPERIMENTS_API` settings for site that
+        is the origin of this instance.
+        """
+        for server in conf.API['remotes']:
+            if self.url.startswith(server['url']):
+                return server['token']

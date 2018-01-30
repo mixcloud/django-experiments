@@ -6,7 +6,6 @@ from experiments.consts import CONTROL_STATE
 from experiments.tests.testing_2_3 import mock
 
 
-
 class ModelsTestCase(TestCase):
 
     def setUp(self):
@@ -51,7 +50,7 @@ class ModelsTestCase(TestCase):
             (mock.call(blocking=False), mock.call(blocking=True)))
         mock_lock.release.assert_called_once_with()
 
-    @mock.patch('experiments.conf')
+    @mock.patch('experiments.api.models.conf')
     def test_update_remotes_wo_remotes(self, patched_conf):
         patched_conf.API['remotes'] = []
         mock_lock = mock.MagicMock()
@@ -249,3 +248,32 @@ class ModelsTestCase(TestCase):
             ({'result': 3}, {'name': 'Test Site'}),
         ]
         self.assertEqual(list(value), expected_result)
+
+    def test_remote_payload(self):
+        instance = RemoteExperiment(state=3)
+        expected = {'state': 3}
+        self.assertEqual(instance.remote_payload, expected)
+
+    @mock.patch('experiments.api.models.conf')
+    def test_remote_token(self, conf):
+        conf.API = {
+            'remotes': [
+                {'url': 'url1', 'token': 'token1'},
+                {'url': 'url2', 'token': 'token2'},
+                {'url': 'url3', 'token': 'token3'},
+            ]
+        }
+        instance = RemoteExperiment(url='url2222')
+        self.assertEqual(instance.remote_token, 'token2')
+
+    @mock.patch('experiments.api.models.conf')
+    def test_remote_token_unknown(self, conf):
+        conf.API = {
+            'remotes': [
+                {'url': 'url1', 'token': 'token1'},
+                {'url': 'url2', 'token': 'token2'},
+                {'url': 'url3', 'token': 'token3'},
+            ]
+        }
+        instance = RemoteExperiment(url='url7777')
+        self.assertIsNone(instance.remote_token)
