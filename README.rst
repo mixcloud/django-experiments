@@ -313,12 +313,12 @@ create a function called ``experimentsCsrfToken`` and have it return the value
 of the token. For example:
 
     ::
-    
+
         function experimentsCsrfToken() {
             return experiments.getCookie('');
         }
 
-For more info please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
+    For more info please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
 
 
 4. **Cookies**:
