@@ -307,10 +307,10 @@ This will be fired when the user loads the page. This is not the only way of fir
         <button onclick="experiments.goal('registration')">Complete Registration</button>
 
     If your project uses CSRF protection (and it should), you will need to send
-``X-CSRFToken`` HTTP header along with the AJAX request. Django-experiments 
-provides a hook that will be called before making the AJAX request. To use it, 
-create a function called ``experimentsCsrfToken`` and have it return the value
-of the token. For example:
+    ``X-CSRFToken`` HTTP header along with the AJAX request. Django-experiments 
+    provides a hook that will be called before making the AJAX request. To use it, 
+    create a function called ``experimentsCsrfToken`` and have it return the value
+    of the token. For example:
 
     ::
 
@@ -318,7 +318,7 @@ of the token. For example:
             return experiments.getCookie('');
         }
 
-    For more info please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
+    For more info please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_
 
 
 4. **Cookies**:
