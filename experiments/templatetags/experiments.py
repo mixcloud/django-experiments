@@ -101,7 +101,7 @@ def experiment(parser, token):
     return ExperimentNode(node_list, experiment_name, alternative, weight, user_variable)
 
 
-@register.assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def experiment_enroll(context, experiment_name, *alternatives, **kwargs):
     if 'user' in kwargs:
         user = participant(user=kwargs['user'])
