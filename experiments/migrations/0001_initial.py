@@ -39,12 +39,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='enrollment',
             name='experiment',
-            field=models.ForeignKey(to='experiments.Experiment'),
+            field=models.ForeignKey(to='experiments.Experiment', on_delete=django.db.models.deletion.CASCADE),
         ),
         migrations.AddField(
             model_name='enrollment',
             name='user',
-            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=django.db.models.deletion.CASCADE),
         ),
         migrations.AlterUniqueTogether(
             name='enrollment',
