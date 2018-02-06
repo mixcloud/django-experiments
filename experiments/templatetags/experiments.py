@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from django import template
-from django.urls import resolvers as reverse
+from django.urls import reverse
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
