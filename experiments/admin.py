@@ -312,6 +312,8 @@ class ExperimentAdmin(ExportActionModelAdmin):
 
     def change_view(
             self, request, object_id, form_url='', extra_context=None):
+        participant_value = participant(request)
+        participant_value.set_disabled_experiments([])
         experiment = self.get_object(request, unquote(object_id))
         context = self._admin_view_context(extra_context=extra_context)
         context.update(get_result_context(request, experiment))
@@ -347,6 +349,7 @@ class ExperimentAdmin(ExportActionModelAdmin):
             return HttpResponseBadRequest()
 
         participant_value = participant(request)
+        participant_value.set_disabled_experiments([])
         participant_value.set_alternative(experiment_name, alternative_name)
         return JsonResponse({
             'success': True,

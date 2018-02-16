@@ -8,9 +8,10 @@ from experiments.tests.testing_2_3 import mock
 
 from experiments.models import Experiment
 from experiments.templatetags.experiments import (
-    ExperimentsExtension,
-    _parse_token_contents,
     _experiments_prepare_conditionals,
+    _parse_token_contents,
+    ExperimentsExtension,
+    experiment_enrolled_alternative,
     experiments_prepare_conditionals,
 )
 from experiments.utils import participant
@@ -50,6 +51,19 @@ class ExperimentTemplateTagTestCase(TestCase):
         token_contents = ('experiment', 'backgroundcolor')
         self.assertRaises(ValueError, lambda: _parse_token_contents(token_contents))
 
+    @mock.patch('experiments.templatetags.experiments.participant')
+    def test_experiment_enrolled_alternative(self, participant_patch):
+        experiment_name = "test_experiment"
+        some_alternative = 'some_alternative'
+        mock_user = participant_patch.return_value
+        mock_user.get_alternative.return_value = some_alternative
+        request = mock.Mock()
+        context = {'request': request}
+        alternative = experiment_enrolled_alternative(context, experiment_name)
+        participant_patch.assert_called_once_with(request=request)
+        mock_user.get_alternative.assert_called_once_with(
+            experiment_name, request)
+        self.assertEqual(alternative, some_alternative)
 
 class ExperimentAutoCreateTestCase(TestCase):
     @override_settings(EXPERIMENTS_AUTO_CREATE=False)
@@ -443,6 +457,21 @@ class ExperimentsJinjaExtensionTests(TestCase):
         self.parser.stream = mock_stream
         retval = self.extension._token_as(self.parser)
         self.assertFalse(retval)
+
+    @mock.patch('experiments.templatetags.experiments.participant')
+    def test_render_experiment_enrolled_alternative(self, participant_patch):
+        experiment_name = "test_experiment"
+        some_alternative = 'some_alternative'
+        mock_user = participant_patch.return_value
+        mock_user.get_alternative.return_value = some_alternative
+        request = mock.Mock()
+        context = {'request': request}
+        alternative = self.extension.render_experiment_enrolled_alternative(
+            experiment_name, context)
+        participant_patch.assert_called_once_with(request=request)
+        mock_user.get_alternative.assert_called_once_with(
+            experiment_name, request)
+        self.assertEqual(alternative, some_alternative)
 
 
 class PrepareTemplateTagTestCase(TestCase):

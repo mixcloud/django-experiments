@@ -123,17 +123,21 @@ class WebUser(object):
 
         return chosen_alternative
 
-    def get_alternative(self, experiment_name):
+    def get_alternative(self, experiment_name, request=None):
         """
         Get the alternative this user is enrolled in.
         """
+        disabled = False
+        if request and request.experiments:
+            disabled = experiment_name in request.experiments.disabled_experiments
+
         experiment = None
         try:
             # catching the KeyError instead of using .get so that the experiment is auto created if desired
             experiment = experiment_manager[experiment_name]
         except KeyError:
             pass
-        if experiment:
+        if experiment and not disabled:
             if experiment.is_displaying_alternatives():
                 alternative = self._get_enrollment(experiment)
                 if alternative is not None:
@@ -314,15 +318,16 @@ class AuthenticatedUser(WebUser):
     def _get_enrollment(self, experiment):
         if experiment.name not in self._enrollment_cache:
             try:
-                self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment).alternative
+                self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment, disabled=False).alternative
             except Enrollment.DoesNotExist:
                 self._enrollment_cache[experiment.name] = None
         return self._enrollment_cache[experiment.name]
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
+        if experiment.name in self._get_disabled_experiment_names():
+            return
         if experiment.name in self._enrollment_cache:
             del self._enrollment_cache[experiment.name]
-
         try:
             enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative})
         except IntegrityError:
@@ -366,8 +371,19 @@ class AuthenticatedUser(WebUser):
         )
 
     def set_disabled_experiments(self, names):
-        Enrollment.objects.filter(experiment__name__in=names).update(disabled=True)
-        Enrollment.objects.exclude(experiment__name__in=names).update(disabled=False)
+        for name in names:
+            experiment = experiment_manager.get_experiment(name, auto_create=False)
+            if not experiment:
+                continue
+            enrollment, _ = Enrollment.objects.get_or_create(
+                experiment=experiment,
+                user=self.user,
+                defaults={'disabled': True}
+            )
+            if not enrollment.disabled:
+                enrollment.disabled = True
+                enrollment.save()
+        Enrollment.objects.filter(user=self.user).exclude(experiment__name__in=names).update(disabled=False)
 
     def _cancel_enrollment(self, experiment):
         try:
