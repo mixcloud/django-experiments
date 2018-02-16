@@ -409,6 +409,10 @@ See conf.py for other settings
 Changelog
 ---------
 
+1.4.4
+~~~~~
+ - bugfix release for conditionals
+
 1.4.3
 ~~~~~
  - experimentsCsrfToken JS hook for reporting goals via JS
