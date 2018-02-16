@@ -128,7 +128,7 @@ class WebUser(object):
         Get the alternative this user is enrolled in.
         """
         disabled = False
-        if request and request.experiments:
+        if request and hasattr(request, 'experiments'):
             disabled = experiment_name in request.experiments.disabled_experiments
 
         experiment = None
@@ -316,9 +316,11 @@ class AuthenticatedUser(WebUser):
         super(AuthenticatedUser, self).__init__()
 
     def _get_enrollment(self, experiment):
+        if experiment.name in self._get_disabled_experiment_names():
+            return None
         if experiment.name not in self._enrollment_cache:
             try:
-                self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment, disabled=False).alternative
+                self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment).alternative
             except Enrollment.DoesNotExist:
                 self._enrollment_cache[experiment.name] = None
         return self._enrollment_cache[experiment.name]
@@ -361,6 +363,8 @@ class AuthenticatedUser(WebUser):
             yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
 
     def _get_disabled_experiment_names(self):
+        if self.request and hasattr(self.request, 'experiments'):
+            return self.request.experiments.disabled_experiments
         return list(
             Enrollment.objects.filter(
                 user=self.user,
