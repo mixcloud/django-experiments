@@ -26,17 +26,20 @@ class WatchSignal(object):
 
 class SignalsTestCase(TestCase):
     def setUp(self):
-        self.experiment = Experiment.objects.create(name=EXPERIMENT_NAME, state=ENABLED_STATE)
+        self.experiment = Experiment.objects.create(
+            name=EXPERIMENT_NAME, state=ENABLED_STATE)
         User = get_user_model()
         self.user = User.objects.create(username='brian')
 
     def test_sends_enroll_signal(self):
         with WatchSignal(user_enrolled) as signal:
-            participant(user=self.user).enroll(EXPERIMENT_NAME, ['red', 'blue'])
+            participant(user=self.user).enroll(
+                EXPERIMENT_NAME, ['red', 'blue'])
             self.assertTrue(signal.called)
 
     def test_does_not_send_enroll_signal_again(self):
         participant(user=self.user).enroll(EXPERIMENT_NAME, ['red', 'blue'])
         with WatchSignal(user_enrolled) as signal:
-            participant(user=self.user).enroll(EXPERIMENT_NAME, ['red', 'blue'])
+            participant(user=self.user).enroll(
+                EXPERIMENT_NAME, ['red', 'blue'])
             self.assertFalse(signal.called)

@@ -1,11 +1,11 @@
+import random
+import json
+
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
 from jsonfield import JSONField
-
-import random
-import json
 
 from experiments.dateutils import now
 from experiments import conf
@@ -31,7 +31,8 @@ class Experiment(models.Model):
 
     state = models.IntegerField(default=CONTROL_STATE, choices=STATES)
 
-    start_date = models.DateTimeField(default=now, blank=True, null=True, db_index=True)
+    start_date = models.DateTimeField(
+        default=now, blank=True, null=True, db_index=True)
     end_date = models.DateTimeField(blank=True, null=True)
 
     def is_displaying_alternatives(self):
@@ -59,7 +60,9 @@ class Experiment(models.Model):
             self.alternatives[alternative] = {}
             self.alternatives[alternative]['enabled'] = True
             self.save()
-        if weight is not None and 'weight' not in self.alternatives[alternative]:
+
+        if weight is not None and 'weight' not in self.alternatives[
+                alternative]:
             self.alternatives[alternative]['weight'] = float(weight)
             self.save()
 
@@ -79,7 +82,9 @@ class Experiment(models.Model):
 
     def random_alternative(self):
         if all('weight' in alt for alt in self.alternatives.values()):
-            return weighted_choice([(name, details['weight']) for name, details in self.alternatives.items()])
+            return weighted_choice(
+                [(name, details['weight'])
+                    for name, details in self.alternatives.items()])
         else:
             return random.choice(list(self.alternatives))
 
@@ -106,7 +111,9 @@ class Experiment(models.Model):
 
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
-    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        getattr(settings, 'AUTH_USER_MODEL', 'auth.User'),
+        on_delete=models.CASCADE)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
@@ -123,9 +130,9 @@ def weighted_choice(choices):
     total = sum(w for c, w in choices)
     r = random.uniform(0, total)
     upto = 0
+
     for c, w in choices:
         upto += w
+
         if upto >= r:
             return c
-
-

@@ -4,7 +4,7 @@ from math import fabs, exp, sqrt, log, pi
 def zprob(z):
     """
     Returns the area under the normal curve 'to the left of' the given z value.
-    Thus, 
+    Thus,
         for z<0, zprob(z) = 1-tail probability
         for z>0, 1.0-zprob(z) = 1-tail probability
         for any z, 2.0*(1.0-zprob(abs(z))) = 2-tail probability
@@ -46,10 +46,10 @@ def zprob(z):
 def chisqprob(chisq, df):
     """
     Returns the (1-tailed) probability value associated with the provided
-    chi-square value and df.  
-    
+    chi-square value and df.
+
     Originally adapted from Gary Perlman code by Gary Strangman.
-    
+
     Usage:   chisqprob(chisq,df)
     """
     BIG = 20.0

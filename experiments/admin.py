@@ -1,12 +1,15 @@
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
+from django.conf.urls import url
 from django import forms
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import (
+    JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden)
 from django.utils import timezone
+
 from experiments.admin_utils import get_result_context
 from experiments.models import Experiment
 from experiments import conf
-from django.conf.urls import url
+
 from experiments.utils import participant
 
 
@@ -49,20 +52,25 @@ class ExperimentAdmin(admin.ModelAdmin):
         """
         if obj:
             if obj.alternatives:
-                choices = [(alternative, alternative) for alternative in obj.alternatives.keys()]
+                choices = [
+                    (alternative, alternative)
+                    for alternative in obj.alternatives.keys()]
             else:
                 choices = [(conf.CONTROL_GROUP, conf.CONTROL_GROUP)]
 
             class ExperimentModelForm(forms.ModelForm):
-                default_alternative = forms.ChoiceField(choices=choices,
-                                                        initial=obj.default_alternative,
-                                                        required=False)
+                default_alternative = forms.ChoiceField(
+                    choices=choices, initial=obj.default_alternative,
+                    required=False)
+
             kwargs['form'] = ExperimentModelForm
-        return super(ExperimentAdmin, self).get_form(request, obj=obj, **kwargs)
+        return super(ExperimentAdmin, self).get_form(
+            request, obj=obj, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if change:
-            obj.set_default_alternative(form.cleaned_data['default_alternative'])
+            obj.set_default_alternative(
+                form.cleaned_data['default_alternative'])
         obj.save()
 
     # --------------------------------------- Overriding admin views
@@ -90,22 +98,29 @@ class ExperimentAdmin(admin.ModelAdmin):
         return context
 
     def add_view(self, request, form_url='', extra_context=None):
-        return super(ExperimentAdmin, self).add_view(request,
-                                                     form_url=form_url,
-                                                     extra_context=self._admin_view_context(extra_context=extra_context))
+        return super(ExperimentAdmin, self).add_view(
+            request, form_url=form_url, extra_context=self._admin_view_context(
+                extra_context=extra_context))
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         experiment = self.get_object(request, unquote(object_id))
         context = self._admin_view_context(extra_context=extra_context)
         context.update(get_result_context(request, experiment))
-        return super(ExperimentAdmin, self).change_view(request, object_id, form_url=form_url, extra_context=context)
+
+        return super(ExperimentAdmin, self).change_view(
+            request, object_id, form_url=form_url, extra_context=context)
 
     # --------------------------------------- Views for ajax functionality
 
     def get_urls(self):
         experiment_urls = [
-            url(r'^set-alternative/$', self.admin_site.admin_view(self.set_alternative_view), name='experiment_admin_set_alternative'),
-            url(r'^set-state/$', self.admin_site.admin_view(self.set_state_view), name='experiment_admin_set_state'),
+            url(
+                r'^set-alternative/$', self.admin_site.admin_view(
+                    self.set_alternative_view),
+                name='experiment_admin_set_alternative'),
+            url(
+                r'^set-state/$', self.admin_site.admin_view(
+                    self.set_state_view), name='experiment_admin_set_state'),
         ]
         return experiment_urls + super(ExperimentAdmin, self).get_urls()
 
@@ -124,7 +139,8 @@ class ExperimentAdmin(admin.ModelAdmin):
         participant(request).set_alternative(experiment_name, alternative_name)
         return JsonResponse({
             'success': True,
-            'alternative': participant(request).get_alternative(experiment_name)
+            'alternative': participant(
+                request).get_alternative(experiment_name)
         })
 
     def set_state_view(self, request):
@@ -140,7 +156,8 @@ class ExperimentAdmin(admin.ModelAdmin):
             return HttpResponseBadRequest()
 
         try:
-            experiment = Experiment.objects.get(name=request.POST.get("experiment"))
+            experiment = Experiment.objects.get(
+                name=request.POST.get("experiment"))
         except Experiment.DoesNotExist:
             return HttpResponseBadRequest()
 
@@ -155,5 +172,5 @@ class ExperimentAdmin(admin.ModelAdmin):
 
         return HttpResponse()
 
-admin.site.register(Experiment, ExperimentAdmin)
 
+admin.site.register(Experiment, ExperimentAdmin)

@@ -27,19 +27,23 @@ class ExperimentTemplateTagTestCase(TestCase):
         self.assertEqual(weight, '10')
 
     def test_handles_user(self):
-        token_contents = ('experiment', 'backgroundcolor', 'blue', 'user=commenter')
+        token_contents = (
+            'experiment', 'backgroundcolor', 'blue', 'user=commenter')
         experiment_name, alternative, weight, user_resolvable = _parse_token_contents(token_contents)
         self.assertEqual(user_resolvable.var, 'commenter')
 
     def test_handles_user_and_weight(self):
-        token_contents = ('experiment', 'backgroundcolor', 'blue', 'user=commenter', 'weight=10')
+        token_contents = (
+            'experiment', 'backgroundcolor', 'blue', 'user=commenter',
+            'weight=10')
         experiment_name, alternative, weight, user_resolvable = _parse_token_contents(token_contents)
         self.assertEqual(user_resolvable.var, 'commenter')
         self.assertEqual(weight, '10')
 
     def test_raises_on_insufficient_arguments(self):
         token_contents = ('experiment', 'backgroundcolor')
-        self.assertRaises(ValueError, lambda: _parse_token_contents(token_contents))
+        self.assertRaises(ValueError, lambda: _parse_token_contents(
+            token_contents))
 
 
 class ExperimentAutoCreateTestCase(TestCase):
@@ -48,21 +52,27 @@ class ExperimentAutoCreateTestCase(TestCase):
         request = RequestFactory().get('/')
         request.user = User.objects.create(username='test')
         Template("{% load experiments %}{% experiment test_experiment control %}{% endexperiment %}").render(Context({'request': request}))
-        self.assertFalse(Experiment.objects.filter(name="test_experiment").exists())
+        self.assertFalse(Experiment.objects.filter(
+            name="test_experiment").exists())
 
     def test_template_auto_create_on(self):
         request = RequestFactory().get('/')
         request.user = User.objects.create(username='test')
         Template("{% load experiments %}{% experiment test_experiment control %}{% endexperiment %}").render(Context({'request': request}))
-        self.assertTrue(Experiment.objects.filter(name="test_experiment").exists())
+        self.assertTrue(Experiment.objects.filter(
+            name="test_experiment").exists())
 
     @override_settings(EXPERIMENTS_AUTO_CREATE=False)
     def test_view_auto_create_off(self):
         user = User.objects.create(username='test')
-        participant(user=user).enroll('test_experiment_y', alternatives=['other'])
-        self.assertFalse(Experiment.objects.filter(name="test_experiment_y").exists())
+        participant(user=user).enroll(
+            'test_experiment_y', alternatives=['other'])
+        self.assertFalse(Experiment.objects.filter(
+            name="test_experiment_y").exists())
 
     def test_view_auto_create_on(self):
         user = User.objects.create(username='test')
-        participant(user=user).enroll('test_experiment_x', alternatives=['other'])
-        self.assertTrue(Experiment.objects.filter(name="test_experiment_x").exists())
+        participant(user=user).enroll(
+            'test_experiment_x', alternatives=['other'])
+        self.assertTrue(Experiment.objects.filter(
+            name="test_experiment_x").exists())

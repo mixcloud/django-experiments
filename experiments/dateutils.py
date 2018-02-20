@@ -11,7 +11,9 @@ else:
 
 
 def fix_awareness(value):
-    tz_aware_value = value.tzinfo is not None and value.tzinfo.utcoffset(value) is not None
+    tz_aware_value = value.tzinfo is not None and value.tzinfo.utcoffset(
+        value) is not None
+
     if USE_TZ and not tz_aware_value:
         from django.utils.timezone import get_current_timezone
         return value.replace(tzinfo=get_current_timezone())
