@@ -211,8 +211,8 @@ class ExperimentDisablement(models.Model):
     """
     Used to keep record of disabled experiments for Authenticated Users
     """
-    user = models.ForeignKey(User, models.CASCADE)
-    experiment = models.ForeignKey('Experiment', models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    experiment = models.ForeignKey('Experiment', on_delete=models.CASCADE)
     disabled = models.BooleanField(null=False, blank=True, default=True)
 
     def __str__(self):
