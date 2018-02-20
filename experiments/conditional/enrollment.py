@@ -30,20 +30,20 @@ class Experiments(object):
 
     def _evaluate_conditionals(self):
         """
-        Enroll current user in all experiments that are marked with
-        `auto_enroll` and evaluate at least one of the conditionals
-        positively.
+        Populate request.experiments.disabled_experiments list with names
+        of disabled experiments on the current request.
         """
         for name in self.experiment_names:
             experiment = experiment_manager.get_experiment(
                 name, auto_create=False)
             if experiment:
-                active = experiment.is_enabled_by_conditionals(self.request)
+                disabled = not experiment.is_enabled_by_conditionals(
+                    self.request)
                 alternative = None
-                if not active:
+                if disabled:
                     self.disabled_experiments.append(experiment.name)
                     alternative = experiment.default_alternative
-                self._report(experiment, active, alternative)
+                self._report(experiment, not disabled, alternative)
 
     def _report(self, instance, active, variate):
         """
@@ -52,6 +52,6 @@ class Experiments(object):
         for debugging and verifying whether an experiment is running.
         """
         self.report['conditional'][instance.name] = {
-            'auto-enrolling': active,
+            'disabled': not active,
             'enrolled_alternative': variate,
         }

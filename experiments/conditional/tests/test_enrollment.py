@@ -24,7 +24,7 @@ class ConditionalEnrollmentTestCase(TestCase):
         self.assertIn(
             'mock_experiment', self.experiments.report['conditional'])
         expected_report = {
-            'auto-enrolling': True,
+            'disabled': False,
             'enrolled_alternative': 'mock_variate',
         }
         self.assertEqual(
@@ -56,11 +56,11 @@ class ConditionalEnrollmentTestCase(TestCase):
         expected_report = {
             'conditional': {
                 'mock_exp_1': {
-                    'auto-enrolling': False,
+                    'disabled': True,
                     'enrolled_alternative': 'variate_for_exp_1',
                 },
                 'mock_exp_2': {
-                    'auto-enrolling': True,
+                    'disabled': False,
                     'enrolled_alternative': None,
                 },
             },
