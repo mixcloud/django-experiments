@@ -2,6 +2,7 @@
 from __future__ import division
 from django.db import IntegrityError
 
+from experiments.conditional.models import ExperimentDisablement
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
@@ -358,7 +359,12 @@ class AuthenticatedUser(WebUser):
         return 'user:%d' % (self.user.pk, )
 
     def _get_all_enrollments(self):
-        enrollments = Enrollment.objects.filter(user=self.user, disabled=False).select_related("experiment")
+        disabled = self._get_disabled_experiment_names()
+        enrollments = Enrollment.objects.filter(
+            user=self.user,
+        ).exclude(
+            experiment__name__in=disabled
+        ).select_related("experiment")
         for enrollment in enrollments:
             yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
 
@@ -366,7 +372,7 @@ class AuthenticatedUser(WebUser):
         if self.request and hasattr(self.request, 'experiments'):
             return self.request.experiments.disabled_experiments
         return list(
-            Enrollment.objects.filter(
+            ExperimentDisablement.objects.filter(
                 user=self.user,
                 disabled=True,
             ).select_related(
@@ -375,18 +381,23 @@ class AuthenticatedUser(WebUser):
         )
 
     def set_disabled_experiments(self, names):
+        ExperimentDisablement.objects.filter(
+            user=self.user,
+            disabled=True,
+        ).exclude(
+            experiment__name__in=names,
+        ).update(
+            disabled=False,
+        )
         for name in names:
-            experiment = experiment_manager.get_experiment(name, auto_create=False)
-            if not experiment:
-                continue
-            Enrollment.objects.update_or_create(
-                experiment=experiment,
-                user=self.user,
-                defaults={
-                    'disabled': True,
-                }
-            )
-        Enrollment.objects.filter(user=self.user).exclude(experiment__name__in=names).update(disabled=False)
+            experiment = experiment_manager.get_experiment(
+                name, auto_create=False)
+            if experiment:
+                ExperimentDisablement.objects.get_or_create(
+                    user=self.user,
+                    experiment=experiment,
+                    disabled=True,
+                )
 
     def _cancel_enrollment(self, experiment):
         try:
