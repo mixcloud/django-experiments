@@ -12,6 +12,15 @@ Through the Django admin you can monitor and control experiment progress.
 If you don't know what AB testing is, check out `wikipedia <http://en.wikipedia.org/wiki/A/B_testing>`_.
 
 
+This Fork
+---------
+
+See Changelog from ``1.3.0`` onwards.
+
+
+Forked from: https://github.com/mixcloud/django-experiments
+
+
 Installation
 ------------
 
@@ -19,7 +28,7 @@ Django-Experiments is best installed via pip:
 
 ::
 
-    pip install django-experiments
+    pip install consumeraffairs-django-experiments
 
 This should download django-experiments and any dependencies. If downloading from the repo,
 pip is still the recommended way to install dependencies:
@@ -32,8 +41,9 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Redis <http://redis.io/>`_
-- `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
+- `django-jsonfield <https://github.com/dmkoch/django-jsonfield/>`_
 - `django-modeldict <https://github.com/disqus/django-modeldict>`_
+- `django-import-export<https://github.com/django-import-export/django-import-export>`_
 
 (Detailed list in setup.py)
 
@@ -74,9 +84,11 @@ Next, activate the apps by adding them to your INSTALLED_APPS:
         'django.contrib.admin',
         'django.contrib.humanize',
         'experiments',
+        'import_export',
     ]
 
 Include 'django.contrib.humanize' as above if not already included.
+Include 'import_export' below 'experiments'.
 
 Include the app URLconf in your urls.py file:
 
@@ -92,10 +104,40 @@ If you want to use the built in retention goals you will need to include the ret
 
     MIDDLEWARE_CLASSES [
         ...
+        'experiments.middleware.ConfirmHumanMiddleware',
         'experiments.middleware.ExperimentsRetentionMiddleware',
     ]
 
 *Note, more configuration options are detailed below.*
+
+
+Note: `ConfirmHumanMiddleware` is optional, not needed it you plan on running only template-based tests.
+If used, it should come after these classes:
+
+::
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+
+
+
+Jinja2:
+
+If using Jinja2 template engine (tested with ``django_jinja``), add the extension to enable template tags:
+
+::
+
+    TEMPLATES = [
+        {
+            'BACKEND': 'django_jinja.backend.Jinja2',
+            'OPTIONS': {
+                'extensions': [
+                    ...
+                    'experiments.templatetags.experiments.ExperimentsExtension',
+                ],
+                ...
+            },
+        },
+    ]
 
 
 Experiments and Alternatives
@@ -106,7 +148,7 @@ The experiment can be manually created in your Django admin. Adding alternatives
 An experiment allows you to test the effect of various design
 alternatives on user interaction. Django-Experiments is designed to work
 from within django templates, to make it easier for designers. We begin
-by loading our module:
+by loading our module (unless using Jinja2):
 
 ::
 
@@ -264,7 +306,20 @@ This will be fired when the user loads the page. This is not the only way of fir
 
         <button onclick="experiments.goal('registration')">Complete Registration</button>
 
-    (Please note, this requires CSRF authentication. Please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
+    If your project uses CSRF protection (and it should), you will need to send
+    ``X-CSRFToken`` HTTP header along with the AJAX request. Django-experiments 
+    provides a hook that will be called before making the AJAX request. To use it, 
+    create a function called ``experimentsCsrfToken`` and have it return the value
+    of the token. For example:
+
+    ::
+
+        function experimentsCsrfToken() {
+            return experiments.getCookie('');
+        }
+
+    For more info please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_
+
 
 4. **Cookies**:
 
@@ -353,8 +408,68 @@ See conf.py for other settings
 
 Changelog
 ---------
-UNRELEASED
-~~~~~~~~~~
+
+1.4.4
+~~~~~
+ - bugfix release for conditionals
+
+1.4.3
+~~~~~
+ - experimentsCsrfToken JS hook for reporting goals via JS
+
+1.4.2
+~~~~~
+ - export experiments to CSV and other formats from the admin
+
+1.4.1
+~~~~~
+ - state toggle on the multisite admin dashboard
+
+1.4.0
+~~~~~
+ - multisite admin dashboard
+
+1.3.7
+~~~~~
+ - minor bugfix
+
+1.3.6
+~~~~~
+ - compatibility improvements of unit tests
+
+1.3.5
+~~~~~
+ - bugfix for python2
+
+1.3.4
+~~~~~
+ - bugfix related to auto-create of experiments
+
+1.3.3
+~~~~~
+ - experiment conditionals
+ - ability to create experiments from the admin (though without code ATM)
+ - removed South migrations
+ - new template tab {% experiment_enrolled_alternative %}
+
+1.3.2
+~~~~~
+ - added confirm_human middleware
+
+1.3.1
+~~~~~
+ - added unittests for Jinja2 extension
+ - updated user enrolment tag to only enrol in specified alternatives (plus the control)
+
+1.3.0 (withdrawn)
+~~~~~~~~~~~~~~~~~
+ - fork to ConsumerAffairs
+ - added jinja2 support
+ - removed some older python version from Tox
+ - removed dependency on jQuery, dropped support for IE8
+
+pre-1.3.0 (unreleased)
+~~~~~~~~~~~~~~~~~~~~~~
  - Conform to common expectations in `setup.py`:
     - Separate `install_requires` and `tests_require` (not reading from `requirements.txt`)
     - Add trove classifiers including Python and Django supported versions

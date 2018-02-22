@@ -1,5 +1,8 @@
+# coding=utf-8
+from __future__ import division
 from django.db import IntegrityError
 
+from experiments.conditional.models import ExperimentDisablement
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
@@ -71,45 +74,71 @@ class WebUser(object):
         """
         chosen_alternative = conf.CONTROL_GROUP
 
+        if experiment_name in self._get_disabled_experiment_names():
+            return chosen_alternative
+
         experiment = experiment_manager.get_experiment(experiment_name)
 
         if experiment:
-            if experiment.is_displaying_alternatives():
-                if isinstance(alternatives, collections.Mapping):
-                    if conf.CONTROL_GROUP not in alternatives:
-                        experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
-                    for alternative, weight in alternatives.items():
-                        experiment.ensure_alternative_exists(alternative, weight)
-                else:
-                    alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
-                    for alternative in alternatives_including_control:
-                        experiment.ensure_alternative_exists(alternative)
 
-                assigned_alternative = self._get_enrollment(experiment)
-                if assigned_alternative:
-                    chosen_alternative = assigned_alternative
-                elif experiment.is_accepting_new_users():
-                    if force_alternative:
-                        chosen_alternative = force_alternative
-                    else:
-                        chosen_alternative = experiment.random_alternative()
-                    self._set_enrollment(experiment, chosen_alternative)
+            if not experiment.is_displaying_alternatives():
+                return experiment.default_alternative
+
+            if not isinstance(alternatives, collections.Mapping):
+                if any(':' in alt for alt in alternatives):
+                    parsed_alternatives = {}
+                    for alt in alternatives:
+                        try:
+                            name, weight = alt.split(':', 1)
+                        except ValueError:
+                            name, weight = alt, None
+                        else:
+                            weight = int(weight)
+                        parsed_alternatives[name] = weight
+                    alternatives = parsed_alternatives
+
+            if isinstance(alternatives, collections.Mapping):
+                if conf.CONTROL_GROUP not in alternatives:
+                    total_weight = sum(filter(
+                        alt.get('weight') for alt in alternatives.values()))
+                    average_weight = round(total_weight / len(alternatives))
+                    experiment.ensure_alternative_exists(
+                        conf.CONTROL_GROUP, average_weight)
+                for alternative, weight in alternatives.items():
+                    experiment.ensure_alternative_exists(alternative, weight)
+
             else:
-                chosen_alternative = experiment.default_alternative
+                alternatives_including_control = alternatives + [conf.CONTROL_GROUP]
+                for alternative in alternatives_including_control:
+                    experiment.ensure_alternative_exists(alternative)
+
+            assigned_alternative = self._get_enrollment(experiment)
+            if assigned_alternative:
+                chosen_alternative = assigned_alternative
+            elif experiment.is_accepting_new_users():
+                if force_alternative:
+                    chosen_alternative = force_alternative
+                else:
+                    chosen_alternative = experiment.random_alternative()
+                self._set_enrollment(experiment, chosen_alternative)
 
         return chosen_alternative
 
-    def get_alternative(self, experiment_name):
+    def get_alternative(self, experiment_name, request=None):
         """
         Get the alternative this user is enrolled in.
         """
+        disabled = False
+        if request and hasattr(request, 'experiments'):
+            disabled = experiment_name in request.experiments.disabled_experiments
+
         experiment = None
         try:
             # catching the KeyError instead of using .get so that the experiment is auto created if desired
             experiment = experiment_manager[experiment_name]
         except KeyError:
             pass
-        if experiment:
+        if experiment and not disabled:
             if experiment.is_displaying_alternatives():
                 alternative = self._get_enrollment(experiment)
                 if alternative is not None:
@@ -189,6 +218,21 @@ class WebUser(object):
         alternative will be increment, but those for the old one will not be decremented."""
         raise NotImplementedError
 
+    def _get_disabled_experiment_names(self):
+        """
+        Names of experiments that are not enabled for this requests. User will
+        not be enrolled into these experiments, their current alternative is
+        going to be default / control, and goals will not be recorded for them.
+        """
+        raise NotImplementedError
+
+    def set_disabled_experiments(self, names):
+        """
+        Experiments that are disabled for this request.
+        This is set by {% experiments_prepare_conditionals %}.
+        """
+        raise NotImplementedError
+
     def is_enrolled(self, experiment_name, alternative):
         """Enroll this user in the experiment if they are not already part of it. Returns the selected alternative"""
         """Test if the user is enrolled in the supplied alternative for the given experiment.
@@ -204,7 +248,10 @@ class WebUser(object):
         raise NotImplementedError
 
     def _get_all_enrollments(self):
-        "Return experiment, alternative tuples for all experiments the user is enrolled in"
+        """
+        Return experiment, alternative tuples for all experiments the user is
+        enrolled in, excluding those from _get_disabled_experiment_names().
+        """
         raise NotImplementedError
 
     def _cancel_enrollment(self, experiment):
@@ -240,6 +287,12 @@ class DummyUser(WebUser):
     def _get_all_enrollments(self):
         return []
 
+    def _get_disabled_experiment_names(self):
+        return []
+
+    def set_disabled_experiments(self, names):
+        pass
+
     def _is_enrolled_in_experiment(self, experiment):
         return False
 
@@ -264,6 +317,8 @@ class AuthenticatedUser(WebUser):
         super(AuthenticatedUser, self).__init__()
 
     def _get_enrollment(self, experiment):
+        if experiment.name in self._get_disabled_experiment_names():
+            return None
         if experiment.name not in self._enrollment_cache:
             try:
                 self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment).alternative
@@ -272,9 +327,10 @@ class AuthenticatedUser(WebUser):
         return self._enrollment_cache[experiment.name]
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
+        if experiment.name in self._get_disabled_experiment_names():
+            return
         if experiment.name in self._enrollment_cache:
             del self._enrollment_cache[experiment.name]
-
         try:
             enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative})
         except IntegrityError:
@@ -303,10 +359,45 @@ class AuthenticatedUser(WebUser):
         return 'user:%d' % (self.user.pk, )
 
     def _get_all_enrollments(self):
-        enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
-        if enrollments:
-            for enrollment in enrollments:
-                yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
+        disabled = self._get_disabled_experiment_names()
+        enrollments = Enrollment.objects.filter(
+            user=self.user,
+        ).exclude(
+            experiment__name__in=disabled
+        ).select_related("experiment")
+        for enrollment in enrollments:
+            yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
+
+    def _get_disabled_experiment_names(self):
+        if self.request and hasattr(self.request, 'experiments'):
+            return self.request.experiments.disabled_experiments
+        return list(
+            ExperimentDisablement.objects.filter(
+                user=self.user,
+                disabled=True,
+            ).select_related(
+                'experiment'
+            ).values_list('experiment__name', flat=True).distinct()
+        )
+
+    def set_disabled_experiments(self, names):
+        ExperimentDisablement.objects.filter(
+            user=self.user,
+            disabled=True,
+        ).exclude(
+            experiment__name__in=names,
+        ).update(
+            disabled=False,
+        )
+        for name in names:
+            experiment = experiment_manager.get_experiment(
+                name, auto_create=False)
+            if experiment:
+                ExperimentDisablement.objects.get_or_create(
+                    user=self.user,
+                    experiment=experiment,
+                    disabled=True,
+                )
 
     def _cancel_enrollment(self, experiment):
         try:
@@ -347,13 +438,17 @@ class SessionUser(WebUser):
         super(SessionUser, self).__init__()
 
     def _get_enrollment(self, experiment):
+        disabled = self._get_disabled_experiment_names()
         enrollments = self.session.get('experiments_enrollments', None)
-        if enrollments and experiment.name in enrollments:
+        if enrollments and experiment.name in enrollments and experiment.name not in disabled:
             alternative, _, _, _ = _session_enrollment_latest_version(enrollments[experiment.name])
             return alternative
         return None
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
+        disabled = self._get_disabled_experiment_names()
+        if experiment.name in disabled:
+            return
         enrollments = self.session.get('experiments_enrollments', {})
         enrollments[experiment.name] = (alternative, None, timestamp_from_datetime(enrollment_date or now()), timestamp_from_datetime(last_seen))
         self.session['experiments_enrollments'] = enrollments
@@ -374,8 +469,11 @@ class SessionUser(WebUser):
 
         # Replay goals
         if 'experiments_goals' in self.session:
+            disabled = self._get_disabled_experiment_names()
             try:
                 for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
+                    if experiment_name in disabled:
+                        continue
                     experiment = experiment_manager.get_experiment(experiment_name)
                     if experiment:
                         self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
@@ -400,11 +498,19 @@ class SessionUser(WebUser):
     def _get_all_enrollments(self):
         enrollments = self.session.get('experiments_enrollments', None)
         if enrollments:
+            disabled = self._get_disabled_experiment_names()
             for experiment_name, data in list(enrollments.items()):
                 alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
                 experiment = experiment_manager.get_experiment(experiment_name)
-                if experiment:
+                if experiment and experiment not in disabled:
                     yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
+
+    def _get_disabled_experiment_names(self):
+        return self.session.get(conf.DISABLED_EXPERIMENTS_SESSION_KEY, [])
+
+    def set_disabled_experiments(self, names):
+        key = conf.DISABLED_EXPERIMENTS_SESSION_KEY
+        self.session[key] = list(names)
 
     def _cancel_enrollment(self, experiment):
         alternative = self._get_enrollment(experiment)
@@ -415,6 +521,8 @@ class SessionUser(WebUser):
             self.session['experiments_enrollments'] = enrollments
 
     def _experiment_goal(self, experiment, alternative, goal_name, count):
+        if experiment.name in self._get_disabled_experiment_names():
+            return
         if self._is_verified_human():
             self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
@@ -424,10 +532,16 @@ class SessionUser(WebUser):
             logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
     def _set_last_seen(self, experiment, last_seen):
+        if experiment.name in self._get_disabled_experiment_names():
+            return
         enrollments = self.session.get('experiments_enrollments', {})
         alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollments[experiment.name])
         enrollments[experiment.name] = (alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))
         self.session['experiments_enrollments'] = enrollments
+
+
+def format_percentage(value):
+    return '{0:.2f}%'.format(value) if value is not None else 'N/A'
 
 
 __all__ = ['participant']

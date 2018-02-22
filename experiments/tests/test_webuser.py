@@ -18,8 +18,7 @@ from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_
 from experiments.signal_handlers import transfer_enrollments_to_user
 from experiments.utils import participant
 
-from mock import patch
-
+from experiments.tests.testing_2_3 import mock
 import random
 
 request_factory = RequestFactory()
@@ -48,6 +47,13 @@ class WebUserTests(object):
         experiment_user = participant(self.request)
         experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
         self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), TEST_ALTERNATIVE, "Wrong Alternative Set")
+
+    def test_user_not_enrolls_w_false_conditional(self):
+        experiment_user = participant(self.request)
+        with mock.patch.object(experiment_user, '_get_disabled_experiment_names'):
+            experiment_user._get_disabled_experiment_names.return_value = EXPERIMENT_NAME
+            experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+        self.assertEqual(experiment_user.get_alternative(EXPERIMENT_NAME), CONTROL_GROUP, "Wrong Alternative Set")
 
     def test_record_goal_increments_counts(self):
         experiment_user = participant(self.request)
@@ -78,7 +84,7 @@ class WebUserTests(object):
 
     def test_visit_increases_goal(self):
         thetime = timezone.now()
-        with patch('experiments.utils.now', return_value=thetime):
+        with mock.patch('experiments.utils.now', return_value=thetime):
             experiment_user = participant(self.request)
             experiment_user.confirm_human()
             experiment_user.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
@@ -87,7 +93,7 @@ class WebUserTests(object):
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {1: 1}, "Not Present Visit was not correctly counted")
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {}, "Present Visit was not correctly counted")
 
-        with patch('experiments.utils.now', return_value=thetime + timedelta(hours=7)):
+        with mock.patch('experiments.utils.now', return_value=thetime + timedelta(hours=7)):
             experiment_user.visit()
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_NOT_PRESENT_COUNT_GOAL), {2: 1}, "No Present Visit was not correctly counted")
             self.assertEqual(self.experiment_counter.goal_distribution(self.experiment, TEST_ALTERNATIVE, VISIT_PRESENT_COUNT_GOAL), {1: 1}, "Present Visit was not correctly counted")
@@ -129,6 +135,27 @@ class WebUserTests(object):
         other_alternative = random.choice(list(set(alternatives) - set(alternative)))
         experiment_user.enroll(EXPERIMENT_NAME, alternatives, force_alternative=other_alternative)
         self.assertEqual(alternative, experiment_user.get_alternative(EXPERIMENT_NAME))
+
+    def test_disabled_experiments_list(self):
+        experiment_user = participant(self.request)
+        experiment_user.set_disabled_experiments(['foobar', EXPERIMENT_NAME])
+        the_list = experiment_user._get_disabled_experiment_names()
+        self.assertIn(EXPERIMENT_NAME, the_list)
+
+    def test_enroll_in_disabled_experiment(self):
+        experiment_user = participant(self.request)
+        another_request = request_factory.get('/')
+        another_request.session = DatabaseSession()
+        another_user = participant(another_request)
+        experiment_user._set_enrollment(self.experiment, 'alt1')
+        alternative = experiment_user.enroll(EXPERIMENT_NAME, ['alt1'])
+        self.assertEqual(alternative, 'alt1')
+        another_user.set_disabled_experiments([EXPERIMENT_NAME])
+        alternative = experiment_user.enroll(EXPERIMENT_NAME, ['alt1'])
+        self.assertEqual(alternative, 'alt1')
+        experiment_user.set_disabled_experiments([EXPERIMENT_NAME])
+        alternative = experiment_user.enroll(EXPERIMENT_NAME, ['alt1'])
+        self.assertEqual(alternative, CONTROL_GROUP)
 
 
 class WebUserAnonymousTestCase(WebUserTests, TestCase):

@@ -1,0 +1,69 @@
+{% extends "admin/change_form.html" %}
+
+{% block content_title %}
+    {% if original %}
+        <h1>{{ original.name }}</h1>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
+
+{% block object-tools %}
+    {{ block.super }}
+
+    {% if original %}
+        <h5 class="experiment-dates">
+            {{ original.start_date }} &dash;
+            {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}
+        </h5>
+
+        <div class="module experiment-results-container">
+            {% include "admin/experiments/experiment/results_table.html" %}
+        </div>
+    {% endif %}
+{% endblock object-tools %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    {% if original %}
+        {# These have to be links to get the correct admin styling #}
+        <li><a href="../" data-set-state="0" class="{% if original.state == 0 %}experiment-state-selected{% endif %} experiment-state-toggle">Default/Control</a></li>
+        <li><a href="../" data-set-state="3" class="{% if original.state == 3 %}experiment-state-selected{% endif %} experiment-state-toggle">Track</a></li>
+        <li><a href="../" data-set-state="1" class="{% if original.state == 1 %}experiment-state-selected{% endif %} experiment-state-toggle">Enabled</a></li>
+    {% endif %}
+{% endblock object-tools-items %}
+
+{% block field_sets %}
+    <div{% if original %} class="experiment-changing"{% endif %}>
+        {{ block.super }}
+    </div>
+{% endblock field_sets %}
+
+{% block after_related_objects %}
+    <div>
+        <fieldset class="module aligned collapse">
+            <h2>Relevant Goals</h2>
+
+            <table class="relevant-goals">
+                <thead>
+                    <tr>
+                        <th>Goal</th>
+                        <th><a href="http://en.wikipedia.org/wiki/Chi-squared_test" target="_blank" title="Used when optimising for conversion rate">&Chi;&sup2;</a></th>
+                        <th><a href="http://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U" target="_blank" title="Used when optimising for number of times users perform an action. (Advanced.)">U</a></th>
+                        <th><span title="Used to highlight primary goals in results table, and also to display them in the multi-site dashboard">Pri</span></th>
+                    </tr>
+                </thead>
+                <tbody id="goal-list">
+                    {% for goal in all_goals %}
+                        <tr data-goal="{{ goal }}">
+                            <th scope="row">{{ goal }}</th>
+                            <td><label><input data-goal-type="chi2" type="checkbox"></label></td>
+                            <td><label><input data-goal-type="mwu" type="checkbox"></label></td>
+                            <td><label><input data-goal-type="primary" type="checkbox" disabled></label></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+    </div>
+{% endblock after_related_objects %}

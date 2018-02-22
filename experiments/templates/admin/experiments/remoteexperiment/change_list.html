@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static "experiments/dashboard/css/admin.css" %}" />
+    <script src="{% static "experiments/dashboard/js/csrf.js" %}"></script>
+    <script src="{% static "experiments/dashboard/js/change_list.js" %}"></script>
+{% endblock extrahead %}
+

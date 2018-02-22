@@ -16,11 +16,6 @@ h5.experiment-dates {
     margin: 0;
 }
 
-.form-row.field-state {
-    /* This is hidden so the controls at the top of the page can be used instead */
-    display: none;
-}
-
 .experiment-results-container {
     max-width: 1000px;
     margin: 30px auto;
@@ -46,8 +41,22 @@ thead th.experiment-toggle-goals {
     display: none;
 }
 
+.experiment-results-table tbody tr .primary_goal {
+    font-weight: bold;
+}
 .experiment-alternative-enrolled {
     display: none;
+}
+table.relevant-goals tbody th {
+    font-size: 11px;
+    font-weight: normal;
+}
+table.relevant-goals td {
+    padding: 0;
+}
+table.relevant-goals td label {
+    display: block;
+    padding: 10px;
 }
 
 .experiment-selected-alternative .experiment-alternative-join {
@@ -84,4 +93,153 @@ thead th.experiment-toggle-goals {
 .experiment-mwu-goal {
     cursor: pointer;
     text-decoration: underline;
+}
+
+/* tool buttons */
+body.experiments-experiment .grp-object-tools a.experiment-state-toggle,
+body.model-experiment .object-tools a.experiment-state-toggle {
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #4fb2d3),color-stop(100%, #309bbf));
+    background: -moz-linear-gradient(#4fb2d3,#309bbf);
+    background: -webkit-linear-gradient(#4fb2d3,#309bbf);
+    background: linear-gradient(#4fb2d3,#309bbf);
+}
+body.experiments-experiment .grp-object-tools a.experiment-state-toggle:hover {
+    background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ffffff),color-stop(100%, #eeeeee));
+    background: -moz-linear-gradient(#ffffff,#eeeeee);
+    background: -webkit-linear-gradient(#ffffff,#eeeeee);
+    background: linear-gradient(#ffffff,#eeeeee);
+    border-color: #777;
+    color: #444;
+}
+body.model-experiment .object-tools a.experiment-state-toggle:hover {
+    background: #417690;
+}
+
+/* alternatives inline */
+body.experiments-experiment #experimentalternative_set-group h2,
+body.model-experiment #experimentalternative_set-group h2 {
+    display: none;
+}
+body.experiments-experiment #experimentalternative_set-group .js-alternatives h2,
+body.model-experiment #experimentalternative_set-group .js-alternatives h2 {
+    display: block;
+}
+body.experiments-experiment #experimentalternative_set-group > .grp-tools,
+body.model-experiment #experimentalternative_set-group > .grp-tools {
+    display: none;
+}
+body.experiments-experiment .js-alternatives,
+body.model-experiment .js-alternatives {
+    margin-bottom: 5px;
+}
+
+/* conditionals inline */
+body.grp-change-form #admin_conditionals-group .inline-related.has_original .form-row {
+    display: block;
+}
+body.grp-change-form #admin_conditionals-group .inline-related.has_original .form-row.copy_from {
+    display: none;
+}
+body.grp-change-form #admin_conditionals-group .inline-related .form-row {
+    display: none;
+}
+body.grp-change-form #admin_conditionals-group .inline-related .form-row.copy_from {
+    display: block;
+}
+
+body.change-form #admin_conditionals-group .inline-related .form-row {
+    display: block;
+}
+body.change-form #admin_conditionals-group .inline-related .form-row.field-copy_from {
+    display: none;
+}
+body.change-form #admin_conditionals-group .inline-related.last-related .form-row {
+    display: none;
+}
+body.change-form #admin_conditionals-group .inline-related.last-related .form-row.field-copy_from {
+    display: block;
+}
+
+
+/* remote experiments stats mini table */
+#changelist .field-confidences > table.ministats,
+.grp-change-list .field-confidences > table.ministats {
+    border: none;
+    width: auto;
+}
+#changelist .field-confidences > table.ministats th,
+#changelist .field-confidences > table.ministats td,
+.grp-change-list .field-confidences > table.ministats th,
+.grp-change-list .field-confidences > table.ministats td {
+    padding: 0 8px 3px 0;
+    border: none;
+}
+
+/* remote expderiments state toggle */
+#changelist .field-state_toggle .state_toggle,
+.grp-change-list .field-state_toggle .state_toggle {
+    white-space: nowrap;
+}
+#changelist .field-state_toggle .state_toggle a,
+.grp-change-list .field-state_toggle .state_toggle a {
+    display: inline-block;
+    position: relative;
+    border: 1px solid transparent;
+    padding: 0 2px;
+}
+#changelist .field-state_toggle .state_toggle a[data-state],
+.grp-change-list .field-state_toggle .state_toggle a[data-state] {
+    margin-right: 15px;
+}
+#changelist .field-state_toggle .state_toggle a[data-state]:last-child,
+.grp-change-list .field-state_toggle .state_toggle a[data-state]:last-child {
+    margin-right: 0;
+}
+#changelist .field-state_toggle .state_toggle a.active,
+.grp-change-list .field-state_toggle .state_toggle a.active {
+    text-decoration: none;
+    border-color: inherit;
+}
+#changelist .field-state_toggle .state_toggle a.error,
+.grp-change-list .field-state_toggle .state_toggle a.error {
+    color: red;
+}
+#changelist .field-state_toggle .state_toggle a.working,
+.grp-change-list .field-state_toggle .state_toggle a.working {
+    color: black;
+    cursor: default;
+}
+#changelist .field-state_toggle .state_toggle a.really,
+.grp-change-list .field-state_toggle .state_toggle a.really,
+#changelist .field-state_toggle .state_toggle a.really.working,
+.grp-change-list .field-state_toggle .state_toggle a.really.working {
+    color: transparent;
+}
+#changelist .field-state_toggle .state_toggle a.really::after,
+.grp-change-list .field-state_toggle .state_toggle a.really::after,
+#changelist .field-state_toggle .state_toggle a.really.working::after,
+.grp-change-list .field-state_toggle .state_toggle a.really.working::after {
+    position: absolute;
+    color: black !important;
+    left: 0;
+    right: 0;
+    top: 0;
+    margin: 0 -10px;
+    text-align: center;
+    color: inherit;
+}
+#changelist .field-state_toggle .state_toggle a.really::after,
+.grp-change-list .field-state_toggle .state_toggle a.really::after {
+    content: "Confirm?";
+}
+#changelist .field-state_toggle .state_toggle a.really.working::after,
+.grp-change-list .field-state_toggle .state_toggle a.really.working::after {
+    content: "Working...";
+}
+
+
+/* misc */
+body.experiments-experiment table.relevant-goals,
+body.model-experiment table.relevant-goals {
+    margin-bottom: 1em;
 }
