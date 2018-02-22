@@ -188,8 +188,9 @@ def experiment_enrolled_alternative(context, experiment_name):
 
 
 def _experiment_enrolled_alternative(context, experiment_name):
-    user = participant(request=context.get('request', None))
-    return user.get_alternative(experiment_name)
+    request = context.get('request', None)
+    user = participant(request=request)
+    return user.get_alternative(experiment_name, request)
 
 
 class ExtensionHelpers(object):
