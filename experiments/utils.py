@@ -300,7 +300,7 @@ class AuthenticatedUser(WebUser):
         user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=self.user, session=None)
 
     def _participant_identifier(self):
-        return 'user:%d' % (self.user.pk, )
+        return 'user:%s' % (self.user.pk, )
 
     def _get_all_enrollments(self):
         enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
