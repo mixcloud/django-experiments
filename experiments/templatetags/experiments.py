@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from django import template
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from experiments.utils import participant
 from experiments.manager import experiment_manager
@@ -101,7 +101,7 @@ def experiment(parser, token):
     return ExperimentNode(node_list, experiment_name, alternative, weight, user_variable)
 
 
-@register.assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def experiment_enroll(context, experiment_name, *alternatives, **kwargs):
     if 'user' in kwargs:
         user = participant(user=kwargs['user'])
