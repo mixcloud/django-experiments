@@ -17,14 +17,14 @@ Installation
 
 Django-Experiments is best installed via pip:
 
-::
+.. code-block:: bash
 
     pip install django-experiments
 
 This should download django-experiments and any dependencies. If downloading from the repo,
 pip is still the recommended way to install dependencies:
 
-::
+.. code-block:: bash
 
     pip install -e .
 
@@ -57,7 +57,7 @@ you have a redis server up and running. See `redis.io <http://redis.io/>`_ for d
 This is a quick guide to configuring your settings file to the bare minimum.
 First, add the relevant settings for your redis server (we run it as localhost):
 
-::
+.. code-block:: python
 
     #Example Redis Settings
     EXPERIMENTS_REDIS_HOST = 'localhost'
@@ -66,7 +66,7 @@ First, add the relevant settings for your redis server (we run it as localhost):
 
 Next, activate the apps by adding them to your INSTALLED_APPS:
 
-::
+.. code-block:: python
 
     #Installed Apps
     INSTALLED_APPS = [
@@ -88,7 +88,7 @@ you have correctly configured your STATIC_URL setting.
 OPTIONAL:
 If you want to use the built in retention goals you will need to include the retention middleware:
 
-::
+.. code-block:: python
 
     MIDDLEWARE_CLASSES [
         ...
@@ -108,14 +108,14 @@ alternatives on user interaction. Django-Experiments is designed to work
 from within django templates, to make it easier for designers. We begin
 by loading our module:
 
-::
+.. code-block:: html
 
     {% load experiments %}
 
 and we then define our first experiment and alternative, using the
 following syntax:
 
-::
+.. code-block:: html
 
     {% experiment EXPERIMENT ALTERNATIVE %}
 
@@ -124,7 +124,7 @@ registration link text causes more users to complete the registration
 process. Our first alternative must always be the “control” alternative.
 This is our fallback if the experiment is disabled.
 
-::
+.. code-block:: html
 
     {% experiment register_text control %}
         <a href = "register.html">Register now.</a>
@@ -133,7 +133,7 @@ This is our fallback if the experiment is disabled.
 So while the experiment is disabled, users will see a register link
 saying “Register now”. Let’s define another, more polite alternative:
 
-::
+.. code-block:: html
 
     {% experiment register_text polite %}
         <a href = "register.html">Please register!</a>
@@ -153,7 +153,7 @@ inside an inclusion tag) or it will silently fail to work.
 The experiment_enroll assignment tag can also be used (note that it
 takes strings or variables unlike the older experiment tag):
 
-::
+.. code-block:: html
 
      {% experiment_enroll "experiment_name" "alternative1" "alternative2" as assigned_alternative %}
      {% if assigned_alternative == "alternative1" or assigned_alternative == "alternative2" %}
@@ -166,7 +166,7 @@ You can also enroll users in experiments and find out what alternative they
 are part of from python. To enroll a user in an experiment and show a
 different result based on the alternative:
 
-::
+.. code-block:: python
 
     from experiments.utils import participant
     alternative = participant(request).enroll('register_text', ['polite'])
@@ -181,7 +181,7 @@ will return 'control' if the user is not enrolled. 'control' is also returned
 for users who are enrolled in the experiment but have been assigned to the
 control group - there is no way to differentiate between these cases.
 
-::
+.. code-block:: python
 
     from experiments.utils import participant
     alternative = participant(request).get_alternative('register_text')
@@ -192,11 +192,11 @@ control group - there is no way to differentiate between these cases.
 
 You can also weight the experiments using the following techniques
 
-::
+.. code-block:: python
 
    alternative = participant(request).enroll('example_test', {'control': 99, 'v2': 1})
 
-::
+.. code-block:: html
 
    {% experiment example_test control 99 %}v2{% endexperiment %}
    {% experiment example_test v2 1 %}v2{% endexperiment %}
@@ -204,7 +204,7 @@ You can also weight the experiments using the following techniques
 By default the participant function expects a HttpRequest object, but you can
 alternatively pass a user or session as a keyword argument
 
-::
+.. code-block:: python
 
     participant(user=current_user).get_alternative('register_text')
     participant(session=session).get_alternative('register_text')
@@ -230,7 +230,7 @@ completed the registration process.
 
 Add the goal to our EXPERIMENT_GOALS tuple in settings.py:
 
-::
+.. code-block:: python
 
     EXPERIMENTS_GOALS = ("registration",)
 
@@ -238,7 +238,7 @@ Goals are simple strings that uniquely identify a goal.
 
 Our registration successful page will contain the goal template tag:
 
-::
+.. code-block:: html
 
     {% experiment_goal "registration" %}
 
@@ -246,13 +246,13 @@ This will be fired when the user loads the page. This is not the only way of fir
 
 1. **Django Template Tags** (as above).
 
-    ::
+    .. code-block:: html
 
         {% experiment_goal "registration" %}
 
 2. **Server side**, using a python function somewhere in your django views:
 
-    ::
+    .. code-block:: python
 
         from experiments.utils import participant
 
@@ -260,7 +260,7 @@ This will be fired when the user loads the page. This is not the only way of fir
 
 3. **JavaScript onclick**:
 
-    ::
+    .. code-block:: html
 
         <button onclick="experiments.goal('registration')">Complete Registration</button>
 
@@ -268,7 +268,7 @@ This will be fired when the user loads the page. This is not the only way of fir
 
 4. **Cookies**:
 
-    ::
+    .. code-block:: html
 
         <span data-experiments-goal="registration">Complete Registration</span>
 
@@ -297,7 +297,7 @@ Confirming Human
 
 The framework can distinguish between humans and bots. By including
 
-::
+.. code-block:: html
 
     {% load experiments %}
 
@@ -332,7 +332,7 @@ the control alternative, and no data will be collected.
 Settings
 --------
 
-::
+.. code-block:: python
 
     #Experiment Goals
     EXPERIMENTS_GOALS = ()
@@ -355,54 +355,54 @@ Changelog
 ---------
 UNRELEASED
 ~~~~~~~~~~
- - Conform to common expectations in `setup.py`:
+- Conform to common expectations in `setup.py`:
     - Separate `install_requires` and `tests_require` (not reading from `requirements.txt`)
     - Add trove classifiers including Python and Django supported versions
     - Fix license name (from "MIT license, see LICENSE file" to "MIT")
     - Make `setup.py` ready for Python 3 (read `README.rst` using codecs module)
     - Dropped an irrelevant workaround for ancient Python bugs
- - Add `setup.cfg` to support building of universal wheels (preparing for Python 3)
- - Tox runs `python setup.py test` (honouring both `install_requires` and `tests_require`)
- - Prepared `tox.ini` for Python 3 and Django 1.11 compatibility
+- Add `setup.cfg` to support building of universal wheels (preparing for Python 3)
+- Tox runs `python setup.py test` (honouring both `install_requires` and `tests_require`)
+- Prepared `tox.ini` for Python 3 and Django 1.11 compatibility
 
 1.2.0
 ~~~~~
- - Add support for Django 1.10 (Thanks to @Kobold)
- - Make requirements.txt more flexible
- - Tox support added for testing on multiple Django Versions (Thanks to @Kobold again!)
+- Add support for Django 1.10 (Thanks to @Kobold)
+- Make requirements.txt more flexible
+- Tox support added for testing on multiple Django Versions (Thanks to @Kobold again!)
 
 1.1.6
 ~~~~~
- - Change to use django-modeldict-yplan as its maintained
- - Change to use pythons inbuilt unittest and not Django's as its Deprecated)
+- Change to use django-modeldict-yplan as its maintained
+- Change to use pythons inbuilt unittest and not Django's as its Deprecated)
 
 1.1.5
 ~~~~~
- - Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
+- Removing experiment_helpers template tag library since it is no longer used and breaks under Django 1.9 (thanks david12341235)
 
 1.1.4
 ~~~~~
 
- - Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
+- Removing django-jsonfield from requirements.txt (thank you to bustavo) and adding jsonfield
 
 1.1.2
 ~~~~~
 
- - Updating migrations
- - Documentation improvements
- - Updating example app
+- Updating migrations
+- Documentation improvements
+- Updating example app
 
 1.1.1
 ~~~~~
 
- - Fixing EXPERIMENTS_AUTO_CREATE flag (previously setting it to True did nothing)
+- Fixing EXPERIMENTS_AUTO_CREATE flag (previously setting it to True did nothing)
 
 1.1.0
 ~~~~~
 
- - Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
- - Promote an experiment to a particular alternative (other than Control) through the admin
- - New experiment_enroll assignment tag (see below)
+- Nexus is no longer required or used - the standard Django admin for the Experiment model takes over the functionality previously provided by Nexus - NOTE this may have some backwards incompatibilities depending on how you included the media files
+- Promote an experiment to a particular alternative (other than Control) through the admin
+- New experiment_enroll assignment tag (see below)
 
 1.0.0
 ~~~~~
@@ -410,14 +410,14 @@ UNRELEASED
 Bumping version to 1.0.0 because django-experiments is definitely production
 ready but also due to backwards incompatible changes that have been merged in.
 
- - Django 1.7 and 1.8 support (including custom user models)
- - Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
- - Fixed bug caused by the participant cache on request
- - Fixed bugs related to confirm human and made the functionality pluggable
- - Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
- - Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
- - ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
- - More tests and logging added
+- Django 1.7 and 1.8 support (including custom user models)
+- Fixed numerous bugs to do with retention goals - before this update they are not trustworthy. See retention section below for more information.
+- Fixed bug caused by the participant cache on request
+- Fixed bugs related to confirm human and made the functionality pluggable
+- Added "force_alternative" option to participant.enroll (important note: forcing the alternative in a non-random way will generate potentially invalid results)
+- Removal of gargoyle integration and extra "request" parameters to methods that no longer need them such as is_enrolled (BACKWARDS INCOMPATIBLE CHANGE)
+- ExperimentsMiddleware changed to ExperimentsRetentionMiddleware (BACKWARDS INCOMPATIBLE CHANGE)
+- More tests and logging added
 
 0.3.5
 ~~~~~
