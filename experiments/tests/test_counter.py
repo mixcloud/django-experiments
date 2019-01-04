@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from unittest import TestCase
 
 from experiments import counters
+from mock import patch
 
 TEST_KEY = 'CounterTestCase'
 
@@ -58,3 +59,9 @@ class CounterTestCase(TestCase):
 
         self.assertEqual(self.counters.get(TEST_KEY), 1)
         self.assertEqual(self.counters.get_frequencies(TEST_KEY), {2: 1})
+
+    @patch('experiments.counters.Counter._redis')
+    def test_should_return_tuple_if_failing(self, patched__redis):
+        patched__redis.side_effect = Exception
+
+        self.assertEqual(self.counters.get_frequencies(TEST_KEY), dict())

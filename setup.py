@@ -10,7 +10,7 @@ with codecs.open(path.join(PATH, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='django-experiments',
-    version='1.2.0',
+    version='1.2.1',
     description='Python Django AB Testing Framework',
     long_description=LONG_DESCRIPTION,
     author='Mixcloud',

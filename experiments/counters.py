@@ -84,7 +84,7 @@ class Counters(object):
             return dict((int(k), int(v)) for (k, v) in self._redis.hgetall(freq_cache_key).items() if int(v) > 0)
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
-            return tuple()
+            return dict()
 
     def reset(self, key):
         try:
