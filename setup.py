@@ -21,7 +21,7 @@ setup(
     license='MIT',
     install_requires=[
         'django>=1.8',
-        'django-modeldict-yplan>=1.5.0',
+        'django-modeldict-yplan>=1.5.0,<2.0.0',
         'jsonfield>=1.0.3',
         'redis>=2.4.9',
     ],
