@@ -2,6 +2,7 @@ steps:
   - label: ":python: Tests"
     timeout_in_minutes: 3
     commands:
+      - "cd /.pyenv/plugins/python-build/../.. && git pull && cd -"
       - "pyenv install 2.7.16"
       - "pyenv install 3.4.10"
       - "pyenv install 3.5.7"
