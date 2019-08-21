@@ -8,7 +8,7 @@ steps:
       - "tox"
     plugins:
       - docker#v3.3.0:
-          image: "n42org/docker-tox:3.4.0"
+          image: "n42org/tox:3.4.0"
     retry:
       automatic:
         - exit_status: -1  # Agent was lost
