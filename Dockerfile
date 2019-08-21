@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM python:2.7.16-buster
 
 ENV PATH /root/.pyenv/shims:/root/.pyenv/bin:$PATH
 RUN set -x \
