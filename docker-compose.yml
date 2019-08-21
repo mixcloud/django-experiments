@@ -1,7 +1,0 @@
-version: '3'
-services:
-  app:
-    build: .
-    working_dir: /usr/src/app/
-    volumes:
-      - .:/app
