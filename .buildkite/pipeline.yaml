@@ -4,11 +4,11 @@ steps:
     commands:
       - "pyenv global 2.7 3.4 3.5 3.6"
       - "python setup.py install"
-      - "pip install tox"
+#      - "pip install tox"
       - "tox"
     plugins:
       - docker#v3.3.0:
-          image: "bopen/ubuntu-pyenv:18.04"
+          image: "themattrix/tox:latest"
     retry:
       automatic:
         - exit_status: -1  # Agent was lost
