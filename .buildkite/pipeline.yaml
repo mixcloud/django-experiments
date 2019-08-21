@@ -1,0 +1,14 @@
+steps:
+  - label: ":python: Tests"
+    timeout_in_minutes: 10
+    commands:
+      - "tox"
+    plugins:
+      - docker#v3.3.0:
+          image: "n42org/tox:3.4.0"
+    retry:
+      automatic:
+        - exit_status: -1  # Agent was lost
+          limit: 2
+        - exit_status: 255 # Forced agent shutdown
+          limit: 2
