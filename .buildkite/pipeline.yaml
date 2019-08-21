@@ -2,7 +2,10 @@ steps:
   - label: ":python: Tests"
     timeout_in_minutes: 3
     commands:
-      - "pyenv install 2.7 3.4 3.5 3.6"
+      - "pyenv install 2.7
+      - "pyenv install 3.4"
+      - "pyenv install 3.5"
+      - "pyenv install 3.6"
       - "pyenv global 2.7 3.4 3.5 3.6"
       - "python setup.py install"
       - "pip install tox"
