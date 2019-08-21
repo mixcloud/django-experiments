@@ -1,0 +1,17 @@
+steps:
+  - label: ":python: Tests"
+    timeout_in_minutes: 3
+    commands:
+      - "pyenv global 2.7 3.4 3.5 3.6"
+      - "python setup.py install"
+      - "pip install tox"
+      - "tox"
+    plugins:
+      - docker#v3.3.0:
+          image: "python:2.7.16-buster"
+    retry:
+      automatic:
+        - exit_status: -1  # Agent was lost
+          limit: 2
+        - exit_status: 255 # Forced agent shutdown
+          limit: 2

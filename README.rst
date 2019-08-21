@@ -1,8 +1,8 @@
 Django-Experiments
 ==================
 
-.. image:: https://codeship.com/projects/1c7cb7a0-caa8-0130-f2cb-36bd8b1bab14/status?branch=master
-   :target: https://codeship.com/projects/4846
+.. image:: https://badge.buildkite.com/3feef671b56c871fe4097fd26ae7e36de082f5bf35a59b9aff.svg
+   :target: https://buildkite.com/mixcloud/django-experiments
 
 Django-Experiments is an AB Testing Framework for Django.
 
