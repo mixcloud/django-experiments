@@ -2,9 +2,10 @@ steps:
   - label: ":python: Tests"
     timeout_in_minutes: 3
     commands:
+      - "pyenv install 2.7 3.4 3.5 3.6"
       - "pyenv global 2.7 3.4 3.5 3.6"
       - "python setup.py install"
-#      - "pip install tox"
+      - "pip install tox"
       - "tox"
     plugins:
       - docker#v3.3.0:
