@@ -8,7 +8,7 @@ steps:
       - "tox"
     plugins:
       - docker#v3.3.0:
-          image: "python:2.7.16-buster"
+          image: "bopen/ubuntu-pyenv:18.04"
     retry:
       automatic:
         - exit_status: -1  # Agent was lost
