@@ -4,15 +4,12 @@ from experiments.stats import zprob, chisqprob
 def mann_whitney(a_distribution, b_distribution, use_continuity=True):
     """Returns (u, p_value)"""
     MINIMUM_VALUES = 20
-
     all_values = sorted(set(a_distribution) | set(b_distribution))
-
     count_so_far = 0
     a_rank_sum = 0
     b_rank_sum = 0
     a_count = 0
     b_count = 0
-
     variance_adjustment = 0
 
     for v in all_values:
@@ -60,7 +57,8 @@ def mann_whitney(a_distribution, b_distribution, use_continuity=True):
 
 def chi_square_p_value(matrix):
     """
-    Accepts a matrix (an array of arrays, where each child array represents a row)
+    Accepts a matrix (an array of arrays, where each child array represents a
+    row)
 
     Example from http://math.hws.edu/javamath/ryan/ChiSquare.html:
 
@@ -122,16 +120,19 @@ def chi_square_p_value(matrix):
     observed_test_statistic = 0.0
     for i in range(num_rows):
         for j in range(num_columns):
-            expected_value = (row_sums[i] / grand_total) * (column_sums[j] / grand_total) * grand_total
+            expected_value = (
+                row_sums[i] / grand_total) * (
+                    column_sums[j] / grand_total) * grand_total
+
             if expected_value <= 0:
                 return None, None
             observed_value = matrix[i][j]
-            observed_test_statistic += ((observed_value - expected_value) ** 2) / expected_value
+            observed_test_statistic += ((
+                observed_value - expected_value) ** 2) / expected_value
             # See https://bitbucket.org/akoha/django-lean/issue/16/g_test-formula-is-incorrect
-            #observed_test_statistic += 2 * (observed_value*log(observed_value/expected_value))
+            # observed_test_statistic += 2 * (observed_value*log(observed_value/expected_value))
 
     degrees_freedom = (num_columns - 1) * (num_rows - 1)
-
     p_value = chisqprob(observed_test_statistic, degrees_freedom)
 
     return observed_test_statistic, p_value

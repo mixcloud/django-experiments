@@ -15,8 +15,11 @@ class Counters(object):
     @cached_property
     def _redis(self):
         if getattr(settings, 'EXPERIMENTS_REDIS_SENTINELS', None):
-            sentinel = Sentinel(settings.EXPERIMENTS_REDIS_SENTINELS, socket_timeout=settings.EXPERIMENTS_REDIS_SENTINELS_TIMEOUT)
-            host, port = sentinel.discover_master(settings.EXPERIMENTS_REDIS_MASTER_NAME)
+            sentinel = Sentinel(
+                settings.EXPERIMENTS_REDIS_SENTINELS,
+                socket_timeout=settings.EXPERIMENTS_REDIS_SENTINELS_TIMEOUT)
+            host, port = sentinel.discover_master(
+                settings.EXPERIMENTS_REDIS_MASTER_NAME)
         else:
             host = getattr(settings, 'EXPERIMENTS_REDIS_HOST', 'localhost')
             port = getattr(settings, 'EXPERIMENTS_REDIS_PORT', 6379)
@@ -33,7 +36,8 @@ class Counters(object):
         try:
             cache_key = COUNTER_CACHE_KEY % key
             freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
-            new_value = self._redis.hincrby(cache_key, participant_identifier, count)
+            new_value = self._redis.hincrby(
+                cache_key, participant_identifier, count)
 
             # Maintain histogram of per-user counts
             if new_value > count:
@@ -48,7 +52,9 @@ class Counters(object):
             # Remove the direct entry
             cache_key = COUNTER_CACHE_KEY % key
             pipe = self._redis.pipeline()
-            freq, _ = pipe.hget(cache_key, participant_identifier).hdel(cache_key, participant_identifier).execute()
+            freq, _ = pipe.hget(
+                cache_key, participant_identifier).hdel(
+                    cache_key, participant_identifier).execute()
 
             # Remove from the histogram
             freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
@@ -77,11 +83,13 @@ class Counters(object):
     def get_frequencies(self, key):
         try:
             freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
-            # In some cases when there are concurrent updates going on, there can
-            # briefly be a negative result for some frequency count. We discard these
-            # as they shouldn't really affect the result, and they are about to become
-            # zero anyway.
-            return dict((int(k), int(v)) for (k, v) in self._redis.hgetall(freq_cache_key).items() if int(v) > 0)
+            # In some cases when there are concurrent updates going on, there
+            # can briefly be a negative result for some frequency count. We
+            # discard these as they shouldn't really affect the result, and
+            # they are about to become zero anyway.
+            return dict((
+                int(k), int(v)) for (k, v) in self._redis.hgetall(
+                    freq_cache_key).items() if int(v) > 0)
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
             return dict()
@@ -98,12 +106,15 @@ class Counters(object):
             return False
 
     def reset_pattern(self, pattern_key):
-        #similar to above, but can pass pattern as arg instead
+        # similar to above, but can pass pattern as arg instead
         try:
             cache_key = COUNTER_CACHE_KEY % pattern_key
+
             for key in self._redis.keys(cache_key):
                 self._redis.delete(key)
+
             freq_cache_key = COUNTER_FREQ_CACHE_KEY % pattern_key
+
             for key in self._redis.keys(freq_cache_key):
                 self._redis.delete(key)
             return True

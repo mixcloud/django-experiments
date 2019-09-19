@@ -1,17 +1,18 @@
+from unittest import TestSuite
+
 from django.http import HttpResponse
 from django.test import TestCase, RequestFactory
 from django.contrib.sessions.backends.db import SessionStore as DatabaseSession
+from django.contrib.auth import get_user_model
 
-from unittest import TestSuite
 
 from experiments import conf
 from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
 from experiments.signal_handlers import transfer_enrollments_to_user
-from experiments.utils import DummyUser, SessionUser, AuthenticatedUser, participant
+from experiments.utils import (
+    DummyUser, SessionUser, AuthenticatedUser, participant)
 from experiments.models import Experiment, ENABLED_STATE, Enrollment
-
-from django.contrib.auth import get_user_model
 
 TEST_ALTERNATIVE = 'blue'
 EXPERIMENT_NAME = 'backgroundcolor'
@@ -30,15 +31,19 @@ class WebUserIncorporateTestCase(object):
             return
 
         try:
-            experiment = Experiment.objects.create(name=EXPERIMENT_NAME, state=ENABLED_STATE)
-            self.incorporated.set_alternative(EXPERIMENT_NAME, TEST_ALTERNATIVE)
+            experiment = Experiment.objects.create(
+                name=EXPERIMENT_NAME, state=ENABLED_STATE)
+            self.incorporated.set_alternative(
+                EXPERIMENT_NAME, TEST_ALTERNATIVE)
             self.incorporating.incorporate(self.incorporated)
-            self.assertEqual(self.incorporating.get_alternative(EXPERIMENT_NAME), TEST_ALTERNATIVE)
+            self.assertEqual(self.incorporating.get_alternative(
+                EXPERIMENT_NAME), TEST_ALTERNATIVE)
         finally:
             self.experiment_counter.delete(experiment)
 
     def _has_data(self):
-        return not isinstance(self.incorporated, DummyUser) and not isinstance(self.incorporating, DummyUser)
+        return not isinstance(self.incorporated, DummyUser) and not isinstance(
+            self.incorporating, DummyUser)
 
 
 def dummy(incorporating):
@@ -51,7 +56,9 @@ def anonymous(incorporating):
 
 def authenticated(incorporating):
     User = get_user_model()
-    return AuthenticatedUser(user=User.objects.create(username=['incorporating_user', 'incorporated_user'][incorporating]))
+    return AuthenticatedUser(user=User.objects.create(
+        username=['incorporating_user', 'incorporated_user'][incorporating]))
+
 
 user_factories = (dummy, anonymous, authenticated)
 
@@ -76,12 +83,14 @@ def build_test_case(incorporating, incorporated):
             self.incorporating = incorporating(True)
             self.incorporated = incorporated(False)
     InstantiatedTestCase.__name__ = "WebUserIncorporateTestCase_into_%s_from_%s" % (incorporating.__name__, incorporated.__name__)
+
     return InstantiatedTestCase
 
 
 class IncorporateTestCase(TestCase):
     def setUp(self):
-        self.experiment = Experiment.objects.create(name=EXPERIMENT_NAME, state=ENABLED_STATE)
+        self.experiment = Experiment.objects.create(
+            name=EXPERIMENT_NAME, state=ENABLED_STATE)
         self.experiment_counter = ExperimentCounter()
 
         User = get_user_model()
@@ -101,14 +110,17 @@ class IncorporateTestCase(TestCase):
         transfer_enrollments_to_user(None, self.request, self.user)
 
     def test_visit_incorporate(self):
-        alternative = participant(self.request).enroll(self.experiment.name, ['alternative'])
+        alternative = participant(self.request).enroll(
+            self.experiment.name, ['alternative'])
 
-        ExperimentsRetentionMiddleware().process_response(self.request, HttpResponse())
+        ExperimentsRetentionMiddleware().process_response(
+            self.request, HttpResponse())
 
         self.assertEqual(
-            dict(self.experiment_counter.participant_goal_frequencies(self.experiment,
-                                                                      alternative,
-                                                                      participant(self.request)._participant_identifier()))[conf.VISIT_NOT_PRESENT_COUNT_GOAL],
+            dict(self.experiment_counter.participant_goal_frequencies(
+                self.experiment, alternative,
+                participant(self.request)._participant_identifier()))[
+                    conf.VISIT_NOT_PRESENT_COUNT_GOAL],
             1
         )
 
@@ -118,11 +130,14 @@ class IncorporateTestCase(TestCase):
         self.assertTrue(Enrollment.objects.all().exists())
         self.assertIsNotNone(Enrollment.objects.all()[0].last_seen)
         self.assertEqual(
-            dict(self.experiment_counter.participant_goal_frequencies(self.experiment,
-                                                                      alternative,
-                                                                      participant(self.request)._participant_identifier()))[conf.VISIT_NOT_PRESENT_COUNT_GOAL],
+            dict(self.experiment_counter.participant_goal_frequencies(
+                self.experiment, alternative,
+                participant(self.request)._participant_identifier()))[
+                    conf.VISIT_NOT_PRESENT_COUNT_GOAL],
             1
         )
-        self.assertEqual(self.experiment_counter.goal_count(self.experiment, alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL), 1)
-        self.assertEqual(self.experiment_counter.participant_count(self.experiment, alternative), 1)
-
+        self.assertEqual(self.experiment_counter.goal_count(
+            self.experiment, alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL),
+            1)
+        self.assertEqual(self.experiment_counter.participant_count(
+            self.experiment, alternative), 1)
