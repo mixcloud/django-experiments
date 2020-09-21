@@ -43,6 +43,5 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Framework :: Django',
         'Framework :: Django :: 1.11',
-        'Framework :: Django :: 2.0',
     ],
 )
