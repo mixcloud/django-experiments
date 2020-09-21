@@ -1,8 +1,8 @@
 Django-Experiments
 ==================
 
-.. image:: https://badge.buildkite.com/3feef671b56c871fe4097fd26ae7e36de082f5bf35a59b9aff.svg
-   :target: https://buildkite.com/mixcloud/django-experiments
+.. image:: https://github.com/mixcloud/django-experiments/workflows/Tests/badge.svg
+   :target: https://github.com/mixcloud/django-experiments/actions
 
 Django-Experiments is an AB Testing Framework for Django.
 
