@@ -20,9 +20,9 @@ setup(
     include_package_data=True,
     license='MIT',
     install_requires=[
-        'django>=1.8',
-        'django-modeldict-yplan>=1.5.0,<2.0.0',
-        'jsonfield>=1.0.3',
+        'django>=1.11',
+        'django-modeldict-yplan>=1.5.0,<2',
+        'jsonfield>=1.0.3,<3',
         'redis>=2.4.9',
     ],
     tests_require=[
@@ -39,14 +39,10 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Framework :: Django',
-        'Framework :: Django :: 1.8',
-        'Framework :: Django :: 1.9',
-        'Framework :: Django :: 1.10',
         'Framework :: Django :: 1.11',
+        'Framework :: Django :: 2.0',
     ],
 )
