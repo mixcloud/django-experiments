@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import json
 
 from django.contrib.auth.models import User, Permission
-from django.urls import reverse import reverse
+from django.urls import reverse
 from django.test import TestCase
 
 from experiments.models import Experiment, CONTROL_STATE, ENABLED_STATE
