@@ -6,7 +6,7 @@ jobs:
   tox:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      max-parallel: 5
       matrix:
         python-version: [2.7, 3.4, 3.5, 3.6, pypy]
 
