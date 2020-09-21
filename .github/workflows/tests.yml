@@ -1,4 +1,4 @@
-name: Tests
+name: Test suite
 
 on: [push]
 
@@ -20,9 +20,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip tox tox-gh-actions
         pip install .
-        python -m pip install tox tox-gh-actions
     - name: Run test suite with tox
-      run: |
-        tox
+      run: tox
