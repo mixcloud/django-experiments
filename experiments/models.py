@@ -119,6 +119,21 @@ class Enrollment(models.Model):
         return u'%s - %s' % (self.user, self.experiment)
 
 
+class SessionEnrollment(models.Model):
+    """ A participant in a split testing experiment """
+    session_key = models.CharField(max_length=40)
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    enrollment_date = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(null=True)
+    alternative = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = ('session_key', 'experiment')
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.session_key, self.experiment)
+
+
 def weighted_choice(choices):
     total = sum(w for c, w in choices)
     r = random.uniform(0, total)
@@ -127,5 +142,3 @@ def weighted_choice(choices):
         upto += w
         if upto >= r:
             return c
-
-

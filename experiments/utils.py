@@ -1,6 +1,6 @@
 from django.db import IntegrityError
 
-from experiments.models import Enrollment
+from experiments.models import Enrollment, SessionEnrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
 from experiments.signals import user_enrolled
@@ -15,9 +15,13 @@ import collections
 import numbers
 import logging
 import json
-import pickle
 
 logger = logging.getLogger('experiments')
+
+redis = get_redis_client()
+
+
+SESSION_USER_GOALS_REDIS_KEY = "experiments:goals:%s"
 
 
 def participant(request=None, session=None, user=None):
@@ -344,22 +348,44 @@ def _session_enrollment_latest_version(data):
 
 class SessionUser(WebUser):
     def __init__(self, session, request=None):
+        self._enrollment_cache = {}
         self.session = session
         self.request = request
-        self.redis = get_redis_client()
-        self.enrollments_key = "experiments:enrollments:%s" % self._participant_identifier()
-        self.goals_key = "experiments:goals:%s" % self._participant_identifier()
+        self.goals_key = SESSION_USER_GOALS_REDIS_KEY % self._participant_identifier()
         super(SessionUser, self).__init__()
 
     def _get_enrollment(self, experiment):
-        enrollments = self.redis.hgetall(self.enrollments_key)
-        if enrollments and experiment.name in enrollments:
-            alternative, _, _, _ = _session_enrollment_latest_version(pickle.loads(enrollments[experiment.name]))
-            return alternative
-        return None
+        if experiment.name not in self._enrollment_cache:
+            try:
+                self._enrollment_cache[experiment.name] = SessionEnrollment.objects.get(session_key=self._session_key, experiment=experiment).alternative
+            except SessionEnrollment.DoesNotExist:
+                self._enrollment_cache[experiment.name] = None
+        return self._enrollment_cache[experiment.name]
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
-        self.redis.hset(self.enrollments_key, experiment.name, pickle.dumps((alternative, None, timestamp_from_datetime(enrollment_date or now()), timestamp_from_datetime(last_seen))))
+        if experiment.name in self._enrollment_cache:
+            del self._enrollment_cache[experiment.name]
+
+        try:
+            enrollment, _ = SessionEnrollment.objects.get_or_create(session_key=self._session_key, experiment=experiment, defaults={'alternative': alternative})
+        except IntegrityError:
+            # Already registered (db race condition under high load)
+            return
+        # Update alternative if it doesn't match
+        enrollment_changed = False
+        if enrollment.alternative != alternative:
+            enrollment.alternative = alternative
+            enrollment_changed = True
+        if enrollment_date:
+            enrollment.enrollment_date = enrollment_date
+            enrollment_changed = True
+        if last_seen:
+            enrollment.last_seen = last_seen
+            enrollment_changed = True
+
+        if enrollment_changed:
+            enrollment.save()
+
         if self._is_verified_human():
             self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
         else:
@@ -376,25 +402,29 @@ class SessionUser(WebUser):
             self.experiment_counter.increment_participant_count(enrollment.experiment, enrollment.alternative, self._participant_identifier())
 
         # Replay goals
-        goals = self.redis.lrange(self.goals_key, 0, -1)
+        goals = redis.lrange(self.goals_key, 0, -1)
         if goals:
             try:
                 for data in goals:
-                    experiment_name, alternative, goal_name, count = pickle.loads(data)
+                    experiment_name, alternative, goal_name, count = json.loads(data)
                     experiment = experiment_manager.get_experiment(experiment_name)
                     if experiment:
                         self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
             except ValueError:
                 pass  # Values from older version
             finally:
-                self.redis.delete(self.goals_key)
-
-    def _participant_identifier(self):
+                redis.delete(self.goals_key)
+    
+    @property
+    def _session_key(self):
         if 'experiments_session_key' not in self.session:
             if not self.session.session_key:
                 self.session.save()  # Force session key
             self.session['experiments_session_key'] = self.session.session_key
-        return 'session:%s' % (self.session['experiments_session_key'], )
+        return self.session['experiments_session_key']
+
+    def _participant_identifier(self):
+        return 'session:%s' % (self._session_key, )
 
     def _is_verified_human(self):
         if conf.VERIFY_HUMAN:
@@ -403,31 +433,29 @@ class SessionUser(WebUser):
             return True
 
     def _get_all_enrollments(self):
-        enrollments = self.redis.hgetall(self.enrollments_key)
+        enrollments = SessionEnrollment.objects.filter(session_key=self._session_key).select_related("experiment")
         if enrollments:
-            for experiment_name, data in list(enrollments.items()):
-                alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(pickle.loads(data))
-                experiment = experiment_manager.get_experiment(experiment_name)
-                if experiment:
-                    yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
+            for enrollment in enrollments:
+                yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
 
     def _cancel_enrollment(self, experiment):
-        alternative = self._get_enrollment(experiment)
-        if alternative:
-            self.experiment_counter.remove_participant(experiment, alternative, self._participant_identifier())
-            self.redis.hdel(self.enrollments_key, experiment.name)
+        try:
+            enrollment = SessionEnrollment.objects.get(session_key=self._session_key, experiment=experiment)
+        except Enrollment.DoesNotExist:
+            pass
+        else:
+            self.experiment_counter.remove_participant(experiment, enrollment.alternative, self._participant_identifier())
+            enrollment.delete()
 
     def _experiment_goal(self, experiment, alternative, goal_name, count):
         if self._is_verified_human():
             self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
-            self.redis.lpush(self.goals_key, pickle.dumps((experiment.name, alternative, goal_name, count)))
+            redis.lpush(self.goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
             logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
     def _set_last_seen(self, experiment, last_seen):
-        enrollment = pickle.loads(self.redis.hget(self.enrollments_key, experiment.name))
-        alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollment)
-        self.redis.hset(self.enrollments_key, experiment.name, pickle.dumps((alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))))
+        SessionEnrollment.objects.filter(session_key=self._session_key, experiment=experiment).update(last_seen=last_seen)
 
 
 __all__ = ['participant']

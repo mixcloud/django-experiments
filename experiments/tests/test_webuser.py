@@ -15,6 +15,7 @@ from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
 from experiments.models import Experiment, ENABLED_STATE, Enrollment
 from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_PRESENT_COUNT_GOAL
+from experiments.redis_client import get_redis_client
 from experiments.signal_handlers import transfer_enrollments_to_user
 from experiments.utils import participant
 
@@ -237,17 +238,17 @@ class ConfirmHumanTestCase(TestCase):
         self.experiment_user = participant(session=DatabaseSession())
         self.alternative = self.experiment_user.enroll(self.experiment.name, ['alternative'])
         self.experiment_user.goal('my_goal')
+        self.redis = get_redis_client()
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)
 
     def test_confirm_human_updates_experiment(self):
-        # Check redis key exists
-        self.assertTrue(self.experiment_user.redis.exists(self.experiment_user.goals_key))
+        self.assertTrue(self.redis.exists(self.experiment_user.goals_key))
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 0)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 0)
         self.experiment_user.confirm_human()
-        self.assertFalse(self.experiment_user.redis.exists(self.experiment_user.goals_key))
+        self.assertFalse(self.redis.exists(self.experiment_user.goals_key))
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
 
