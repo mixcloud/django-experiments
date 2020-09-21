@@ -242,11 +242,12 @@ class ConfirmHumanTestCase(TestCase):
         self.experiment_counter.delete(self.experiment)
 
     def test_confirm_human_updates_experiment(self):
-        self.assertIn('experiments_goals', self.experiment_user.session)
+        # Check redis key exists
+        self.assertTrue(self.experiment_user.redis.exists(self.experiment_user.goals_key))
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 0)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 0)
         self.experiment_user.confirm_human()
-        self.assertNotIn('experiments_goals', self.experiment_user.session)
+        self.assertFalse(self.experiment_user.redis.exists(self.experiment_user.goals_key))
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
 

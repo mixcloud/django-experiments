@@ -5,6 +5,7 @@ from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
 from experiments.signals import user_enrolled
 from experiments.experiment_counters import ExperimentCounter
+from experiments.redis_client import get_redis_client
 from experiments import conf
 
 from collections import namedtuple
@@ -14,6 +15,7 @@ import collections
 import numbers
 import logging
 import json
+import pickle
 
 logger = logging.getLogger('experiments')
 
@@ -344,19 +346,20 @@ class SessionUser(WebUser):
     def __init__(self, session, request=None):
         self.session = session
         self.request = request
+        self.redis = get_redis_client()
+        self.enrollments_key = "experiments:enrollments:%s" % self._participant_identifier()
+        self.goals_key = "experiments:goals:%s" % self._participant_identifier()
         super(SessionUser, self).__init__()
 
     def _get_enrollment(self, experiment):
-        enrollments = self.session.get('experiments_enrollments', None)
+        enrollments = self.redis.hgetall(self.enrollments_key)
         if enrollments and experiment.name in enrollments:
-            alternative, _, _, _ = _session_enrollment_latest_version(enrollments[experiment.name])
+            alternative, _, _, _ = _session_enrollment_latest_version(pickle.loads(enrollments[experiment.name]))
             return alternative
         return None
 
     def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
-        enrollments = self.session.get('experiments_enrollments', {})
-        enrollments[experiment.name] = (alternative, None, timestamp_from_datetime(enrollment_date or now()), timestamp_from_datetime(last_seen))
-        self.session['experiments_enrollments'] = enrollments
+        self.redis.hset(self.enrollments_key, experiment.name, pickle.dumps((alternative, None, timestamp_from_datetime(enrollment_date or now()), timestamp_from_datetime(last_seen))))
         if self._is_verified_human():
             self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
         else:
@@ -373,16 +376,18 @@ class SessionUser(WebUser):
             self.experiment_counter.increment_participant_count(enrollment.experiment, enrollment.alternative, self._participant_identifier())
 
         # Replay goals
-        if 'experiments_goals' in self.session:
+        goals = self.redis.lrange(self.goals_key, 0, -1)
+        if goals:
             try:
-                for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
+                for data in goals:
+                    experiment_name, alternative, goal_name, count = pickle.loads(data)
                     experiment = experiment_manager.get_experiment(experiment_name)
                     if experiment:
                         self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
             except ValueError:
                 pass  # Values from older version
             finally:
-                del self.session['experiments_goals']
+                self.redis.delete(self.goals_key)
 
     def _participant_identifier(self):
         if 'experiments_session_key' not in self.session:
@@ -398,10 +403,10 @@ class SessionUser(WebUser):
             return True
 
     def _get_all_enrollments(self):
-        enrollments = self.session.get('experiments_enrollments', None)
+        enrollments = self.redis.hgetall(self.enrollments_key)
         if enrollments:
             for experiment_name, data in list(enrollments.items()):
-                alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
+                alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(pickle.loads(data))
                 experiment = experiment_manager.get_experiment(experiment_name)
                 if experiment:
                     yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
@@ -410,24 +415,19 @@ class SessionUser(WebUser):
         alternative = self._get_enrollment(experiment)
         if alternative:
             self.experiment_counter.remove_participant(experiment, alternative, self._participant_identifier())
-            enrollments = self.session.get('experiments_enrollments', None)
-            del enrollments[experiment.name]
-            self.session['experiments_enrollments'] = enrollments
+            self.redis.hdel(self.enrollments_key, experiment.name)
 
     def _experiment_goal(self, experiment, alternative, goal_name, count):
         if self._is_verified_human():
             self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
-            goals = self.session.get('experiments_goals', [])
-            goals.append((experiment.name, alternative, goal_name, count))
-            self.session['experiments_goals'] = goals
+            self.redis.lpush(self.goals_key, pickle.dumps((experiment.name, alternative, goal_name, count)))
             logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
     def _set_last_seen(self, experiment, last_seen):
-        enrollments = self.session.get('experiments_enrollments', {})
-        alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollments[experiment.name])
-        enrollments[experiment.name] = (alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))
-        self.session['experiments_enrollments'] = enrollments
+        enrollment = pickle.loads(self.redis.hget(self.enrollments_key, experiment.name))
+        alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollment)
+        self.redis.hset(self.enrollments_key, experiment.name, pickle.dumps((alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))))
 
 
 __all__ = ['participant']
