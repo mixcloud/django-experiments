@@ -18,4 +18,4 @@ jobs:
         pip install tox>=2.3.1
     - name: Run test suite with tox
       run: |
-        /home/runner/.local/bin tox
+        /home/runner/.local/bin/tox
