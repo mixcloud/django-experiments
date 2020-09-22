@@ -1,7 +1,7 @@
 Django-Experiments
 ==================
 
-.. image:: https://github.com/mixcloud/django-experiments/workflows/Tests/badge.svg
+.. image:: https://github.com/mixcloud/django-experiments/workflows/Test%20suite/badge.svg
    :target: https://github.com/mixcloud/django-experiments/actions
 
 Django-Experiments is an AB Testing Framework for Django.
