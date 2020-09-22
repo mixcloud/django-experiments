@@ -52,7 +52,7 @@ class Counters(object):
 
             # Remove from the histogram
             freq_cache_key = COUNTER_FREQ_CACHE_KEY % key
-            self._redis.hincrby(freq_cache_key, freq, -1)
+            self._redis.hincrby(freq_cache_key, freq or 0, -1)
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
             pass
