@@ -60,7 +60,6 @@ class CounterTestCase(TestCase):
         self.assertEqual(self.counters.get(TEST_KEY), 1)
         self.assertEqual(self.counters.get_frequencies(TEST_KEY), {2: 1})
 
-
     @patch('experiments.counters.Counters._redis')
     def test_should_return_tuple_if_failing(self, patched__redis):
         patched__redis.side_effect = Exception
