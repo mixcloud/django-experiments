@@ -310,7 +310,7 @@ class WebUser(BaseUser):
         if enrollment_changed:
             enrollment.save()
 
-        if self._is_verified_human():
+        if self._is_verified_human:
             self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
         else:
             logger.info(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
@@ -339,7 +339,7 @@ class WebUser(BaseUser):
             enrollment.delete()
     
     def _experiment_goal(self, experiment, alternative, goal_name, count):
-        if self._is_verified_human():
+        if self._is_verified_human:
             self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
             redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
@@ -373,6 +373,7 @@ class WebUser(BaseUser):
     def _set_last_seen(self, experiment, last_seen):
         Enrollment.objects.filter(experiment=experiment, **self._qs_kwargs).update(last_seen=last_seen)
     
+    @property
     def _is_verified_human(self):
         if conf.VERIFY_HUMAN and not self.user:
             return self.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)
