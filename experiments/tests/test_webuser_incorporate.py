@@ -8,7 +8,7 @@ from experiments import conf
 from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
 from experiments.signal_handlers import transfer_enrollments_to_user
-from experiments.utils import DummyUser, SessionUser, AuthenticatedUser, participant
+from experiments.utils import DummyUser, WebUser, participant
 from experiments.models import Experiment, ENABLED_STATE, Enrollment
 
 from django.contrib.auth import get_user_model
@@ -17,9 +17,9 @@ TEST_ALTERNATIVE = 'blue'
 EXPERIMENT_NAME = 'backgroundcolor'
 
 
-class WebUserIncorporateTestCase(object):
+class BaseUserIncorporateTestCase(object):
     def __init__(self, *args, **kwargs):
-        super(WebUserIncorporateTestCase, self).__init__(*args, **kwargs)
+        super(BaseUserIncorporateTestCase, self).__init__(*args, **kwargs)
         self.experiment_counter = ExperimentCounter()
 
     def test_can_incorporate(self):
@@ -46,12 +46,12 @@ def dummy(incorporating):
 
 
 def anonymous(incorporating):
-    return SessionUser(session=DatabaseSession())
+    return WebUser(session=DatabaseSession())
 
 
 def authenticated(incorporating):
     User = get_user_model()
-    return AuthenticatedUser(user=User.objects.create(username=['incorporating_user', 'incorporated_user'][incorporating]))
+    return WebUser(user=User.objects.create(username=['incorporating_user', 'incorporated_user'][incorporating]))
 
 user_factories = (dummy, anonymous, authenticated)
 
@@ -69,13 +69,13 @@ def load_tests(loader, standard_tests, _):
 
 
 def build_test_case(incorporating, incorporated):
-    class InstantiatedTestCase(WebUserIncorporateTestCase, TestCase):
+    class InstantiatedTestCase(BaseUserIncorporateTestCase, TestCase):
 
         def setUp(self):
             super(InstantiatedTestCase, self).setUp()
             self.incorporating = incorporating(True)
             self.incorporated = incorporated(False)
-    InstantiatedTestCase.__name__ = "WebUserIncorporateTestCase_into_%s_from_%s" % (incorporating.__name__, incorporated.__name__)
+    InstantiatedTestCase.__name__ = "BaseUserIncorporateTestCase_into_%s_from_%s" % (incorporating.__name__, incorporated.__name__)
     return InstantiatedTestCase
 
 
@@ -112,10 +112,10 @@ class IncorporateTestCase(TestCase):
             1
         )
 
-        self.assertFalse(Enrollment.objects.all().exists())
+        self.assertFalse(Enrollment.objects.filter(user__isnull=False).exists())
         self._login()
 
-        self.assertTrue(Enrollment.objects.all().exists())
+        self.assertTrue(Enrollment.objects.filter(user__isnull=False).exists())
         self.assertIsNotNone(Enrollment.objects.all()[0].last_seen)
         self.assertEqual(
             dict(self.experiment_counter.participant_goal_frequencies(self.experiment,
@@ -125,4 +125,3 @@ class IncorporateTestCase(TestCase):
         )
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, alternative, conf.VISIT_NOT_PRESENT_COUNT_GOAL), 1)
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, alternative), 1)
-
