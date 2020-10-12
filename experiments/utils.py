@@ -1,5 +1,7 @@
 from django.db import IntegrityError
 
+from redis.exceptions import ConnectionError, ResponseError
+
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
@@ -342,7 +344,11 @@ class WebUser(BaseUser):
         if self._is_verified_human:
             self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
-            redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
+            try:
+                redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
+            except (ConnectionError, ResponseError):
+                # Handle Redis failures gracefully
+                pass
             logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
     
     def confirm_human(self):
@@ -357,18 +363,22 @@ class WebUser(BaseUser):
             self.experiment_counter.increment_participant_count(enrollment.experiment, enrollment.alternative, self._participant_identifier())
 
         # Replay goals
-        goals = redis.lrange(self._redis_goals_key, 0, -1)
-        if goals:
-            try:
-                for data in goals:
-                    experiment_name, alternative, goal_name, count = json.loads(data)
-                    experiment = experiment_manager.get_experiment(experiment_name)
-                    if experiment:
-                        self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
-            except ValueError:
-                pass  # Values from older version
-            finally:
-                redis.delete(self._redis_goals_key)
+        try:
+            goals = redis.lrange(self._redis_goals_key, 0, -1)
+            if goals:
+                try:
+                    for data in goals:
+                        experiment_name, alternative, goal_name, count = json.loads(data)
+                        experiment = experiment_manager.get_experiment(experiment_name)
+                        if experiment:
+                            self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
+                except ValueError:
+                    pass  # Values from older version
+                finally:
+                    redis.delete(self._redis_goals_key)
+        except (ConnectionError, ResponseError):
+            # Handle Redis failures gracefully
+            pass
 
     def _set_last_seen(self, experiment, last_seen):
         Enrollment.objects.filter(experiment=experiment, **self._qs_kwargs).update(last_seen=last_seen)
