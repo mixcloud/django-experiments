@@ -13,4 +13,4 @@ def get_redis_client():
     password = getattr(settings, 'EXPERIMENTS_REDIS_PASSWORD', None)
     db = getattr(settings, 'EXPERIMENTS_REDIS_DB', 0)
 
-    return redis.Redis(host=host, port=port, password=password, db=db, charset="utf-8", decode_responses=True)
+    return redis.Redis(host=host, port=port, password=password, db=db, encoding="utf-8", decode_responses=True)
