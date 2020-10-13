@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
@@ -106,17 +107,27 @@ class Experiment(models.Model):
 
 class Enrollment(models.Model):
     """ A participant in a split testing experiment """
-    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), on_delete=models.CASCADE)
+    user = models.ForeignKey(getattr(settings, 'AUTH_USER_MODEL', 'auth.User'), on_delete=models.CASCADE, null=True)
+    session_key = models.CharField(max_length=40, null=True)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     enrollment_date = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True)
     alternative = models.CharField(max_length=50)
 
+    def clean(self):
+        if self.user_id and self.session_key:
+            raise ValidationError("Only one of user_id or session_key can be set")
+        elif not self.user_id and not self.session_key:
+            raise ValidationError("Must set a user_id or session_key")
+
     class Meta:
-        unique_together = ('user', 'experiment')
+        unique_together = (('user', 'experiment'), ('session_key', 'experiment'))
 
     def __unicode__(self):
-        return u'%s - %s' % (self.user, self.experiment)
+        if self.user_id:
+            return u'%s - %s' % (self.user, self.experiment)
+        else:
+            return u'%s - %s' % (self.session_key, self.experiment)
 
 
 def weighted_choice(choices):
@@ -127,5 +138,3 @@ def weighted_choice(choices):
         upto += w
         if upto >= r:
             return c
-
-

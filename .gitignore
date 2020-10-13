@@ -9,3 +9,5 @@ django_experiments.egg-info
 *.egg
 dist/
 .tox
+.eggs/
+.coverage

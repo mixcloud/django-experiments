@@ -15,6 +15,7 @@ from experiments.experiment_counters import ExperimentCounter
 from experiments.middleware import ExperimentsRetentionMiddleware
 from experiments.models import Experiment, ENABLED_STATE, Enrollment
 from experiments.conf import CONTROL_GROUP, VISIT_PRESENT_COUNT_GOAL, VISIT_NOT_PRESENT_COUNT_GOAL
+from experiments.redis_client import get_redis_client
 from experiments.signal_handlers import transfer_enrollments_to_user
 from experiments.utils import participant
 
@@ -29,7 +30,7 @@ TEST_GOAL = 'buy'
 EXPERIMENT_NAME = 'backgroundcolor'
 
 
-class WebUserTests(object):
+class BaseUserTests(object):
     def setUp(self):
         self.experiment = Experiment(name=EXPERIMENT_NAME, state=ENABLED_STATE)
         self.experiment.save()
@@ -131,9 +132,9 @@ class WebUserTests(object):
         self.assertEqual(alternative, experiment_user.get_alternative(EXPERIMENT_NAME))
 
 
-class WebUserAnonymousTestCase(WebUserTests, TestCase):
+class BaseUserAnonymousTestCase(BaseUserTests, TestCase):
     def setUp(self):
-        super(WebUserAnonymousTestCase, self).setUp()
+        super(BaseUserAnonymousTestCase, self).setUp()
         self.request.user = AnonymousUser()
 
     def test_confirm_human_increments_participant_count(self):
@@ -155,9 +156,9 @@ class WebUserAnonymousTestCase(WebUserTests, TestCase):
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, TEST_ALTERNATIVE, TEST_GOAL), 1, "Did not count goal after confirm human")
 
 
-class WebUserAuthenticatedTestCase(WebUserTests, TestCase):
+class BaseUserAuthenticatedTestCase(BaseUserTests, TestCase):
     def setUp(self):
-        super(WebUserAuthenticatedTestCase, self).setUp()
+        super(BaseUserAuthenticatedTestCase, self).setUp()
         User = get_user_model()
         self.request.user = User(username='brian')
         self.request.user.save()
@@ -237,16 +238,17 @@ class ConfirmHumanTestCase(TestCase):
         self.experiment_user = participant(session=DatabaseSession())
         self.alternative = self.experiment_user.enroll(self.experiment.name, ['alternative'])
         self.experiment_user.goal('my_goal')
+        self.redis = get_redis_client()
 
     def tearDown(self):
         self.experiment_counter.delete(self.experiment)
 
     def test_confirm_human_updates_experiment(self):
-        self.assertIn('experiments_goals', self.experiment_user.session)
+        self.assertTrue(self.redis.exists(self.experiment_user._redis_goals_key))
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 0)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 0)
         self.experiment_user.confirm_human()
-        self.assertNotIn('experiments_goals', self.experiment_user.session)
+        self.assertFalse(self.redis.exists(self.experiment_user._redis_goals_key))
         self.assertEqual(self.experiment_counter.participant_count(self.experiment, self.alternative), 1)
         self.assertEqual(self.experiment_counter.goal_count(self.experiment, self.alternative, 'my_goal'), 1)
 

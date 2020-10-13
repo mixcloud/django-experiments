@@ -1,10 +1,14 @@
 from django.db import IntegrityError
+from django.utils.functional import cached_property
+
+from redis.exceptions import ConnectionError, ResponseError
 
 from experiments.models import Enrollment
 from experiments.manager import experiment_manager
 from experiments.dateutils import now, fix_awareness, datetime_from_timestamp, timestamp_from_datetime
 from experiments.signals import user_enrolled
 from experiments.experiment_counters import ExperimentCounter
+from experiments.redis_client import get_redis_client
 from experiments import conf
 
 from collections import namedtuple
@@ -18,8 +22,11 @@ import json
 logger = logging.getLogger('experiments')
 
 
+SESSION_USER_GOALS_REDIS_KEY = "experiments:goals:%s"
+
+
 def participant(request=None, session=None, user=None):
-    # This caches the experiment user on the request object because AuthenticatedUser can involve database lookups that
+    # This caches the experiment user on the request object because WebUser can involve database lookups that
     # it caches. Signals are attached to login/logout to clear the cache using clear_participant_cache
     if request and hasattr(request, '_experiments_user'):
         return request._experiments_user
@@ -45,11 +52,11 @@ def _get_participant(request, session, user):
         return DummyUser()
     elif user and user.is_authenticated:
         if getattr(user, 'is_confirmed_human', True):
-            return AuthenticatedUser(user, request)
+            return WebUser(user=user, request=request)
         else:
             return DummyUser()
     elif session:
-        return SessionUser(session, request)
+        return WebUser(session=session, request=request)
     else:
         return DummyUser()
 
@@ -57,7 +64,7 @@ def _get_participant(request, session, user):
 EnrollmentData = namedtuple('EnrollmentData', ['experiment', 'alternative', 'enrollment_date', 'last_seen'])
 
 
-class WebUser(object):
+class BaseUser(object):
     """Represents a user (either authenticated or session based) which can take part in experiments"""
 
     def __init__(self):
@@ -220,7 +227,7 @@ class WebUser(object):
         raise NotImplementedError
 
 
-class DummyUser(WebUser):
+class DummyUser(BaseUser):
     def _get_enrollment(self, experiment):
         return None
 
@@ -256,17 +263,30 @@ class DummyUser(WebUser):
         pass
 
 
-class AuthenticatedUser(WebUser):
-    def __init__(self, user, request=None):
+class WebUser(BaseUser):
+    def __init__(self, user=None, session=None, request=None):
         self._enrollment_cache = {}
         self.user = user
+        self.session = session
         self.request = request
-        super(AuthenticatedUser, self).__init__()
+        self._redis_goals_key = SESSION_USER_GOALS_REDIS_KEY % self._participant_identifier()
+        super(WebUser, self).__init__()
+
+    @cached_property
+    def _redis(self):
+        return get_redis_client()
+    
+    @property
+    def _qs_kwargs(self):
+        if self.user:
+            return {"user": self.user}
+        else:
+            return {"session_key": self._session_key}
 
     def _get_enrollment(self, experiment):
         if experiment.name not in self._enrollment_cache:
             try:
-                self._enrollment_cache[experiment.name] = Enrollment.objects.get(user=self.user, experiment=experiment).alternative
+                self._enrollment_cache[experiment.name] = Enrollment.objects.get(experiment=experiment, **self._qs_kwargs).alternative
             except Enrollment.DoesNotExist:
                 self._enrollment_cache[experiment.name] = None
         return self._enrollment_cache[experiment.name]
@@ -276,7 +296,7 @@ class AuthenticatedUser(WebUser):
             del self._enrollment_cache[experiment.name]
 
         try:
-            enrollment, _ = Enrollment.objects.get_or_create(user=self.user, experiment=experiment, defaults={'alternative': alternative})
+            enrollment, _ = Enrollment.objects.get_or_create(experiment=experiment, defaults={'alternative': alternative}, **self._qs_kwargs)
         except IntegrityError:
             # Already registered (db race condition under high load)
             return
@@ -295,76 +315,49 @@ class AuthenticatedUser(WebUser):
         if enrollment_changed:
             enrollment.save()
 
-        self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
+        if self._is_verified_human:
+            self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
+        else:
+            logger.info(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
 
-        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=self.user, session=None)
+        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=self.user, session=self.session)
 
     def _participant_identifier(self):
-        return 'user:%s' % (self.user.pk, )
+        if self.user:
+            return 'user:%s' % self.user.pk
+        else:
+            return 'session:%s' % self._session_key
 
     def _get_all_enrollments(self):
-        enrollments = Enrollment.objects.filter(user=self.user).select_related("experiment")
+        enrollments = Enrollment.objects.filter(**self._qs_kwargs).select_related("experiment")
         if enrollments:
             for enrollment in enrollments:
                 yield EnrollmentData(enrollment.experiment, enrollment.alternative, enrollment.enrollment_date, enrollment.last_seen)
 
     def _cancel_enrollment(self, experiment):
         try:
-            enrollment = Enrollment.objects.get(user=self.user, experiment=experiment)
+            enrollment = Enrollment.objects.get(experiment=experiment, **self._qs_kwargs)
         except Enrollment.DoesNotExist:
             pass
         else:
             self.experiment_counter.remove_participant(experiment, enrollment.alternative, self._participant_identifier())
             enrollment.delete()
-
+    
     def _experiment_goal(self, experiment, alternative, goal_name, count):
-        self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
-
-    def _set_last_seen(self, experiment, last_seen):
-        Enrollment.objects.filter(user=self.user, experiment=experiment).update(last_seen=last_seen)
-
-
-def _session_enrollment_latest_version(data):
-    try:
-        alternative, unused, enrollment_date, last_seen = data
-        if isinstance(enrollment_date, numbers.Number):
-            enrollment_date = datetime_from_timestamp(enrollment_date)
-        if isinstance(last_seen, numbers.Number):
-            last_seen = datetime_from_timestamp(last_seen)
-        if last_seen:
-            last_seen = fix_awareness(last_seen)
-    except ValueError:  # Data from previous version
-        alternative, unused = data
-        enrollment_date = None
-        last_seen = None
-    return alternative, unused, enrollment_date, last_seen
-
-
-class SessionUser(WebUser):
-    def __init__(self, session, request=None):
-        self.session = session
-        self.request = request
-        super(SessionUser, self).__init__()
-
-    def _get_enrollment(self, experiment):
-        enrollments = self.session.get('experiments_enrollments', None)
-        if enrollments and experiment.name in enrollments:
-            alternative, _, _, _ = _session_enrollment_latest_version(enrollments[experiment.name])
-            return alternative
-        return None
-
-    def _set_enrollment(self, experiment, alternative, enrollment_date=None, last_seen=None):
-        enrollments = self.session.get('experiments_enrollments', {})
-        enrollments[experiment.name] = (alternative, None, timestamp_from_datetime(enrollment_date or now()), timestamp_from_datetime(last_seen))
-        self.session['experiments_enrollments'] = enrollments
-        if self._is_verified_human():
-            self.experiment_counter.increment_participant_count(experiment, alternative, self._participant_identifier())
+        if self._is_verified_human:
+            self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
-            logger.info(json.dumps({'type':'participant_unconfirmed', 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
-
-        user_enrolled.send(self, experiment=experiment.name, alternative=alternative, user=None, session=self.session)
-
+            try:
+                self._redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
+            except (ConnectionError, ResponseError):
+                # Handle Redis failures gracefully
+                pass
+            logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
+    
     def confirm_human(self):
+        if self.user:
+            return
+
         self.session[conf.CONFIRM_HUMAN_SESSION_KEY] = True
         logger.info(json.dumps({'type': 'confirm_human', 'participant': self._participant_identifier()}))
 
@@ -373,61 +366,42 @@ class SessionUser(WebUser):
             self.experiment_counter.increment_participant_count(enrollment.experiment, enrollment.alternative, self._participant_identifier())
 
         # Replay goals
-        if 'experiments_goals' in self.session:
-            try:
-                for experiment_name, alternative, goal_name, count in self.session['experiments_goals']:
-                    experiment = experiment_manager.get_experiment(experiment_name)
-                    if experiment:
-                        self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
-            except ValueError:
-                pass  # Values from older version
-            finally:
-                del self.session['experiments_goals']
+        try:
+            goals = self._redis.lrange(self._redis_goals_key, 0, -1)
+            if goals:
+                try:
+                    for data in goals:
+                        experiment_name, alternative, goal_name, count = json.loads(data)
+                        experiment = experiment_manager.get_experiment(experiment_name)
+                        if experiment:
+                            self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
+                except ValueError:
+                    pass  # Values from older version
+                finally:
+                    self._redis.delete(self._redis_goals_key)
+        except (ConnectionError, ResponseError):
+            # Handle Redis failures gracefully
+            pass
 
-    def _participant_identifier(self):
+    def _set_last_seen(self, experiment, last_seen):
+        Enrollment.objects.filter(experiment=experiment, **self._qs_kwargs).update(last_seen=last_seen)
+    
+    @property
+    def _is_verified_human(self):
+        if conf.VERIFY_HUMAN and not self.user:
+            return self.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)
+        else:
+            return True
+    
+    @property
+    def _session_key(self):
+        if not self.session:
+            return None
         if 'experiments_session_key' not in self.session:
             if not self.session.session_key:
                 self.session.save()  # Force session key
             self.session['experiments_session_key'] = self.session.session_key
-        return 'session:%s' % (self.session['experiments_session_key'], )
-
-    def _is_verified_human(self):
-        if conf.VERIFY_HUMAN:
-            return self.session.get(conf.CONFIRM_HUMAN_SESSION_KEY, False)
-        else:
-            return True
-
-    def _get_all_enrollments(self):
-        enrollments = self.session.get('experiments_enrollments', None)
-        if enrollments:
-            for experiment_name, data in list(enrollments.items()):
-                alternative, _, enrollment_date, last_seen = _session_enrollment_latest_version(data)
-                experiment = experiment_manager.get_experiment(experiment_name)
-                if experiment:
-                    yield EnrollmentData(experiment, alternative, enrollment_date, last_seen)
-
-    def _cancel_enrollment(self, experiment):
-        alternative = self._get_enrollment(experiment)
-        if alternative:
-            self.experiment_counter.remove_participant(experiment, alternative, self._participant_identifier())
-            enrollments = self.session.get('experiments_enrollments', None)
-            del enrollments[experiment.name]
-            self.session['experiments_enrollments'] = enrollments
-
-    def _experiment_goal(self, experiment, alternative, goal_name, count):
-        if self._is_verified_human():
-            self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
-        else:
-            goals = self.session.get('experiments_goals', [])
-            goals.append((experiment.name, alternative, goal_name, count))
-            self.session['experiments_goals'] = goals
-            logger.info(json.dumps({'type': 'goal_hit_unconfirmed', 'goal': goal_name, 'goal_count': count, 'experiment': experiment.name, 'alternative': alternative, 'participant': self._participant_identifier()}))
-
-    def _set_last_seen(self, experiment, last_seen):
-        enrollments = self.session.get('experiments_enrollments', {})
-        alternative, unused, enrollment_date, _ = _session_enrollment_latest_version(enrollments[experiment.name])
-        enrollments[experiment.name] = (alternative, unused, timestamp_from_datetime(enrollment_date), timestamp_from_datetime(last_seen))
-        self.session['experiments_enrollments'] = enrollments
+        return self.session['experiments_session_key']
 
 
 __all__ = ['participant']
