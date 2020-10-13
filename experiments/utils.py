@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.utils.functional import cached_property
 
 from redis.exceptions import ConnectionError, ResponseError
 
@@ -19,8 +20,6 @@ import logging
 import json
 
 logger = logging.getLogger('experiments')
-
-redis = get_redis_client()
 
 
 SESSION_USER_GOALS_REDIS_KEY = "experiments:goals:%s"
@@ -272,6 +271,10 @@ class WebUser(BaseUser):
         self.request = request
         self._redis_goals_key = SESSION_USER_GOALS_REDIS_KEY % self._participant_identifier()
         super(WebUser, self).__init__()
+
+    @cached_property
+    def _redis(self):
+        return get_redis_client()
     
     @property
     def _qs_kwargs(self):
@@ -345,7 +348,7 @@ class WebUser(BaseUser):
             self.experiment_counter.increment_goal_count(experiment, alternative, goal_name, self._participant_identifier(), count)
         else:
             try:
-                redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
+                self._redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
             except (ConnectionError, ResponseError):
                 # Handle Redis failures gracefully
                 pass
@@ -364,7 +367,7 @@ class WebUser(BaseUser):
 
         # Replay goals
         try:
-            goals = redis.lrange(self._redis_goals_key, 0, -1)
+            goals = self._redis.lrange(self._redis_goals_key, 0, -1)
             if goals:
                 try:
                     for data in goals:
@@ -375,7 +378,7 @@ class WebUser(BaseUser):
                 except ValueError:
                     pass  # Values from older version
                 finally:
-                    redis.delete(self._redis_goals_key)
+                    self._redis.delete(self._redis_goals_key)
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
             pass
