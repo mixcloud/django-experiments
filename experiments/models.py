@@ -111,7 +111,7 @@ class Experiment(models.Model):
     def delete(self, reset_counters=True, *args, **kwargs):
         if reset_counters:
             self.reset_counters()
-        super(Experiment, self).delete(*args, **kwargs)
+        return super(Experiment, self).delete(*args, **kwargs)
 
 
 
