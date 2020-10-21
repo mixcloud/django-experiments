@@ -1,3 +1,5 @@
+import itertools
+
 from django.utils.functional import cached_property
 
 from redis.exceptions import ConnectionError, ResponseError
@@ -99,3 +101,12 @@ class Counters(object):
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
             return False
+    
+    def reset_prefix(self, key_prefix):
+        # Delete all data in redis for a given key prefix, batched to handle long
+        # running experiments with many participants
+        for key_pattern in [COUNTER_CACHE_KEY, COUNTER_FREQ_CACHE_KEY]:
+            match = "%s:*" % (key_pattern % key_prefix)
+            batched_keys = [iter(self._redis.scan_iter(match))] * 500
+            for keys in itertools.izip_longest(*batched_keys):
+                self._redis.delete(*[k for k in keys if k])
