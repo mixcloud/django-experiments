@@ -23,6 +23,7 @@ logger = logging.getLogger('experiments')
 
 
 SESSION_USER_GOALS_REDIS_KEY = "experiments:goals:%s"
+SESSION_USER_GOALS_REDIS_TTL = 300
 
 
 def participant(request=None, session=None, user=None):
@@ -349,6 +350,7 @@ class WebUser(BaseUser):
         else:
             try:
                 self._redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
+                self._redis.expire(self._redis_goals_key, SESSION_USER_GOALS_REDIS_TTL)
             except (ConnectionError, ResponseError):
                 # Handle Redis failures gracefully
                 pass
