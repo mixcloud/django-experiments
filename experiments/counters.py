@@ -1,10 +1,13 @@
-import itertools
-
 from django.utils.functional import cached_property
 
 from redis.exceptions import ConnectionError, ResponseError
 
 from experiments.redis_client import get_redis_client
+
+try:
+    from itertools import zip_longest as izip_longest
+except ImportError:
+    from itertools import izip_longest 
 
 
 COUNTER_CACHE_KEY = 'experiments:participants:%s'
@@ -108,5 +111,5 @@ class Counters(object):
         for key_pattern in [COUNTER_CACHE_KEY, COUNTER_FREQ_CACHE_KEY]:
             match = "%s:*" % (key_pattern % key_prefix)
             batched_keys = [iter(self._redis.scan_iter(match))] * 500
-            for keys in itertools.izip_longest(*batched_keys):
+            for keys in izip_longest(*batched_keys):
                 self._redis.delete(*[k for k in keys if k])
