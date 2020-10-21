@@ -8,6 +8,7 @@ from jsonfield import JSONField
 import random
 import json
 
+from experiments.counters import Counters
 from experiments.dateutils import now
 from experiments import conf
 
@@ -103,6 +104,15 @@ class Experiment(models.Model):
 
     def to_dict_serialized(self):
         return json.dumps(self.to_dict(), cls=DjangoJSONEncoder)
+    
+    def reset_counters(self):
+        Counters().reset_prefix(self.name)
+    
+    def delete(self, reset_counters=True, *args, **kwargs):
+        if reset_counters:
+            self.reset_counters()
+        super(Experiment, self).delete(*args, **kwargs)
+
 
 
 class Enrollment(models.Model):
