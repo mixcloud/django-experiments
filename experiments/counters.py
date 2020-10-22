@@ -4,11 +4,6 @@ from redis.exceptions import ConnectionError, ResponseError
 
 from experiments.redis_client import get_redis_client
 
-try:
-    from itertools import zip_longest as izip_longest
-except ImportError:
-    from itertools import izip_longest 
-
 
 COUNTER_CACHE_KEY = 'experiments:participants:%s'
 COUNTER_FREQ_CACHE_KEY = 'experiments:freq:%s'
@@ -104,12 +99,18 @@ class Counters(object):
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
             return False
-    
+     
     def reset_prefix(self, key_prefix):
-        # Delete all data in redis for a given key prefix, batched to handle long
-        # running experiments with many participants
+        # Delete all data in redis for a given key prefix
+        from experiments.utils import grouper
+        
         for key_pattern in [COUNTER_CACHE_KEY, COUNTER_FREQ_CACHE_KEY]:
             match = "%s:*" % (key_pattern % key_prefix)
-            batched_keys = [iter(self._redis.scan_iter(match))] * 500
-            for keys in izip_longest(*batched_keys):
-                self._redis.delete(*[k for k in keys if k])
+            key_iter = self._redis.scan_iter(match)
+
+            # Delete keys in groups of 1000 to prevent problems with long
+            # running experiments having many participants
+            for keys in grouper(key_iter, 1000):
+                # The last group will be padded with None to reach the specified batch
+                # size, so these are filtered out here
+                self._redis.delete(*filter(None, keys))
