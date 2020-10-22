@@ -22,8 +22,7 @@ import json
 logger = logging.getLogger('experiments')
 
 
-SESSION_USER_GOALS_REDIS_KEY = "experiments:goals:%s"
-SESSION_USER_GOALS_REDIS_TTL = 300
+UNCONFIRMED_HUMAN_GOALS_REDIS_KEY = "experiments:goals:%s"
 
 
 def participant(request=None, session=None, user=None):
@@ -270,7 +269,7 @@ class WebUser(BaseUser):
         self.user = user
         self.session = session
         self.request = request
-        self._redis_goals_key = SESSION_USER_GOALS_REDIS_KEY % self._participant_identifier()
+        self._redis_goals_key = UNCONFIRMED_HUMAN_GOALS_REDIS_KEY % self._participant_identifier()
         super(WebUser, self).__init__()
 
     @cached_property
@@ -350,7 +349,11 @@ class WebUser(BaseUser):
         else:
             try:
                 self._redis.lpush(self._redis_goals_key, json.dumps((experiment.name, alternative, goal_name, count)))
-                self._redis.expire(self._redis_goals_key, SESSION_USER_GOALS_REDIS_TTL)
+                # Setting an expiry on this data otherwise it could linger for a while
+                # and also fill up redis quickly if lots of bots begin to scrape the app.
+                # Human confirmation processes are generally quick so this defaults to a
+                # low value (but it can be configured via Django settings)
+                self._redis.expire(self._redis_goals_key, conf.REDIS_GOALS_TTL)
             except (ConnectionError, ResponseError):
                 # Handle Redis failures gracefully
                 pass
