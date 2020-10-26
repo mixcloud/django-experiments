@@ -99,3 +99,18 @@ class Counters(object):
         except (ConnectionError, ResponseError):
             # Handle Redis failures gracefully
             return False
+     
+    def reset_prefix(self, key_prefix):
+        # Delete all data in redis for a given key prefix
+        from experiments.utils import grouper
+        
+        for key_pattern in [COUNTER_CACHE_KEY, COUNTER_FREQ_CACHE_KEY]:
+            match = "%s:*" % (key_pattern % key_prefix)
+            key_iter = self._redis.scan_iter(match)
+
+            # Delete keys in groups of 1000 to prevent problems with long
+            # running experiments having many participants
+            for keys in grouper(key_iter, 1000):
+                # The last group will be padded with None to reach the specified batch
+                # size, so these are filtered out here
+                self._redis.delete(*filter(None, keys))

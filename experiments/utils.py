@@ -19,6 +19,11 @@ import numbers
 import logging
 import json
 
+try:
+    from itertools import zip_longest as izip_longest
+except ImportError:
+    from itertools import izip_longest
+
 logger = logging.getLogger('experiments')
 
 
@@ -407,6 +412,14 @@ class WebUser(BaseUser):
                 self.session.save()  # Force session key
             self.session['experiments_session_key'] = self.session.session_key
         return self.session['experiments_session_key']
+
+
+def grouper(iterable, n, fillvalue=None):
+    # Taken from the recipe at
+    # https://docs.python.org/2.7/library/itertools.html#itertools-recipes
+    args = [iter(iterable)] * n
+    return izip_longest(fillvalue=fillvalue, *args)
+
 
 
 __all__ = ['participant']
