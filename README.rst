@@ -79,10 +79,20 @@ Include 'django.contrib.humanize' as above if not already included.
 
 Include the app URLconf in your urls.py file:
 
+.. code-block:: python
+
     url(r'experiments/', include('experiments.urls')),
 
 We haven't configured our goals yet, we'll do that in a bit. Please ensure
 you have correctly configured your STATIC_URL setting.
+
+
+Include following JS libraries to your base template:
+
+    .. code-block:: html
+
+         <script src="{% static 'experiments/js/experiments.js' %}"></script>
+         <script src="{% static 'experiments/js/jquery.cookie.js' %}"></script>
 
 OPTIONAL:
 If you want to use the built in retention goals you will need to include the retention middleware:
@@ -263,7 +273,15 @@ This will be fired when the user loads the page. This is not the only way of fir
 
         <button onclick="experiments.goal('registration')">Complete Registration</button>
 
-    (Please note, this requires CSRF authentication. Please see the `Django Docs <https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/#ajax>`_)
+    (Please note, this requires CSRF authentication. Please see the `Django Docs <https://docs.djangoproject.com/en/3.2/ref/csrf/>`_)
+    The CSRF code would be something like:
+
+    .. code-block:: javascript
+
+       $.ajaxSetup({
+           headers:
+           { 'X-CSRFToken': Cookies.get('csrftoken') }
+       });
 
 4. **Cookies**:
 
