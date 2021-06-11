@@ -22,4 +22,8 @@ class ExperimentsRetentionMiddleware(MiddlewareMixin):
         experiment_user = participant(request)
         experiment_user.visit()
 
+        # record cookie goal
+        goal_name = request.COOKIES.get('experiments_goal')
+        participant(request).goal(goal_name)
+
         return response
