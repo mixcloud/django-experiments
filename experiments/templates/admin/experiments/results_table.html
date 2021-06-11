@@ -9,13 +9,13 @@
             <th id="experiment-toggle-goals" class="experiment-toggle-goals" data-shown="false">Toggle All Goals</th>
             <th data-alternative="control"{% if user_alternative == 'control' %} class="experiment-selected-alternative"{% endif %}>
                 control <small>({{ control_participants|intcomma }})</small>
-                &dash; <span class="experiment-alternative-enrolled">Enrolled</span><span class="experiment-alternative-join">Click to join</span>
+                <span class="experiment-alternative-enrolled button">Shown</span><span class="experiment-alternative-join button" disabled>Show for me</span>
             </th>
             {% for alternative, participants in alternatives %}
                  {% if alternative != 'control' %}
                      <th colspan="3" data-alternative="{{ alternative }}"{% if user_alternative == alternative %} class="experiment-selected-alternative"{% endif %}>
                         {{ alternative }} <small>({{ participants|intcomma }})</small>
-                        &dash; <span class="experiment-alternative-enrolled">Enrolled</span><span class="experiment-alternative-join">Click to join</span>
+                        <span class="experiment-alternative-enrolled button">Shown</span><span class="experiment-alternative-join button disabled" disabled>Show for me</span>
                      </th>
                  {% endif %}
             {% endfor %}
