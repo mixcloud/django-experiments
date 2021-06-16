@@ -71,7 +71,7 @@
                                 {% endif %}
                             {% endwith %}
                             {% if data.mwu %}
-                                MWU: {{ results.mann_whitney_confidence|floatformat:2 }}%
+                               <span title="Mann-Whitney U test">MWU:</span> {{ results.mann_whitney_confidence|floatformat:2 }}%
                             {% endif %}
                         </td>
                     {% endif %}
