@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+try:
+    from django.db.models import JSONField
+except ImportError:  # Django < 3.1
+    from jsonfield import JSONField
+
 from django.db import models, migrations
 import django.utils.timezone
-import jsonfield.fields
 from django.conf import settings
 
 
@@ -28,7 +32,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('name', models.CharField(max_length=128, serialize=False, primary_key=True)),
                 ('description', models.TextField(default=b'', null=True, blank=True)),
-                ('alternatives', jsonfield.fields.JSONField(default={}, blank=True)),
+                ('alternatives', JSONField(default={}, blank=True)),
                 ('relevant_chi2_goals', models.TextField(default=b'', null=True, blank=True)),
                 ('relevant_mwu_goals', models.TextField(default=b'', null=True, blank=True)),
                 ('state', models.IntegerField(default=0, choices=[(0, b'Default/Control'), (1, b'Enabled'), (3, b'Track')])),
