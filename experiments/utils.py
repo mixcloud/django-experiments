@@ -15,6 +15,10 @@ from collections import namedtuple
 from datetime import timedelta
 
 import collections
+try:
+    from collections.abc import Mapping
+except ImportError:  # Python < 3.10
+    from collections import Mapping
 import numbers
 import logging
 import json
@@ -87,7 +91,7 @@ class BaseUser(object):
 
         if experiment:
             if experiment.is_displaying_alternatives():
-                if isinstance(alternatives, collections.Mapping):
+                if isinstance(alternatives, Mapping):
                     if conf.CONTROL_GROUP not in alternatives:
                         experiment.ensure_alternative_exists(conf.CONTROL_GROUP, 1)
                     for alternative, weight in alternatives.items():
