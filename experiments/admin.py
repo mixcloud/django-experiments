@@ -6,7 +6,7 @@ from django.utils import timezone
 from experiments.admin_utils import get_result_context
 from experiments.models import Experiment
 from experiments import conf
-from django.conf.urls import url
+from django.urls import path
 from experiments.utils import participant
 
 
@@ -104,8 +104,8 @@ class ExperimentAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         experiment_urls = [
-            url(r'^set-alternative/$', self.admin_site.admin_view(self.set_alternative_view), name='experiment_admin_set_alternative'),
-            url(r'^set-state/$', self.admin_site.admin_view(self.set_state_view), name='experiment_admin_set_state'),
+            path('set-alternative/', self.admin_site.admin_view(self.set_alternative_view), name='experiment_admin_set_alternative'),
+            path('set-state/', self.admin_site.admin_view(self.set_state_view), name='experiment_admin_set_state'),
         ]
         return experiment_urls + super(ExperimentAdmin, self).get_urls()
 
