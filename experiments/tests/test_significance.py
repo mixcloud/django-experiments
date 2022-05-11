@@ -39,8 +39,8 @@ class ChiSquare(TestCase):
         self.assertChiSquareCorrect(((100, 100, 100), (200, 200, 200), (300, 300, 300)), 0, 1)
 
     def test_error(self):
-        self.assertRaises(TypeError, chi_square_p_value((1,)))
-        self.assertRaises(TypeError, chi_square_p_value(((1,2,3))))
+        self.assertEqual(chi_square_p_value((1,)), None)
+        self.assertEqual(chi_square_p_value(((0,2,3))), None)
 
     def test_is_none(self):
         self.assertEqual(chi_square_p_value(((1, 1), (1, -1))), (None, None), "Negative numbers should not be allowed")

@@ -103,7 +103,7 @@ class IncorporateTestCase(TestCase):
     def test_visit_incorporate(self):
         alternative = participant(self.request).enroll(self.experiment.name, ['alternative'])
 
-        ExperimentsRetentionMiddleware().process_response(self.request, HttpResponse())
+        ExperimentsRetentionMiddleware(self.request).process_response(self.request, HttpResponse())
 
         self.assertEqual(
             dict(self.experiment_counter.participant_goal_frequencies(self.experiment,

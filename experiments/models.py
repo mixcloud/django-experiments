@@ -29,7 +29,7 @@ STATES = (
 class Experiment(models.Model):
     name = models.CharField(primary_key=True, max_length=128)
     description = models.TextField(default="", blank=True, null=True)
-    alternatives = models.JSONField(default={}, blank=True)
+    alternatives = JSONField(default=dict, blank=True)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
 

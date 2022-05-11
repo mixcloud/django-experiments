@@ -227,7 +227,7 @@ class ParticipantCacheTestCase(TestCase):
         # if the participant cache hasn't been wiped appropriately then the
         # session experiment user will be impacted instead of the authenticated
         # experiment user
-        ExperimentsRetentionMiddleware().process_response(request, HttpResponse())
+        ExperimentsRetentionMiddleware(request).process_response(request, HttpResponse())
         self.assertIsNotNone(Enrollment.objects.all()[0].last_seen)
 
 
