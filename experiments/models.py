@@ -3,10 +3,12 @@ from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
-from jsonfield import JSONField
-
 import random
 import json
+try:
+    from django.db.models import JSONField
+except ImportError:  # Django < 3.1
+    from jsonfield import JSONField
 
 from experiments.counters import Counters
 from experiments.dateutils import now
@@ -27,7 +29,7 @@ STATES = (
 class Experiment(models.Model):
     name = models.CharField(primary_key=True, max_length=128)
     description = models.TextField(default="", blank=True, null=True)
-    alternatives = JSONField(default={}, blank=True)
+    alternatives = models.JSONField(default={}, blank=True)
     relevant_chi2_goals = models.TextField(default="", null=True, blank=True)
     relevant_mwu_goals = models.TextField(default="", null=True, blank=True)
 

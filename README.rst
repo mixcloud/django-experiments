@@ -32,7 +32,6 @@ Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
 - `Redis <http://redis.io/>`_
-- `jsonfield <https://github.com/bradjasper/django-jsonfield/>`_
 - `django-modeldict <https://github.com/disqus/django-modeldict>`_
 
 (Detailed list in setup.py)
@@ -364,6 +363,7 @@ UNRELEASED
 - Add `setup.cfg` to support building of universal wheels (preparing for Python 3)
 - Tox runs `python setup.py test` (honouring both `install_requires` and `tests_require`)
 - Prepared `tox.ini` for Python 3 and Django 1.11 compatibility
+- Remove dependency on jsonfield, use Django builtin JSONField
 
 1.2.0
 ~~~~~
