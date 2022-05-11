@@ -1,6 +1,10 @@
 name: Test suite
 
-on: [push]
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
 
 jobs:
   tox:
