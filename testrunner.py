@@ -20,14 +20,16 @@ def runtests():
                         'django.contrib.contenttypes',
                         'django.contrib.sessions',
                         'django.contrib.admin',
+                        'django.contrib.messages',
                         'experiments',),
         ROOT_URLCONF='experiments.tests.urls',
-        MIDDLEWARE_CLASSES = (
+        MIDDLEWARE = (
             'django.contrib.sessions.middleware.SessionMiddleware',
             'django.middleware.csrf.CsrfViewMiddleware',
             'django.contrib.auth.middleware.AuthenticationMiddleware',
-            'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+            'django.contrib.messages.middleware.MessageMiddleware'
         ),
+        SECRET_KEY="foobarbaz",
         TEMPLATES = [
             {
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -36,6 +38,7 @@ def runtests():
                 'OPTIONS': {
                     'context_processors': [
                         'django.contrib.auth.context_processors.auth',
+                        'django.contrib.messages.context_processors.messages',
                     ],
                 },
             },
