@@ -26,3 +26,4 @@ CONFIRM_HUMAN_SESSION_KEY = getattr(settings, 'EXPERIMENTS_CONFIRM_HUMAN_SESSION
 REDIS_GOALS_TTL = getattr(settings, 'EXPERIMENTS_REDIS_GOALS_TTL', 300)
 
 BOT_REGEX = re.compile("(Baidu|Gigabot|Googlebot|YandexBot|AhrefsBot|TVersity|libwww-perl|Yeti|lwp-trivial|msnbot|bingbot|facebookexternalhit|Twitterbot|Twitmunin|SiteUptime|TwitterFeed|Slurp|WordPress|ZIBB|ZyBorg)", re.IGNORECASE)
+USE_DJANGO_SUIT = getattr(settings, 'USE_DJANGO_SUIT', False)
