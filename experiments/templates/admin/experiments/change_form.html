@@ -8,9 +8,11 @@
     {% if original %}
         <h5 class="experiment-dates">{{ original.start_date }} &dash; {% if original.end_date %}{{ original.end_date }}{% else %}now{% endif %}</h5>
 
-        <div class="module experiment-results-container">
-            {% include "admin/experiments/results_table.html" %}
-        </div>
+        {% if not use_django_suit %}
+            <div class="module experiment-results-container">
+                {% include "admin/experiments/results_table.html" %}
+            </div>
+        {% endif %}
     {% endif %}
 {% endblock object-tools %}
 
@@ -55,3 +57,11 @@
         </fieldset>
     </div>
 {% endblock after_field_sets %}
+
+{% block after_related_objects %}
+    {% if use_django_suit %}
+        <div class="module experiment-results-container">
+            {% include "admin/experiments/results_table.html" %}
+        </div>
+    {% endif %}
+{% endblock %}

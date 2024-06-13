@@ -28,6 +28,23 @@ pip is still the recommended way to install dependencies:
 
     pip install -e .
 
+Add the context processors in your settings:
+
+.. code-block:: python
+
+    TEMPLATES = [
+        {
+            'OPTIONS': {
+                'context_processors': [
+                    'experiments.context_processors.experiments'
+                ],
+            },
+        },
+    ]
+
+Used to check how to display the result list.
+
+
 Dependencies
 ------------
 - `Django <https://github.com/django/django/>`_
@@ -106,6 +123,13 @@ If you want to use the built in retention goals you will need to include the ret
 
 *Note, more configuration options are detailed below.*
 
+If you use django-suit add a configuration variable:
+
+.. code-block:: python
+
+    USE_DJANGO_SUIT = True
+
+To fix the display of result list.
 
 Experiments and Alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
