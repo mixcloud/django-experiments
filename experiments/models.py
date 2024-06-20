@@ -41,20 +41,16 @@ class Experiment(models.Model):
     def is_displaying_alternatives(self):
         if self.state == CONTROL_STATE:
             return False
-        elif self.state == ENABLED_STATE:
-            return True
-        elif self.state == TRACK_STATE:
+        elif self.state == ENABLED_STATE or self.state == TRACK_STATE:
             return True
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
 
     def is_accepting_new_users(self):
-        if self.state == CONTROL_STATE:
+        if self.state == CONTROL_STATE or self.state == TRACK_STATE:
             return False
         elif self.state == ENABLED_STATE:
             return True
-        elif self.state == TRACK_STATE:
-            return False
         else:
             raise Exception("Invalid experiment state %s!" % self.state)
 
